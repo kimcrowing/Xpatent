@@ -100,6 +100,32 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
     
+    // 根据当前活动功能模式构建API请求
+    function buildAPIRequest(message) {
+        const activeFeature = localStorage.getItem('activeFeature');
+        let systemPrompt = '';
+        
+        // 根据不同功能设置不同的系统提示
+        switch(activeFeature) {
+            case '专利查新':
+                systemPrompt = '你是一位专业的专利检索专家，擅长通过关键词分析技术领域并找出相关专利。请基于用户的描述，提供可能的检索策略和相似专利分析。';
+                break;
+            case '专利撰写':
+                systemPrompt = '你是一位专业的专利代理人，擅长专利申请文件的撰写。请根据用户的技术描述，帮助构建完整的专利申请文件，包括权利要求书和说明书的建议。';
+                break;
+            case '专利答审':
+                systemPrompt = '你是一位专业的专利代理人，擅长应对专利审查意见。请分析用户提供的审查意见通知书内容，提供针对性的答复建议和修改方案。';
+                break;
+            default:
+                systemPrompt = '你是XPatent AI助手，为用户提供专业的专利相关咨询和帮助。';
+        }
+        
+        return {
+            message: message,
+            systemPrompt: systemPrompt
+        };
+    }
+    
     // 发送消息
     async function sendMessage() {
         const message = userInput.value.trim();
@@ -116,8 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const loadingIndicator = addLoadingIndicator();
         
         try {
+            // 构建API请求 
+            const request = buildAPIRequest(message);
+            
             // 调用API获取回复
-            const response = await callOpenRouterAPI(message);
+            const response = await callOpenRouterAPI(request.message, request.systemPrompt);
             
             // 移除加载指示器
             loadingIndicator.remove();
