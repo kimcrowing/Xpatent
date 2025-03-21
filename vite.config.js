@@ -30,5 +30,29 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['vue', 'vue-router', 'pinia']
+  },
+  build: {
+    // 确保生成的文件使用相对路径
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // 将node_modules的代码分割到单独的chunk中
+          if (id.includes('node_modules')) {
+            return 'vendor'
+          }
+        },
+        // 确保资源引用使用相对路径
+        format: 'es',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
+      }
+    },
+    // 禁用CSS代码分割
+    cssCodeSplit: false,
+    // 生成source map方便调试
+    sourcemap: true,
+    // 构建前清空输出目录
+    emptyOutDir: true
   }
 }) 
