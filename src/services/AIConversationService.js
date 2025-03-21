@@ -148,8 +148,7 @@ class AIConversationService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${config.apiKey}`,
-          'HTTP-Referer': window.location.origin,
-          'OpenRouter-Bypass-Cache': 'true'
+          'HTTP-Referer': window.location.origin
         },
         body: JSON.stringify({
           model: model,

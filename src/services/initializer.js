@@ -87,7 +87,10 @@ export function initServices() {
 function initOfflineSupport() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js')
+      // 使用相对路径或基于当前网站base的路径
+      const swPath = (import.meta.env.BASE_URL || '/') + 'service-worker.js';
+      
+      navigator.serviceWorker.register(swPath)
         .then(registration => {
           console.log('Service Worker 注册成功，作用域:', registration.scope);
           
