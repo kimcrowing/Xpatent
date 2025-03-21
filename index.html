@@ -98,13 +98,23 @@
             
             <input type="text" id="userInput" placeholder="您想了解什么?">
             
-            <div class="model-selector">
-                <span>AI模型 3</span>
+            <div class="model-selector" id="modelSelectorBtn">
+                <span id="currentModel">Deepseek</span>
                 <button class="dropdown-indicator" title="选择模型">
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M2.5 4.5L6 8L9.5 4.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
+            </div>
+            
+            <!-- 模型选择下拉菜单 -->
+            <div class="model-dropdown" id="modelDropdown">
+                <ul>
+                    <li data-model="deepseek/deepseek-r1:free" class="active">Deepseek</li>
+                    <li data-model="anthropic/claude-3-haiku">Claude 3 Haiku</li>
+                    <li data-model="google/gemma-7b">Gemma 7B</li>
+                    <li data-model="meta-llama/llama-3-8b">Llama 3 8B</li>
+                </ul>
             </div>
             
             <button class="send-btn" id="sendBtn" title="发送" disabled>
@@ -119,5 +129,6 @@
     <script src="js/chat.js"></script>
     <script src="js/api.js"></script>
     <script src="js/theme.js"></script>
+    <script src="js/modelSelector.js"></script>
 </body>
 </html> 

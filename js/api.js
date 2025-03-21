@@ -1,6 +1,9 @@
 // OpenRouter API调用
 // 实际应用中API密钥应该从后端获取，不应该暴露在前端
-const OPENROUTER_API_KEY = 'YOUR_OPENROUTER_API_KEY';
+const OPENROUTER_API_KEY = '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';
+
+// 默认模型设置
+window.CURRENT_MODEL = 'deepseek/deepseek-r1:free';
 
 async function callOpenRouterAPI(message) {
     // 如果未设置API密钥，则使用模拟响应
@@ -16,17 +19,19 @@ async function callOpenRouterAPI(message) {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-                'HTTP-Referer': window.location.origin
+                'HTTP-Referer': window.location.origin,
+                'X-Title': 'XPatent AI Chat'
             },
             body: JSON.stringify({
-                model: 'anthropic/claude-3-haiku',
+                model: window.CURRENT_MODEL, // 使用当前选择的模型
                 messages: [
                     {
                         role: 'user',
                         content: message
                     }
                 ],
-                max_tokens: 1000
+                max_tokens: 1000,
+                stream: false
             })
         });
         

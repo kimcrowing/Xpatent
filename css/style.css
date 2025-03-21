@@ -383,4 +383,77 @@ svg path {
     .search-options, .think-btn, .model-selector {
         display: none;
     }
+}
+
+/* 模型选择器样式 */
+.model-selector {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.model-selector:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.model-dropdown {
+    position: absolute;
+    bottom: 70px;
+    right: 70px;
+    background-color: var(--menu-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    width: 200px;
+    z-index: 100;
+    overflow: hidden;
+    display: none;
+}
+
+.model-dropdown.show {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.model-dropdown ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.model-dropdown li {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.model-dropdown li:hover {
+    background-color: var(--hover-bg);
+}
+
+.model-dropdown li.active {
+    background-color: rgba(0, 123, 255, 0.2);
+    position: relative;
+}
+
+.model-dropdown li.active::after {
+    content: "✓";
+    position: absolute;
+    right: 15px;
+    color: var(--primary-color);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .model-dropdown {
+        right: 20px;
+        width: 180px;
+    }
+    
+    .model-selector span {
+        display: none;
+    }
 } 
