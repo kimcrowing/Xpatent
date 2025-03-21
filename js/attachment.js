@@ -1,5 +1,25 @@
 // 附件上传和文本提取功能
 document.addEventListener('DOMContentLoaded', function() {
+    // 清除浏览器缓存函数
+    function clearBrowserCache() {
+        // 尝试刷新应用缓存
+        if (window.applicationCache) {
+            window.applicationCache.update();
+        }
+        // 为XHR请求添加随机参数，避免缓存
+        window.addEventListener('fetch', function(event) {
+            if (event.request && event.request.method === 'GET') {
+                event.respondWith(
+                    fetch(event.request.url + '?_=' + new Date().getTime())
+                );
+            }
+        }, { capture: true });
+        console.log('缓存清理逻辑已执行');
+    }
+    
+    // 执行缓存清理
+    clearBrowserCache();
+    
     // 设置PDF.js workerSrc
     if (typeof pdfjsLib !== 'undefined') {
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';

@@ -4,6 +4,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendBtn = document.getElementById('sendBtn');
     const sendButton = document.getElementById('sendButton');
     
+    // 应用版本检查
+    const APP_VERSION = '1.1';
+    
+    // 检查缓存版本
+    function checkAppVersion() {
+        const storedVersion = localStorage.getItem('appVersion');
+        if (storedVersion !== APP_VERSION) {
+            console.log(`版本不匹配: 存储=${storedVersion}, 当前=${APP_VERSION}`);
+            // 清除缓存并更新版本号
+            localStorage.setItem('appVersion', APP_VERSION);
+            
+            // 强制刷新页面 (只在版本不匹配时执行一次)
+            if (storedVersion && !sessionStorage.getItem('refreshed')) {
+                sessionStorage.setItem('refreshed', 'true');
+                window.location.reload(true);
+            }
+        }
+    }
+    
+    // 执行版本检查
+    checkAppVersion();
+    
     // 添加用户消息到聊天界面
     function addUserMessage(content) {
         const messageDiv = document.createElement('div');
