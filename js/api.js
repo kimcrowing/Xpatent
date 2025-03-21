@@ -25,9 +25,17 @@ async function callOpenRouterAPI(message, systemPrompt = '') {
         
         // 如果提供了系统提示，添加系统消息
         if (systemPrompt) {
+            // 添加Markdown格式指令到系统提示
+            systemPrompt = systemPrompt + "\n请使用Markdown格式回复，支持标题、列表、表格、代码块等Markdown语法。";
             messages.push({
                 role: 'system',
                 content: systemPrompt
+            });
+        } else {
+            // 如果没有提供系统提示，添加默认的Markdown格式指令
+            messages.push({
+                role: 'system',
+                content: "请使用Markdown格式回复，支持标题、列表、表格、代码块等Markdown语法。"
             });
         }
         
@@ -43,12 +51,12 @@ async function callOpenRouterAPI(message, systemPrompt = '') {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
                 'HTTP-Referer': window.location.origin,
-                'X-Title': 'XPatent AI Chat'
+                'X-Title': 'XAI Chat'
             },
             body: JSON.stringify({
                 model: window.CURRENT_MODEL, // 使用当前选择的模型
                 messages: messages,
-                max_tokens: 1000,
+                max_tokens: 2000,  // 增加token数量以支持更长的Markdown内容
                 stream: false
             })
         });
@@ -137,51 +145,149 @@ window.hideAPIKeyWarning = hideAPIKeyWarning;
 // 模拟API响应，用于测试或演示
 function mockResponse(message, systemPrompt = '') {
     return new Promise((resolve) => {
-        // 获取当前活动的专利功能
-        const activeFeature = localStorage.getItem('activeFeature') || '专利查新';
+        // 获取当前活动的功能
+        const activeFeature = localStorage.getItem('activeFeature') || '通用对话';
         
         // 模拟网络延迟
         setTimeout(() => {
-            if (activeFeature === '专利查新') {
-                resolve(generatePatentSearchResponse(message));
+            if (activeFeature === '通用对话') {
+                resolve(generateMarkdownResponse(message));
             } 
-            else if (activeFeature === '专利撰写') {
-                resolve(generatePatentWritingResponse(message));
+            else if (activeFeature === '内容创作') {
+                resolve(generateCreativeResponse(message));
             }
-            else if (activeFeature === '专利答审') {
-                resolve(generatePatentReviewResponse(message));
+            else if (activeFeature === '文档分析') {
+                resolve(generateDocumentAnalysisResponse(message));
             }
             else if (message.toLowerCase().includes('你好') || message.toLowerCase().includes('嗨')) {
-                resolve('您好！我是XPatent AI助手。我可以回答您的专利相关问题，提供专利查新、专利撰写和专利答审的帮助。请选择您需要的功能或直接提问。');
-            } else if (message.toLowerCase().includes('专利') || message.toLowerCase().includes('发明')) {
-                resolve(`关于专利申请流程，主要包括以下步骤：\n\n1. 撰写专利申请文件\n2. 提交专利申请并缴纳官费\n3. 进入实质审查阶段\n4. 答复审查意见\n5. 获得授权并缴纳登记费\n\n您需要了解具体哪个环节的详细信息？或者需要我帮您分析某个发明的可专利性吗？`);
+                resolve('# 你好！👋\n\n我是XAI助手，很高兴为您服务。我可以：\n\n- 回答您的各种问题\n- 提供信息检索\n- 协助内容创作\n- 分析文档内容\n\n您今天需要什么帮助？');
             } else {
-                resolve('感谢您的提问。作为XPatent AI助手，我会尽力提供专利相关的帮助和信息。您可以尝试使用顶部的专利功能菜单，选择专利查新、专利撰写或专利答审功能获得更专业的帮助。');
+                resolve('# 感谢您的提问\n\n我会尽力提供最准确的信息。您可以尝试使用界面顶部的菜单选择不同功能以获得针对性的帮助。\n\n需要了解更多信息吗？');
             }
         }, 1500);
     });
 }
 
-// 生成专利查新响应
-function generatePatentSearchResponse(query) {
-    const keywords = query.split(/\s+/).filter(word => word.length > 1);
-    const randomIPC = ['A61K', 'B01D', 'C07D', 'G06F', 'H04L'][Math.floor(Math.random() * 5)];
-    const randomNumber = Math.floor(Math.random() * 900000) + 100000;
-    const randomUSNumber = Math.floor(Math.random() * 9000000) + 1000000;
+// 生成一般Markdown响应
+function generateMarkdownResponse(query) {
+    const topics = ['技术', '科学', '艺术', '历史', '文化'];
+    const randomTopic = topics[Math.floor(Math.random() * topics.length)];
     
-    return `【专利查新分析】\n\n基于您提供的信息 "${query}"，我建议采用以下检索策略：\n\n1. 关键词组合：\n   - 主要词组：${keywords.join(', ')}\n   - 同义词扩展：${generateSynonyms(keywords)}\n\n2. IPC分类号：可能相关的分类号包括 ${randomIPC}${Math.floor(Math.random() * 100)}/00、${randomIPC}${Math.floor(Math.random() * 100)}/12 等领域\n\n3. 相关专利：\n   - CN${randomNumber}A - ${generateRandomTitle(keywords)}\n   - US${randomUSNumber}B2 - ${generateRandomTitle(keywords)}\n\n4. 检索建议：\n   - 建议使用SooPAT、Patsnap等数据库进行深度检索\n   - 重点关注${getRandomYear()}年后的相关专利文献\n\n建议进一步细化您的技术描述以获得更精确的检索结果。`;
+    return `# 关于"${query}"的信息
+
+## 主要内容
+
+这是关于${query}的模拟回答，使用了Markdown格式。
+
+### 要点分析
+
+- 第一个要点：${randomTopic}与${query}的关系
+- 第二个要点：常见问题解析
+- 第三个要点：未来发展趋势
+
+## 示例代码
+
+\`\`\`javascript
+// 这是一个JavaScript代码示例
+function analyze(topic) {
+  console.log("分析主题：" + topic);
+  return {
+    relevance: Math.random() * 100,
+    complexity: "中等",
+    recommendation: "深入学习"
+  };
 }
 
-// 生成专利撰写响应
-function generatePatentWritingResponse(query) {
-    const keywords = query.split(/\s+/).filter(word => word.length > 1);
-    
-    return `【专利撰写建议】\n\n基于您描述的发明 "${query}"，我提供以下专利文件结构建议：\n\n**权利要求书草稿**：\n1. 一种${keywords.length > 0 ? keywords[0] : '装置'}，其特征在于：[技术特征1]；[技术特征2]；所述[技术特征1]与[技术特征2]相连接...\n\n**说明书建议**：\n1. 技术领域：本发明涉及${keywords.length > 0 ? keywords[0] : '相关'}技术领域。\n2. 背景技术：目前该领域存在[问题1]和[问题2]。\n3. 发明内容：本发明旨在解决上述问题，提供一种[解决方案]。\n4. 附图说明：图1为本发明结构示意图...\n5. 具体实施方式：\n   - 实施例1：...\n   - 实施例2：...\n\n**撰写要点**：\n1. 确保权利要求清楚、完整，涵盖发明的所有关键技术特征\n2. 说明书中应详细描述每个技术特征的结构和功能\n3. 多提供实施例，增强专利保护范围\n\n建议您进一步完善技术细节，尤其是发明的具体实施方式和技术效果描述。`;
+const result = analyze("${query}");
+console.log(result);
+\`\`\`
+
+## 表格数据
+
+| 项目 | 描述 | 重要性 |
+|------|------|--------|
+| 项目一 | ${query}基础概念 | 高 |
+| 项目二 | 应用场景分析 | 中 |
+| 项目三 | 未来发展方向 | 中 |
+
+希望这些信息对您有所帮助！如果需要更多细节，请告诉我。`;
 }
 
-// 生成专利答审响应
-function generatePatentReviewResponse(query) {
-    return `【审查意见回复建议】\n\n针对您提供的审查意见 "${query.substring(0, 50)}..."，我建议按以下方式回复：\n\n1. 关于创造性问题：\n   - 强调本申请与对比文件的区别特征\n   - 论述该区别特征带来的技术效果\n   - 说明该效果在现有技术中未被预见或暗示\n\n2. 关于权利要求修改建议：\n   - 建议将从属权利要求X的特征补充进独权\n   - 删除不清楚的技术特征[具体词语]\n   - 考虑将独权拆分为两个独立权利要求\n\n3. 关于说明书补正：\n   - 建议补充实施例中[具体部分]的详细描述\n   - 增加有关技术效果的数据支持\n\n4. 对比文件分析：\n   - 对比文件1与本申请的区别：...\n   - 对比文件2与本申请的区别：...\n\n请根据实际审查意见内容调整上述建议。建议在回复时引用专利审查指南相关段落支持您的论点。`;
+// 生成创意内容响应
+function generateCreativeResponse(query) {
+    return `# ${query} - 创意内容
+
+## 内容构思
+
+以下是关于"${query}"的创意构思：
+
+1. **核心理念**：融合创新与实用
+2. **目标受众**：对${query}感兴趣的专业人士和爱好者
+3. **表达方式**：图文结合，深入浅出
+
+## 内容大纲
+
+### 第一部分：引言
+- 背景介绍
+- 问题陈述
+- 解决思路
+
+### 第二部分：主体内容
+- 关键点1：概念解析
+- 关键点2：实践应用
+- 关键点3：案例分析
+
+### 第三部分：总结与展望
+- 成果回顾
+- 未来方向
+- 行动建议
+
+## 风格参考
+
+> "${query}"不仅是一个概念，更是一种思维方式和解决问题的途径。
+
+希望这个创意大纲对您有所启发！需要进一步完善某个部分吗？`;
+}
+
+// 生成文档分析响应
+function generateDocumentAnalysisResponse(query) {
+    return `# 文档分析报告
+
+## 文档概述
+
+分析对象：${query.length > 30 ? query.substring(0, 30) + '...' : query}
+
+## 主要发现
+
+### 内容结构
+- **完整性**：中等
+- **组织逻辑**：良好
+- **主题明确度**：高
+
+### 语言分析
+- **风格**：专业/技术性
+- **可读性**：中等
+- **术语使用**：适当
+
+### 核心内容提取
+
+1. 首要要点：...
+2. 次要要点：...
+3. 背景信息：...
+
+## 改进建议
+
+| 问题 | 严重程度 | 改进建议 |
+|------|---------|---------|
+| 结构不够清晰 | 中 | 增加小标题和过渡段落 |
+| 部分论述缺乏依据 | 高 | 添加数据支持和引用 |
+| 结论部分过于简略 | 低 | 扩展并强化核心观点 |
+
+## 总体评价
+
+文档质量整体处于中上水平，具有一定的专业性和参考价值。建议根据上述分析进行有针对性的修改，以提升文档整体质量。
+
+需要对特定部分进行更深入的分析吗？`;
 }
 
 // 辅助函数：生成同义词

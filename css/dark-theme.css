@@ -97,4 +97,28 @@
 
 .dark-theme .feature-menu {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+:root.dark-theme {
+    --bg-color: #1e1e2e;
+    --text-color: #e0e0e0;
+    --text-secondary: #a6a6a6;
+    --border-color: #3a3a3a;
+    --input-bg: #2a2a3a;
+    --menu-bg: #2a2a3a;
+    --hover-color: rgba(255, 255, 255, 0.1);
+    --selected-bg: rgba(88, 101, 242, 0.3);
+    --placeholder-color: #737373;
+    --primary-color: #5865f2;
+    --primary-hover: #4752c4;
+    --disabled-color: #444444;
+    --model-selector-bg: rgba(255, 255, 255, 0.05);
+    --attachment-bg: rgba(88, 101, 242, 0.1);
+    --hover-bg: rgba(255, 255, 255, 0.1);
+    
+    /* Markdown样式变量 */
+    --code-bg: #2b2b3b;
+    --table-header-bg: #2d2d3d;
+    --table-alt-row-bg: #2a2a3a;
+    --link-color: #61afef;
 } 

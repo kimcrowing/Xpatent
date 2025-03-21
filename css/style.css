@@ -186,6 +186,128 @@ body {
     transition: all 0.3s ease;
 }
 
+.message-content h1,
+.message-content h2,
+.message-content h3,
+.message-content h4,
+.message-content h5,
+.message-content h6 {
+    margin-top: 16px;
+    margin-bottom: 12px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.message-content h1 {
+    font-size: 1.8em;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.3em;
+}
+
+.message-content h2 {
+    font-size: 1.5em;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.3em;
+}
+
+.message-content h3 {
+    font-size: 1.3em;
+}
+
+.message-content h4 {
+    font-size: 1.1em;
+}
+
+.message-content p,
+.message-content ul,
+.message-content ol {
+    margin-bottom: 16px;
+}
+
+.message-content ul,
+.message-content ol {
+    padding-left: 2em;
+}
+
+.message-content li + li {
+    margin-top: 4px;
+}
+
+.message-content blockquote {
+    padding: 0 1em;
+    border-left: 4px solid var(--border-color);
+    color: var(--text-secondary);
+    margin: 16px 0;
+}
+
+.message-content pre {
+    background-color: var(--code-bg);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 16px 0;
+}
+
+.message-content code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    background-color: var(--code-bg);
+    border-radius: 3px;
+    padding: 2px 4px;
+    font-size: 0.9em;
+}
+
+.message-content pre code {
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
+}
+
+.message-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    overflow-x: auto;
+    display: block;
+}
+
+.message-content table th,
+.message-content table td {
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.message-content table th {
+    background-color: var(--table-header-bg);
+    font-weight: 600;
+}
+
+.message-content table tr:nth-child(even) {
+    background-color: var(--table-alt-row-bg);
+}
+
+.message-content img {
+    max-width: 100%;
+    border-radius: 4px;
+    margin: 12px 0;
+}
+
+.message-content a {
+    color: var(--link-color);
+    text-decoration: none;
+}
+
+.message-content a:hover {
+    text-decoration: underline;
+}
+
+.message-content hr {
+    border: 0;
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 24px 0;
+}
+
 .user-message .message-content {
     font-weight: 500;
 }

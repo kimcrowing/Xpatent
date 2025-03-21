@@ -108,21 +108,47 @@ document.addEventListener('DOMContentLoaded', () => {
         return loadingDiv;
     }
     
-    // 格式化消息，处理换行、链接等
+    // 格式化消息，处理Markdown格式
     function formatMessage(content) {
-        // 处理换行
-        content = content.replace(/\n/g, '<br>');
-        
-        // 处理链接
-        content = content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
-        
-        // 处理代码块
-        content = content.replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>');
-        
-        // 处理内联代码
-        content = content.replace(/`([^`]+)`/g, '<code>$1</code>');
-        
-        return content;
+        try {
+            // 使用marked.js解析Markdown
+            if (window.marked) {
+                console.log('使用marked解析Markdown');
+                
+                // 配置marked选项
+                marked.setOptions({
+                    breaks: true, // 允许换行
+                    gfm: true,    // 启用GitHub风格Markdown
+                    headerIds: false, // 避免标题自动添加ID
+                    mangle: false,
+                    sanitize: false, // 不净化输出
+                    silent: true  // 忽略错误
+                });
+                
+                // 解析Markdown
+                return marked.parse(content);
+            } else {
+                console.warn('marked库未加载，使用基本格式化');
+                // 回退到基本格式化
+                // 处理换行
+                content = content.replace(/\n/g, '<br>');
+                
+                // 处理链接
+                content = content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+                
+                // 处理代码块
+                content = content.replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>');
+                
+                // 处理内联代码
+                content = content.replace(/`([^`]+)`/g, '<code>$1</code>');
+                
+                return content;
+            }
+        } catch (error) {
+            console.error('Markdown解析错误:', error);
+            // 出错时返回原始内容
+            return content.replace(/\n/g, '<br>');
+        }
     }
     
     // 滚动到底部

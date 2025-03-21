@@ -162,4 +162,28 @@
 
 .light-theme .feature-menu {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+:root.light-theme {
+    --bg-color: #f7f7f7;
+    --text-color: #333333;
+    --text-secondary: #666666;
+    --border-color: #dedede;
+    --input-bg: #ffffff;
+    --menu-bg: #ffffff;
+    --hover-color: rgba(0, 0, 0, 0.05);
+    --selected-bg: rgba(88, 101, 242, 0.1);
+    --placeholder-color: #aaaaaa;
+    --primary-color: #5865f2;
+    --primary-hover: #4752c4;
+    --disabled-color: #dddddd;
+    --model-selector-bg: rgba(0, 0, 0, 0.05);
+    --attachment-bg: rgba(88, 101, 242, 0.1);
+    --hover-bg: rgba(0, 0, 0, 0.05);
+    
+    /* Markdown样式变量 */
+    --code-bg: #f0f0f0;
+    --table-header-bg: #f5f5f5;
+    --table-alt-row-bg: #f9f9f9;
+    --link-color: #0366d6;
 } 
