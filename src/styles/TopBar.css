@@ -1,0 +1,128 @@
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background-color: var(--background-dark);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1.5rem;
+  z-index: 100;
+}
+
+.light-mode .topbar {
+  background-color: var(--background-light);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  color: inherit;
+  transition: background-color 0.2s ease;
+}
+
+.menu-button:hover {
+  background-color: var(--hover-dark);
+}
+
+.light-mode .menu-button:hover {
+  background-color: var(--hover-light);
+}
+
+.topbar-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.topbar-title img {
+  height: 1.5rem;
+  width: auto;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.topbar-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  color: inherit;
+  transition: background-color 0.2s ease;
+}
+
+.topbar-icon-button:hover {
+  background-color: var(--hover-dark);
+}
+
+.light-mode .topbar-icon-button:hover {
+  background-color: var(--hover-light);
+}
+
+.user-avatar-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #4d4d4d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: white;
+  cursor: pointer;
+}
+
+.light-mode .user-avatar-button {
+  background-color: #a0a0a0;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .topbar {
+    padding: 0 1rem;
+  }
+  
+  .topbar-title {
+    font-size: 1rem;
+  }
+  
+  .topbar-title img {
+    height: 1.25rem;
+  }
+  
+  /* 在小屏幕上隐藏或简化某些元素 */
+  .menu-button, .topbar-icon-button {
+    padding: 0.4rem;
+  }
+  
+  /* 确保图标适合小屏幕 */
+  .topbar svg {
+    width: 20px;
+    height: 20px;
+  }
+} 

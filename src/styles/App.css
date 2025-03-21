@@ -1,0 +1,40 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+
+.app.dark-mode {
+  background-color: var(--background-dark);
+  color: var(--text-dark);
+}
+
+.app.light-mode {
+  background-color: var(--background-light);
+  color: var(--text-light);
+}
+
+.main-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.chat-container {
+  flex: 1;
+  transition: margin-left 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.chat-container.sidebar-open {
+  margin-left: 0;
+}
+
+@media (min-width: 768px) {
+  .chat-container.sidebar-open {
+    margin-left: 280px;
+  }
+} 

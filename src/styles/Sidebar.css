@@ -1,0 +1,303 @@
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 280px;
+  padding: 1rem 0;
+  background-color: var(--background-dark);
+  border-right: 1px solid var(--border-dark);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.light-mode .sidebar {
+  background-color: var(--background-light);
+  border-right-color: var(--border-light);
+}
+
+.sidebar.open {
+  transform: translateX(0);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+.light-mode .sidebar.open {
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1rem 1rem;
+  border-bottom: 1px solid var(--border-dark);
+  margin-bottom: 1rem;
+}
+
+.light-mode .sidebar-header {
+  border-bottom-color: var(--border-light);
+}
+
+.sidebar-header h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.close-sidebar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  color: inherit;
+  transition: background-color 0.2s ease;
+}
+
+.close-sidebar:hover {
+  background-color: var(--hover-dark);
+}
+
+.light-mode .close-sidebar:hover {
+  background-color: var(--hover-light);
+}
+
+.sidebar-new-chat {
+  margin: 0 1rem 1rem;
+  padding: 0.7rem;
+  border-radius: 4px;
+  color: white;
+  width: calc(100% - 2rem);
+  justify-content: center;
+}
+
+.conversations-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 1rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.conversation-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.conversation-item:hover {
+  background-color: var(--hover-dark);
+}
+
+.light-mode .conversation-item:hover {
+  background-color: var(--hover-light);
+}
+
+.conversation-item.active {
+  background-color: var(--hover-dark);
+  font-weight: 500;
+}
+
+.light-mode .conversation-item.active {
+  background-color: var(--hover-light);
+}
+
+.conversation-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow: hidden;
+  flex: 1;
+}
+
+.conversation-title span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delete-conversation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 50%;
+  color: var(--secondary-color);
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.conversation-item:hover .delete-conversation {
+  opacity: 1;
+}
+
+.delete-conversation:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--error-color);
+}
+
+.sidebar-footer {
+  padding: 1rem;
+  border-top: 1px solid var(--border-dark);
+}
+
+.light-mode .sidebar-footer {
+  border-top-color: var(--border-light);
+}
+
+.settings-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-radius: 4px;
+  width: 100%;
+  background-color: transparent;
+  color: inherit;
+  transition: background-color 0.2s ease;
+}
+
+.settings-button:hover {
+  background-color: var(--hover-dark);
+}
+
+.light-mode .settings-button:hover {
+  background-color: var(--hover-light);
+}
+
+.settings-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--background-dark);
+  z-index: 10;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.light-mode .settings-panel {
+  background-color: var(--background-light);
+}
+
+.settings-panel h3 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings-group label {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.settings-group select {
+  padding: 0.7rem;
+}
+
+.api-key-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.api-key-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.api-key-buttons button {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  background-color: var(--primary-color);
+  color: white;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.api-key-buttons button:hover {
+  background-color: #1a8cd8;
+}
+
+.api-key-buttons button:last-child {
+  background-color: transparent;
+  color: inherit;
+  border: 1px solid var(--border-dark);
+}
+
+.light-mode .api-key-buttons button:last-child {
+  border-color: var(--border-light);
+}
+
+.api-key-buttons button:last-child:hover {
+  background-color: var(--hover-dark);
+}
+
+.light-mode .api-key-buttons button:last-child:hover {
+  background-color: var(--hover-light);
+}
+
+.about-info {
+  margin-top: auto;
+  padding-top: 1.5rem;
+  font-size: 0.9rem;
+  color: var(--secondary-color);
+  line-height: 1.6;
+}
+
+@media (min-width: 768px) {
+  .sidebar {
+    padding-top: 60px;
+  }
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    max-width: 320px;
+  }
+  
+  .sidebar.open {
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* 在移动端始终显示删除按钮 */
+  .delete-conversation {
+    opacity: 0.7;
+  }
+  
+  .api-key-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .api-key-buttons button {
+    width: 100%;
+    padding: 0.7rem;
+  }
+} 
