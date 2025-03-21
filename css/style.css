@@ -81,8 +81,8 @@ body {
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     width: 200px;
+    z-index: 1000;
     display: none;
-    z-index: 100;
     transition: all 0.3s ease;
     border: 1px solid var(--border-color);
 }
@@ -519,33 +519,20 @@ svg path {
 /* 专利功能菜单样式 */
 .feature-menu {
     position: absolute;
+    right: 65px;
     top: 60px;
-    right: 20px;
     background-color: var(--menu-bg);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    width: 200px;
+    width: 180px;
+    z-index: 1000;
     display: none;
-    z-index: 100;
-    overflow: hidden;
     transition: all 0.3s ease;
     border: 1px solid var(--border-color);
 }
 
 .feature-menu.active {
     display: block;
-    animation: fadeInRight 0.3s ease-out;
-}
-
-@keyframes fadeInRight {
-    from { 
-        opacity: 0; 
-        transform: translateX(10px); 
-    }
-    to { 
-        opacity: 1; 
-        transform: translateX(0); 
-    }
 }
 
 .feature-menu ul {

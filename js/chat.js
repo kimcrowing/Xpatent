@@ -4,6 +4,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendBtn = document.getElementById('sendBtn');
     const sendButton = document.getElementById('sendButton');
     
+    console.log('聊天组件已加载', {
+        chatMessages: !!chatMessages,
+        userInput: !!userInput,
+        sendBtn: !!sendBtn,
+        sendButton: !!sendButton
+    });
+    
     // 应用版本检查
     const APP_VERSION = '1.1';
     
@@ -151,29 +158,47 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 发送消息
     async function sendMessage() {
+        console.log('准备发送消息');
+        if (!userInput) {
+            console.error('找不到用户输入元素');
+            return;
+        }
+        
         const message = userInput.value.trim();
-        if (!message) return;
+        console.log('用户输入:', message);
+        
+        if (!message) {
+            console.log('消息为空，不发送');
+            return;
+        }
         
         // 清空输入框
         userInput.value = '';
-        sendBtn.setAttribute('disabled', true);
         
         // 获取附件内容（如果有）
         let fullMessage = message;
         if (window.getAttachmentText && typeof window.getAttachmentText === 'function') {
-            const attachmentText = window.getAttachmentText();
-            if (attachmentText) {
-                // 在用户消息后添加文档内容
-                fullMessage += "\n\n===== 附件内容 =====\n" + attachmentText;
+            try {
+                const attachmentText = window.getAttachmentText();
+                console.log('附件内容长度:', attachmentText ? attachmentText.length : 0);
                 
-                // 在UI中只显示用户输入的消息
-                addUserMessage(message + ' <span class="attachment-badge">[已上传附件]</span>');
-            } else {
-                // 没有附件，正常显示消息
+                if (attachmentText) {
+                    // 在用户消息后添加文档内容
+                    fullMessage += "\n\n===== 附件内容 =====\n" + attachmentText;
+                    
+                    // 在UI中只显示用户输入的消息
+                    addUserMessage(message + ' <span class="attachment-badge">[已上传附件]</span>');
+                } else {
+                    // 没有附件，正常显示消息
+                    addUserMessage(message);
+                }
+            } catch (e) {
+                console.error('获取附件内容时出错:', e);
                 addUserMessage(message);
             }
         } else {
             // 如果附件功能不可用，正常显示消息
+            console.log('附件功能不可用');
             addUserMessage(message);
         }
         
@@ -181,44 +206,57 @@ document.addEventListener('DOMContentLoaded', () => {
         const loadingIndicator = addLoadingIndicator();
         
         try {
+            console.log('准备调用API');
             // 构建API请求 
             const request = buildAPIRequest(fullMessage);
             
             // 调用API获取回复
             const response = await callOpenRouterAPI(request.message, request.systemPrompt);
+            console.log('API响应成功', response ? response.substring(0, 50) + '...' : '无响应');
             
             // 移除加载指示器
             loadingIndicator.remove();
             
             // 添加AI回复
             addAIMessage(response);
-            
-            // 重新启用发送按钮
-            sendBtn.removeAttribute('disabled');
         } catch (error) {
+            console.error('API调用出错:', error);
             // 移除加载指示器
             loadingIndicator.remove();
             
             // 显示错误信息
             addAIMessage(`抱歉，发生了错误：${error.message}`);
-            
-            // 重新启用发送按钮
-            sendBtn.removeAttribute('disabled');
         }
     }
     
     // 发送按钮点击事件
-    sendBtn.addEventListener('click', sendMessage);
+    if (sendBtn) {
+        sendBtn.addEventListener('click', () => {
+            console.log('发送按钮(sendBtn)点击');
+            sendMessage();
+        });
+    }
     
     // 新发送按钮点击事件
-    sendButton.addEventListener('click', sendMessage);
+    if (sendButton) {
+        sendButton.addEventListener('click', () => {
+            console.log('发送按钮(sendButton)点击');
+            sendMessage();
+        });
+    } else {
+        console.error('找不到发送按钮元素(sendButton)');
+    }
     
     // Enter键发送消息
-    userInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
-    });
+    if (userInput) {
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                console.log('检测到Enter键按下');
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    }
     
     // 设置消息操作事件
     chatMessages.addEventListener('click', (e) => {
