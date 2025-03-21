@@ -1,10 +1,24 @@
+:root {
+    --bg-color: #111111;
+    --text-color: #ffffff;
+    --secondary-text: #a0a0a0;
+    --menu-bg: #1a1a1a;
+    --hover-bg: #333333;
+    --input-bg: #2a2a2a;
+    --welcome-bg: rgba(40, 40, 40, 0.7);
+    --primary-color: #2b88fc;
+    --border-color: #333333;
+    --code-bg: #2a2a2a;
+}
+
 .dark-theme {
-    background-color: #121212;
-    color: #ffffff;
+    background-color: var(--bg-color);
+    color: var(--text-color);
 }
 
 .dark-theme .navbar {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .dark-theme .logo {
@@ -12,52 +26,59 @@
 }
 
 .dark-theme .user-avatar {
-    background-color: #444;
-    color: #fff;
+    background-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+.dark-theme .user-menu {
+    background-color: var(--menu-bg);
+    border: 1px solid var(--border-color);
 }
 
 .dark-theme .input-wrapper {
-    background-color: #2a2a2a;
-    border: 1px solid #3a3a3a;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
 }
 
 .dark-theme input::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--secondary-text);
 }
 
-.dark-theme .search-options, 
-.dark-theme .think-btn, 
+.dark-theme .input-container {
+    background-color: var(--bg-color);
+}
+
+.dark-theme .search-options,
+.dark-theme .think-btn,
 .dark-theme .model-selector {
-    background-color: #3a3a3a;
-    color: #ffffff;
+    background-color: var(--hover-bg);
 }
 
 .dark-theme .icon-btn:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-.dark-theme .message-avatar {
-    background-color: #444;
+.dark-theme .message-avatar.user {
+    background-color: var(--primary-color);
 }
 
-.dark-theme .ai-message .message-avatar {
-    background-color: #4a4aff;
+.dark-theme .message-avatar.ai {
+    background-color: #555;
 }
 
 /* 消息内容高亮 */
 .dark-theme code {
-    background-color: #2a2a2a;
+    background-color: #333;
+    color: #f8f8f8;
     padding: 2px 4px;
     border-radius: 4px;
-    font-family: 'Courier New', Courier, monospace;
 }
 
 .dark-theme pre {
-    background-color: #2a2a2a;
-    padding: 16px;
+    background-color: #333;
+    padding: 12px;
     border-radius: 8px;
     overflow-x: auto;
-    margin: 12px 0;
 }
 
 .dark-theme a {
