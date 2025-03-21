@@ -158,22 +158,22 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 根据当前活动功能模式构建API请求
     function buildAPIRequest(message) {
-        const activeFeature = localStorage.getItem('activeFeature');
+        const activeFeature = localStorage.getItem('activeFeature') || '通用对话';
         let systemPrompt = '';
         
         // 根据不同功能设置不同的系统提示
         switch(activeFeature) {
-            case '专利查新':
-                systemPrompt = '你是一位专业的专利检索专家，擅长通过关键词分析技术领域并找出相关专利。请基于用户的描述，提供可能的检索策略和相似专利分析。';
+            case '通用对话':
+                systemPrompt = '你是XAI助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。';
                 break;
-            case '专利撰写':
-                systemPrompt = '你是一位专业的专利代理人，擅长专利申请文件的撰写。请根据用户的技术描述，帮助构建完整的专利申请文件，包括权利要求书和说明书的建议。';
+            case '内容创作':
+                systemPrompt = '你是XAI创作助手，擅长帮助用户创作各类内容。根据用户的描述，提供创意建议、内容结构和详细内容。';
                 break;
-            case '专利答审':
-                systemPrompt = '你是一位专业的专利代理人，擅长应对专利审查意见。请分析用户提供的审查意见通知书内容，提供针对性的答复建议和修改方案。';
+            case '文档分析':
+                systemPrompt = '你是XAI分析助手，擅长分析文档并提取重要信息。请分析用户提供的文本，归纳要点，并提供见解。';
                 break;
             default:
-                systemPrompt = '你是XPatent AI助手，为用户提供专业的专利相关咨询和帮助。';
+                systemPrompt = '你是XAI助手，为用户提供智能对话服务。';
         }
         
         return {
