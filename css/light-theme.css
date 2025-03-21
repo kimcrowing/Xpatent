@@ -1,0 +1,122 @@
+.light-theme {
+    background-color: #ffffff;
+    color: #333333;
+}
+
+.light-theme .navbar {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .logo {
+    color: #333333;
+}
+
+.light-theme .logo svg path {
+    fill: #333333;
+}
+
+.light-theme .user-avatar {
+    background-color: #e0e0e0;
+    color: #333333;
+}
+
+.light-theme .icon-btn svg path {
+    fill: #333333;
+    stroke: #333333;
+}
+
+.light-theme .user-menu {
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .user-menu li:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.light-theme .input-wrapper {
+    background-color: #f5f5f5;
+    border: 1px solid #e0e0e0;
+}
+
+.light-theme input::placeholder {
+    color: rgba(0, 0, 0, 0.4);
+}
+
+.light-theme .search-options, 
+.light-theme .think-btn, 
+.light-theme .model-selector {
+    background-color: #e8e8e8;
+    color: #333333;
+}
+
+.light-theme .search-options:hover, 
+.light-theme .think-btn:hover, 
+.light-theme .model-selector:hover {
+    background-color: #d8d8d8;
+}
+
+.light-theme .search-options svg path,
+.light-theme .think-btn svg path,
+.light-theme .model-selector svg path,
+.light-theme .dropdown-indicator svg path,
+.light-theme .send-btn svg path,
+.light-theme .attachment-btn svg path {
+    fill: #333333;
+    stroke: #333333;
+}
+
+.light-theme .icon-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.light-theme .message-avatar {
+    background-color: #e0e0e0;
+}
+
+.light-theme .ai-message .message-avatar {
+    background-color: #4a4aff;
+}
+
+.light-theme .ai-message .message-avatar svg path {
+    fill: #ffffff;
+}
+
+.light-theme .typing-indicator span {
+    background-color: #333333;
+}
+
+.light-theme .action-btn svg path {
+    fill: #666666;
+    stroke: #666666;
+}
+
+/* 消息内容高亮 */
+.light-theme code {
+    background-color: #f0f0f0;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    color: #333333;
+}
+
+.light-theme pre {
+    background-color: #f0f0f0;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 12px 0;
+}
+
+.light-theme a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.light-theme a:hover {
+    text-decoration: underline;
+}
+
+.light-theme .input-wrapper.focus {
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+} 
