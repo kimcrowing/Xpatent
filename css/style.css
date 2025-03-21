@@ -1,0 +1,347 @@
+/* 全局样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* 导航栏样式 */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    height: 60px;
+    position: relative;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.logo svg {
+    height: 28px;
+}
+
+.nav-controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+.icon-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.user-menu {
+    position: absolute;
+    right: 20px;
+    top: 60px;
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    width: 200px;
+    display: none;
+    z-index: 100;
+}
+
+.user-menu.active {
+    display: block;
+}
+
+.user-menu ul {
+    list-style: none;
+    padding: 8px 0;
+}
+
+.user-menu li {
+    padding: 10px 16px;
+    cursor: pointer;
+}
+
+.user-menu li:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 聊天容器 */
+.chat-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 40px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.welcome-message {
+    text-align: center;
+    margin-bottom: 40px;
+    max-width: 600px;
+}
+
+.welcome-message h1 {
+    font-size: 32px;
+    margin-bottom: 12px;
+}
+
+.welcome-message p {
+    font-size: 20px;
+    opacity: 0.8;
+}
+
+.chat-messages {
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 0 16px;
+}
+
+.message {
+    display: flex;
+    padding: 0 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    margin-right: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.message-content {
+    flex: 1;
+    line-height: 1.5;
+}
+
+.user-message .message-content {
+    font-weight: 500;
+}
+
+/* 输入区域 */
+.input-container {
+    padding: 16px 24px;
+    margin-bottom: 16px;
+}
+
+.input-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #2a2a2a;
+    border-radius: 16px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: box-shadow 0.2s ease;
+}
+
+.input-wrapper.focus {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.attachment-btn, .send-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.attachment-btn:hover, .send-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.search-options, .think-btn, .model-selector {
+    display: flex;
+    align-items: center;
+    background-color: #3a3a3a;
+    border-radius: 16px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    gap: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.search-options:hover, .think-btn:hover, .model-selector:hover {
+    background-color: #444;
+}
+
+.search-option-btn, .dropdown-indicator {
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+input[type="text"] {
+    flex: 1;
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 16px;
+    padding: 8px 12px;
+    min-height: 24px;
+    max-height: 120px;
+    transition: height 0.2s ease;
+}
+
+input[type="text"]:focus {
+    outline: none;
+}
+
+.send-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.send-btn[disabled] {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.send-btn[disabled]:hover {
+    background-color: transparent;
+}
+
+/* 输入状态指示器 */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.typing-indicator span {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #fff;
+    animation: typingAnimation 1.5s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typingAnimation {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.6;
+    }
+    30% {
+        transform: translateY(-6px);
+        opacity: 1;
+    }
+}
+
+/* 消息操作按钮 */
+.message-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+.action-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .welcome-message h1 {
+        font-size: 24px;
+    }
+    
+    .welcome-message p {
+        font-size: 16px;
+    }
+    
+    .search-options span, .think-btn span, .model-selector span {
+        display: none;
+    }
+    
+    .search-options, .think-btn, .model-selector {
+        padding: 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    .search-options, .think-btn, .model-selector {
+        display: none;
+    }
+} 

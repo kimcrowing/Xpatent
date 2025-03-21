@@ -1,82 +1,61 @@
-# Grok克隆
+# XPatent AI 对话界面
 
-一个类似Grok的AI聊天网站，使用React和OpenRouter API构建。该项目旨在提供类似Grok的用户界面，同时支持多种大型语言模型进行聊天对话。
+这是一个模仿高级AI对话界面的网页应用，使用HTML, CSS和JavaScript实现。该项目可以部署在GitHub Pages上，并连接到OpenRouter API进行AI对话。
 
-## 功能特点
+## 特点
 
-- 类Grok的现代UI界面
-- 暗色/亮色主题切换
-- 对话历史保存
-- 支持多种AI模型选择（默认使用DeepSeek R1免费模型）
-- 流式响应显示
-- 支持Markdown格式输出
-- 响应式设计，适配移动和桌面设备
-- 预配置OpenRouter API密钥，可直接使用
+- 优雅的暗色主题界面
+- 响应式设计，适配不同设备
+- 连接到OpenRouter API进行实时AI对话
+- 模拟打字效果和加载状态
+- 支持消息格式化，包括代码块、链接等
+- 提供消息操作按钮：点赞、复制等
 
-## 技术栈
+## 使用方法
 
-- React 18
-- OpenRouter API
-- GitHub Pages (用于部署)
+1. 克隆此仓库
+2. 在`js/api.js`文件中设置你的OpenRouter API密钥
+3. 部署到GitHub Pages或任何网络服务器
+
+## OpenRouter API密钥设置
+
+为了使用实际的AI对话功能，您需要：
+
+1. 注册[OpenRouter](https://openrouter.ai/)账号并获取API密钥
+2. 在`js/api.js`文件中将`OPENROUTER_API_KEY`变量的值替换为您的API密钥
+
+```javascript
+const OPENROUTER_API_KEY = '您的OpenRouter API密钥';
+```
+
+**注意**：在实际生产环境中，不应该在前端代码中直接包含API密钥。建议使用后端服务来处理API调用。
 
 ## 本地开发
 
-要在本地运行项目，请执行以下步骤：
-
-1. 克隆仓库
+您可以使用任何本地HTTP服务器运行此项目，例如：
 
 ```bash
-git clone https://github.com/你的用户名/grok-clone.git
-cd grok-clone
+# 如果您安装了Node.js，可以使用http-server
+npx http-server
+
+# 如果您安装了Python
+python -m http.server
 ```
 
-2. 安装依赖
+## 安全注意事项
 
-```bash
-npm install
-```
+- 不要在生产环境中直接在前端暴露API密钥
+- 考虑使用后端服务或无服务器函数来处理API调用
+- 考虑添加用户认证机制以保护API调用
 
-3. 启动开发服务器
+## 自定义
 
-```bash
-npm start
-```
+您可以通过编辑以下文件来自定义界面：
 
-4. 在浏览器中打开 [http://localhost:3000](http://localhost:3000)
-
-## API密钥说明
-
-应用已预配置了一个OpenRouter API密钥，可以直接使用。如果您想使用自己的API密钥：
-
-1. 访问 [OpenRouter](https://openrouter.ai/)
-2. 注册并创建API密钥
-3. 在应用的侧边栏设置中替换API密钥
-
-## DeepSeek R1免费模型
-
-默认情况下，应用使用DeepSeek R1的免费模型。这是一个功能强大的开源模型，对于普通查询和对话非常有效。使用免费模型时请注意以下限制：
-
-- 免费用户限制为每分钟20个请求
-- 每天限制为200个请求
-
-## 部署到GitHub Pages
-
-1. 设置您的GitHub仓库
-
-```bash
-git init
-git add .
-git commit -m "初始提交"
-git remote add origin https://github.com/你的用户名/grok-clone.git
-git push -u origin master
-```
-
-2. 部署到GitHub Pages
-
-```bash
-npm run deploy
-```
+- `css/style.css` - 主样式
+- `css/dark-theme.css` - 暗色主题
+- `js/api.js` - API调用和模型配置
 
 ## 许可证
 
-MIT 
+[MIT](LICENSE) 

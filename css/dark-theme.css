@@ -1,0 +1,70 @@
+.dark-theme {
+    background-color: #121212;
+    color: #ffffff;
+}
+
+.dark-theme .navbar {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .logo {
+    color: #ffffff;
+}
+
+.dark-theme .user-avatar {
+    background-color: #444;
+    color: #fff;
+}
+
+.dark-theme .input-wrapper {
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
+}
+
+.dark-theme input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.dark-theme .search-options, 
+.dark-theme .think-btn, 
+.dark-theme .model-selector {
+    background-color: #3a3a3a;
+    color: #ffffff;
+}
+
+.dark-theme .icon-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .message-avatar {
+    background-color: #444;
+}
+
+.dark-theme .ai-message .message-avatar {
+    background-color: #4a4aff;
+}
+
+/* 消息内容高亮 */
+.dark-theme code {
+    background-color: #2a2a2a;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.dark-theme pre {
+    background-color: #2a2a2a;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 12px 0;
+}
+
+.dark-theme a {
+    color: #4a9eff;
+    text-decoration: none;
+}
+
+.dark-theme a:hover {
+    text-decoration: underline;
+} 
