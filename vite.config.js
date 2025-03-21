@@ -2,7 +2,11 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 
+// 根据环境确定基础路径
+const base = process.env.NODE_ENV === 'production' ? '/Xpatent/' : '/'
+
 export default defineConfig({
+  base, // 设置部署基础路径
   plugins: [vue()],
   resolve: {
     alias: {

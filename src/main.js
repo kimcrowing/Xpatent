@@ -25,6 +25,9 @@ import { initServices } from './services/initializer'
 import { useAuthStore } from './stores/auth'
 import { useConfigStore } from './stores/config'
 
+// 确定基础路径（用于GitHub Pages部署）
+const base = import.meta.env.BASE_URL || '/'
+
 // 创建路由
 const routes = [
   { 
@@ -79,7 +82,7 @@ app.use(pinia)
 
 // 创建并注册Router（在Pinia之后初始化）
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(base),
   routes
 })
 app.use(router)
