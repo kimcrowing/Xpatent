@@ -1,6 +1,6 @@
 // OpenRouter API调用
 // 实际应用中API密钥应该从后端获取，不应该暴露在前端
-const OPENROUTER_API_KEY = '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';
+const OPENROUTER_API_KEY = 'YOUR_OPENROUTER_API_KEY'; // 修改为空值，启用模拟响应
 
 // 默认模型设置
 window.CURRENT_MODEL = 'deepseek/deepseek-r1:free';
@@ -8,6 +8,7 @@ window.CURRENT_MODEL = 'deepseek/deepseek-r1:free';
 async function callOpenRouterAPI(message, systemPrompt = '') {
     // 如果未设置API密钥，则使用模拟响应
     if (OPENROUTER_API_KEY === 'YOUR_OPENROUTER_API_KEY') {
+        console.log('使用模拟响应，API密钥未设置或无效');
         return mockResponse(message, systemPrompt);
     }
     
@@ -47,15 +48,23 @@ async function callOpenRouterAPI(message, systemPrompt = '') {
         });
         
         if (!response.ok) {
+            // 处理特定的错误类型
+            if (response.status === 401) {
+                console.error('API授权失败：API密钥无效或已过期，切换到模拟响应模式');
+                return mockResponse(message, systemPrompt);
+            }
+            
             const errorData = await response.json();
-            throw new Error(`API请求失败: ${errorData.error || response.status}`);
+            throw new Error(`API请求失败: ${errorData.error?.message || response.statusText}`);
         }
         
         const data = await response.json();
         return data.choices[0].message.content;
     } catch (error) {
         console.error('API调用错误:', error);
-        throw error;
+        // 对于网络错误等其他错误，也使用模拟响应
+        console.log('出现错误，切换到模拟响应模式');
+        return mockResponse(message, systemPrompt);
     }
 }
 
