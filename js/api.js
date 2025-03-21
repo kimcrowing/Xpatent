@@ -1,6 +1,6 @@
 // OpenRouter API调用
 // 实际应用中API密钥应该从后端获取，不应该暴露在前端
-const OPENROUTER_API_KEY = 'YOUR_OPENROUTER_API_KEY'; // 修改为空值，启用模拟响应
+const OPENROUTER_API_KEY = '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'; // 默认API密钥
 
 // 默认模型设置
 window.CURRENT_MODEL = 'deepseek/deepseek-r1:free';
