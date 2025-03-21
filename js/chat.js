@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatMessages = document.getElementById('chatMessages');
     const userInput = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
+    const sendButton = document.getElementById('sendButton');
     
     // 添加用户消息到聊天界面
     function addUserMessage(content) {
@@ -135,15 +136,31 @@ document.addEventListener('DOMContentLoaded', () => {
         userInput.value = '';
         sendBtn.setAttribute('disabled', true);
         
-        // 添加用户消息
-        addUserMessage(message);
+        // 获取附件内容（如果有）
+        let fullMessage = message;
+        if (window.getAttachmentText && typeof window.getAttachmentText === 'function') {
+            const attachmentText = window.getAttachmentText();
+            if (attachmentText) {
+                // 在用户消息后添加文档内容
+                fullMessage += "\n\n===== 附件内容 =====\n" + attachmentText;
+                
+                // 在UI中只显示用户输入的消息
+                addUserMessage(message + ' <span class="attachment-badge">[已上传附件]</span>');
+            } else {
+                // 没有附件，正常显示消息
+                addUserMessage(message);
+            }
+        } else {
+            // 如果附件功能不可用，正常显示消息
+            addUserMessage(message);
+        }
         
         // 显示加载指示器
         const loadingIndicator = addLoadingIndicator();
         
         try {
             // 构建API请求 
-            const request = buildAPIRequest(message);
+            const request = buildAPIRequest(fullMessage);
             
             // 调用API获取回复
             const response = await callOpenRouterAPI(request.message, request.systemPrompt);
@@ -153,17 +170,33 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // 添加AI回复
             addAIMessage(response);
+            
+            // 重新启用发送按钮
+            sendBtn.removeAttribute('disabled');
         } catch (error) {
             // 移除加载指示器
             loadingIndicator.remove();
             
             // 显示错误信息
             addAIMessage(`抱歉，发生了错误：${error.message}`);
+            
+            // 重新启用发送按钮
+            sendBtn.removeAttribute('disabled');
         }
     }
     
     // 发送按钮点击事件
     sendBtn.addEventListener('click', sendMessage);
+    
+    // 新发送按钮点击事件
+    sendButton.addEventListener('click', sendMessage);
+    
+    // Enter键发送消息
+    userInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
     
     // 设置消息操作事件
     chatMessages.addEventListener('click', (e) => {

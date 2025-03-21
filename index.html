@@ -8,6 +8,10 @@
     <link rel="stylesheet" href="css/dark-theme.css">
     <link rel="stylesheet" href="css/light-theme.css">
     <link rel="icon" href="https://fonts.gstatic.com/s/i/materialicons/lightbulb/v12/24px.svg" type="image/svg+xml">
+    <!-- PDF.js 库 -->
+    <script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <!-- mammoth.js 库 (用于Word文档) -->
+    <script src="https://unpkg.com/mammoth@1.6.0/mammoth.browser.min.js"></script>
 </head>
 <body class="dark-theme">
     <!-- 顶部导航栏 -->
@@ -40,95 +44,84 @@
         <div class="feature-menu" id="featureMenu">
             <ul>
                 <li data-feature="patent-search">
-                    <div class="menu-item-with-icon">
-                        <span>专利查新</span>
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M7 2C4.23858 2 2 4.23858 2 7C2 9.76142 4.23858 12 7 12C9.76142 12 12 9.76142 12 7C12 4.23858 9.76142 2 7 2ZM0 7C0 3.13401 3.13401 0 7 0C10.866 0 14 3.13401 14 7C14 8.57224 13.5013 10.0236 12.6383 11.1925L15.7071 14.2929C16.0976 14.6834 16.0976 15.3166 15.7071 15.7071C15.3166 16.0976 14.6834 16.0976 14.2929 15.7071L11.2113 12.5968C10.0416 13.4778 8.59498 14 7 14C3.13401 14 0 10.866 0 7Z" fill="currentColor"/>
-                        </svg>
-                    </div>
-                </li>
-                <li data-feature="patent-writing">
-                    <div class="menu-item-with-icon">
+                    <span>专利查新</span>
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8.5 3C11.5376 3 14 5.46243 14 8.5C14 9.83879 13.5217 11.0659 12.7266 12.0196L16.8536 16.1464C17.0488 16.3417 17.0488 16.6583 16.8536 16.8536C16.6583 17.0488 16.3417 17.0488 16.1464 16.8536L12.0196 12.7266C11.0659 13.5217 9.83879 14 8.5 14C5.46243 14 3 11.5376 3 8.5C3 5.46243 5.46243 3 8.5 3ZM8.5 4C6.01472 4 4 6.01472 4 8.5C4 10.9853 6.01472 13 8.5 13C10.9853 13 13 10.9853 13 8.5C13 6.01472 10.9853 4 8.5 4Z" fill="white"/>
+                    </li>
+                    <li data-feature="patent-writing">
                         <span>专利撰写</span>
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M13.38 1.4321L14.5679 2.62C15.1433 3.1954 15.1433 4.12459 14.5679 4.7L5.54 13.728L1.75 14.25L2.272 10.4599L11.3 1.4321C11.8754 0.856686 12.8046 0.856686 13.38 1.4321ZM10.5919 2.8683L3.1062 10.354L2.83626 12.0889L4.5441 11.857L12.0679 4.28321L10.5919 2.8683ZM11.9949 2.83529L11.3 2.14041L10.4599 2.98051L11.9359 4.45651L12.8054 3.58701L12.1064 2.888C12.0752 2.85676 12.0333 2.83981 11.9906 2.83982C11.9478 2.83982 11.9059 2.85679 11.8747 2.88806L11.9949 2.83529Z" fill="currentColor"/>
+                        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12.8232 6.35355L16.6464 10.1768L6.9232 19.9H3.1V16.0768L12.8232 6.35355ZM12.8232 4.93934L14.2374 3.52513C14.4327 3.32986 14.6982 3.21967 14.9747 3.21967C15.2513 3.21967 15.5168 3.32986 15.7121 3.52513L16.6464 4.45942C16.8416 4.65468 16.9518 4.92018 16.9518 5.19671C16.9518 5.47325 16.8416 5.73874 16.6464 5.93401L15.2321 7.34822L12.8232 4.93934Z" fill="white"/>
                         </svg>
-                    </div>
-                </li>
-                <li data-feature="patent-response">
-                    <div class="menu-item-with-icon">
+                    </li>
+                    <li data-feature="patent-response">
                         <span>专利答审</span>
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M2 2V11.5C2 11.7652 2.10536 12.0196 2.29289 12.2071C2.48043 12.3946 2.73478 12.5 3 12.5H13C13.2652 12.5 13.5196 12.3946 13.7071 12.2071C13.8946 12.0196 14 11.7652 14 11.5V5.5C14 5.23478 13.8946 4.98043 13.7071 4.79289C13.5196 4.60536 13.2652 4.5 13 4.5H8.5L7 2H3C2.73478 2 2.48043 2.10536 2.29289 2.29289C2.10536 2.48043 2 2.73478 2 3V11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M5.75 8.5L7.25 10L10.25 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 2C9.55228 2 10 2.44772 10 3V4H14C15.1046 4 16 4.89543 16 6V16C16 17.1046 15.1046 18 14 18H6C4.89543 18 4 17.1046 4 16V6C4 4.89543 4.89543 4 6 4H10V3C10 2.44772 9.55228 2 9 2ZM7 8C6.44772 8 6 8.44772 6 9C6 9.55228 6.44772 10 7 10H13C13.5523 10 14 9.55228 14 9C14 8.44772 13.5523 8 13 8H7ZM7 12C6.44772 12 6 12.4477 6 13C6 13.5523 6.44772 14 7 14H11C11.5523 14 12 13.5523 12 13C12 12.4477 11.5523 12 11 12H7Z" fill="white"/>
                         </svg>
-                    </div>
-                </li>
-            </ul>
-        </div>
-        
-        <!-- 用户下拉菜单 -->
-        <div class="user-menu" id="userMenu">
-            <ul>
-                <li id="themeToggle">
-                    <div class="menu-item-with-icon">
-                        <span>切换主题</span>
-                        <svg class="theme-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18Z" fill="currentColor"/>
-                        </svg>
-                    </div>
-                </li>
-                <li>设置</li>
-                <li>帮助 & 反馈</li>
-                <li>退出</li>
-            </ul>
-        </div>
-    </header>
-
-    <!-- 聊天内容区域 -->
-    <main class="chat-container">
-        <div class="welcome-message">
-            <h1>晚上好, <span id="userName">Kim</span>.</h1>
-            <p>今天有什么可以帮到您?</p>
-        </div>
-        
-        <div class="chat-messages" id="chatMessages">
-            <!-- 对话内容将动态添加在这里 -->
-        </div>
-    </main>
-    
-    <!-- 底部输入区域 -->
-    <footer class="input-container">
-        <div class="input-wrapper">
-            <input type="text" id="userInput" placeholder="您想了解什么?">
-            
-            <div class="model-selector" id="modelSelectorBtn">
-                <span id="currentModel">Deepseek</span>
-                <button class="dropdown-indicator" title="选择模型">
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M2.5 4.5L6 8L9.5 4.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-            </div>
-            
-            <!-- 模型选择下拉菜单 -->
-            <div class="model-dropdown" id="modelDropdown">
-                <ul>
-                    <li data-model="deepseek/deepseek-r1:free" class="active">Deepseek</li>
-                    <li data-model="anthropic/claude-3-haiku">Claude 3 Haiku</li>
-                    <li data-model="google/gemma-7b">Gemma 7B</li>
-                    <li data-model="meta-llama/llama-3-8b">Llama 3 8B</li>
+                    </li>
                 </ul>
             </div>
             
-            <button class="send-btn" id="sendBtn" title="发送" disabled>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M18.0717 9.42584L3.07172 1.92584C2.77137 1.77563 2.42017 1.76092 2.10768 1.88573C1.7952 2.01054 1.5548 2.26476 1.45104 2.58766C1.34729 2.91055 1.39456 3.26566 1.58178 3.5483L5.24922 9.00009L1.58178 14.4519C1.39456 14.7345 1.34729 15.0896 1.45104 15.4125C1.5548 15.7354 1.7952 15.9896 2.10768 16.1145C2.42017 16.2393 2.77137 16.2246 3.07172 16.0744L18.0717 8.57435C18.3398 8.43962 18.5463 8.2091 18.6477 7.92767C18.7491 7.64624 18.7382 7.33458 18.6171 7.0619C18.4961 6.78921 18.2737 6.57424 18 6.45924L18.0717 8.57435C18.3398 8.43962 18.5463 8.2091 18.6477 7.92767C18.7491 7.64624 18.7382 7.33458 18.6171 7.0619C18.4961 6.78921 18.2737 6.57424 18 6.45924" fill="#ffffff"/>
-                </svg>
-            </button>
+            <!-- 用户下拉菜单 -->
+            <div class="user-menu" id="userMenu">
+                <ul>
+                    <li id="themeToggle">
+                        <div class="menu-item-with-icon">
+                            <span>切换主题</span>
+                            <svg class="theme-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18Z" fill="currentColor"/>
+                            </svg>
+                        </div>
+                    </li>
+                    <li>设置</li>
+                    <li>帮助 & 反馈</li>
+                    <li>退出</li>
+                </ul>
+            </div>
         </div>
-    </footer>
+    </header>
+
+    <!-- 聊天区域 -->
+    <div class="chat-container">
+        <div class="messages" id="chatMessages">
+            <div class="welcome-message">
+                <h2>欢迎使用 XPatent AI 专利助手</h2>
+                <p>选择左上角菜单以使用专利查新、专利撰写或专利答审功能</p>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input type="file" id="fileUpload" accept=".pdf,.doc,.docx" style="display: none;">
+                <button class="icon-btn" id="attachButton" title="上传附件">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10 4C12.2091 4 14 5.79086 14 8V15.5C14 17.1569 12.6569 18.5 11 18.5C9.34315 18.5 8 17.1569 8 15.5V9C8 8.44772 8.44772 8 9 8C9.55228 8 10 8.44772 10 9V15.5C10 16.0523 10.4477 16.5 11 16.5C11.5523 16.5 12 16.0523 12 15.5V8C12 6.89543 11.1046 6 10 6C8.89543 6 8 6.89543 8 8V15.5C8 17.9853 10.0147 20 12.5 20C14.9853 20 17 17.9853 17 15.5V8C17 4.13401 13.866 1 10 1C6.13401 1 3 4.13401 3 8V15.5C3 16.0523 3.44772 16.5 4 16.5C4.55228 16.5 5 16.0523 5 15.5V9C5 8.44772 5.44772 8 6 8C6.55228 8 7 8.44772 7 9V15.5C7 17.1569 5.65685 18.5 4 18.5C2.34315 18.5 1 17.1569 1 15.5V8C1 3.02944 5.02944 -1 10 -1C14.9706 -1 19 3.02944 19 8V15.5C19 19.0899 16.0899 22 12.5 22C8.91015 22 6 19.0899 6 15.5V8C6 5.79086 7.79086 4 10 4Z" fill="white"/>
+                    </svg>
+                </button>
+                <div id="attachmentInfo" style="display: none;">
+                    <span id="fileName"></span>
+                    <button id="removeAttachment" title="移除附件">×</button>
+                </div>
+                <input type="text" id="userInput" placeholder="您想了解什么?">
+                <div class="input-buttons">
+                    <button class="icon-btn model-selector" id="modelSelector" title="选择AI模型">
+                        <span id="currentModel">Deepseek</span>
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5.29289 7.29289C5.68342 6.90237 6.31658 6.90237 6.70711 7.29289L10 10.5858L13.2929 7.29289C13.6834 6.90237 14.3166 6.90237 14.7071 7.29289C15.0976 7.68342 15.0976 8.31658 14.7071 8.70711L10.7071 12.7071C10.3166 13.0976 9.68342 13.0976 9.29289 12.7071L5.29289 8.70711C4.90237 8.31658 4.90237 7.68342 5.29289 7.29289Z" fill="white"/>
+                        </svg>
+                    </button>
+                    <button class="send-btn" id="sendButton" title="发送消息">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3.49184 15.9892C2.97752 16.5035 2.97716 17.3378 3.49148 17.8521C4.0058 18.3665 4.84008 18.3668 5.3544 17.8525L10.9582 12.2487C11.3545 11.8524 11.3545 11.2126 10.9582 10.8163L5.36152 5.21967C4.8472 4.70535 4.01292 4.70535 3.4986 5.21967C2.98428 5.73399 2.98428 6.56827 3.4986 7.08259L8.06107 11.6325L3.49184 15.9892Z" fill="white"/>
+                            <path d="M9.49184 15.9892C8.97752 16.5035 8.97716 17.3378 9.49148 17.8521C10.0058 18.3665 10.8401 18.3668 11.3544 17.8525L16.9582 12.2487C17.3545 11.8524 17.3545 11.2126 16.9582 10.8163L11.3615 5.21967C10.8472 4.70535 10.0129 4.70535 9.4986 5.21967C8.98428 5.73399 8.98428 6.56827 9.4986 7.08259L14.0611 11.6325L9.49184 15.9892Z" fill="white"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="feature-indicator" style="display: none;"></div>
+        </div>
+    </div>
 
     <script src="js/app.js"></script>
     <script src="js/chat.js"></script>
@@ -136,5 +129,6 @@
     <script src="js/theme.js"></script>
     <script src="js/modelSelector.js"></script>
     <script src="js/featureMenu.js"></script>
+    <script src="js/attachment.js"></script>
 </body>
 </html> 
