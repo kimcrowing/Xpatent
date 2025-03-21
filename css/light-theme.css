@@ -153,4 +153,13 @@
 .light-theme .message-avatar.ai {
     background-color: #ddd;
     color: var(--text-color-light);
+}
+
+/* 确保亮色主题下菜单图标正确显示 */
+.light-theme .feature-btn svg path {
+    fill: #333;
+}
+
+.light-theme .feature-menu {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 } 

@@ -88,4 +88,13 @@
 
 .dark-theme a:hover {
     text-decoration: underline;
+}
+
+/* 确保暗色主题下菜单图标正确显示 */
+.dark-theme .feature-btn svg path {
+    fill: #fff;
+}
+
+.dark-theme .feature-menu {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 } 
