@@ -553,4 +553,41 @@ svg path {
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
     border-top: 5px solid var(--primary-color);
+}
+
+/* API警告提示样式 */
+#api-warning {
+    position: fixed;
+    top: 50px;
+    width: 100%;
+    text-align: center;
+    background-color: #f44336;
+    color: white;
+    padding: 8px 0;
+    z-index: 9999;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+#api-warning span {
+    margin-left: 15px;
+    cursor: pointer;
+    float: right;
+    padding-right: 20px;
+    font-size: 20px;
+    line-height: 14px;
+}
+
+/* 适配主题的API警告 */
+.light-theme #api-warning {
+    background-color: #ff6b6b;
+    color: white;
+}
+
+/* 在较小屏幕上增加padding */
+@media (max-width: 768px) {
+    #api-warning {
+        padding: 10px 15px;
+    }
 } 
