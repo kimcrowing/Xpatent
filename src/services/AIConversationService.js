@@ -5,6 +5,12 @@ class AIConversationService {
     this.baseUrl = 'http://localhost:5000'; // 本地后端API地址
     this.authToken = localStorage.getItem('authToken');
     
+    // OpenRouter API设置
+    this.openRouterConfig = {
+      apiKey: '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',
+      baseUrl: 'https://openrouter.ai/api/v1/chat/completions'
+    };
+    
     // 初始化请求拦截器
     this._initInterceptors();
   }
@@ -29,16 +35,74 @@ class AIConversationService {
   }
   
   /**
+   * 设置OpenRouter API配置
+   * @param {Object} config 包含apiKey和baseUrl的配置对象
+   */
+  setOpenRouterConfig(config) {
+    if (config.apiKey) {
+      this.openRouterConfig.apiKey = config.apiKey;
+    }
+    if (config.baseUrl) {
+      this.openRouterConfig.baseUrl = config.baseUrl;
+    }
+    // 保存到localStorage
+    localStorage.setItem('openRouterConfig', JSON.stringify(this.openRouterConfig));
+  }
+  
+  /**
+   * 获取OpenRouter API配置
+   * @returns {Object} OpenRouter配置
+   */
+  getOpenRouterConfig() {
+    const saved = localStorage.getItem('openRouterConfig');
+    if (saved) {
+      try {
+        const config = JSON.parse(saved);
+        this.openRouterConfig = config;
+      } catch (error) {
+        console.error('解析OpenRouter配置失败:', error);
+      }
+    }
+    return this.openRouterConfig;
+  }
+  
+  /**
    * 获取可用的AI模型列表
    * @returns {Promise<Array>} 可用模型列表
    */
   async getAvailableModels() {
     try {
-      const response = await axios.get(`${this.baseUrl}/api/models`);
-      return response.data.models;
+      // 尝试从OpenRouter获取模型列表
+      const response = await fetch('https://openrouter.ai/api/v1/models', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.openRouterConfig.apiKey}`,
+          'HTTP-Referer': window.location.origin
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`获取模型列表失败: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      // 转换为我们需要的格式
+      return data.data.map(model => ({
+        id: model.id,
+        name: model.name || model.id,
+        description: model.description || '',
+        pricing: model.pricing || {}
+      }));
     } catch (error) {
       console.error('获取模型列表失败:', error);
-      throw error;
+      // 返回默认模型列表
+      return [
+        { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek (免费)' },
+        { id: 'openai/gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
+        { id: 'anthropic/claude-3-haiku', name: 'Claude 3 Haiku' },
+        { id: 'meta-llama/llama-3-8b-instruct', name: 'Llama 3 (8B)' },
+        { id: 'google/gemma-7b-it', name: 'Gemma (7B)' }
+      ];
     }
   }
   
@@ -51,6 +115,11 @@ class AIConversationService {
    */
   async sendMessage(messages, model, options = {}) {
     try {
+      // 首先尝试直接调用OpenRouter API
+      return await this.callOpenRouterDirectly(messages, model, options);
+    } catch (error) {
+      console.warn('直接调用OpenRouter失败，尝试通过后端代理:', error);
+      // 如果直接调用失败，再尝试通过后端代理
       const response = await axios.post(`${this.baseUrl}/api/chat`, {
         messages,
         model,
@@ -59,8 +128,46 @@ class AIConversationService {
       });
       
       return response.data;
+    }
+  }
+  
+  /**
+   * 直接调用OpenRouter API，不经过后端代理
+   * @param {Array} messages 消息历史记录
+   * @param {string} model 使用的模型ID
+   * @param {Object} options 附加选项
+   * @returns {Promise<Object>} AI响应
+   */
+  async callOpenRouterDirectly(messages, model, options = {}) {
+    // 获取最新配置
+    const config = this.getOpenRouterConfig();
+    
+    try {
+      const response = await fetch(config.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${config.apiKey}`,
+          'HTTP-Referer': window.location.origin,
+          'OpenRouter-Bypass-Cache': 'true'
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: messages,
+          temperature: options.temperature || 0.7,
+          max_tokens: options.max_tokens || 2000,
+          stream: false
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `请求失败：${response.status}`);
+      }
+      
+      return await response.json();
     } catch (error) {
-      console.error('发送消息失败:', error);
+      console.error('OpenRouter API调用失败:', error);
       throw error;
     }
   }
@@ -99,11 +206,39 @@ class AIConversationService {
    */
   async testConnection(config) {
     try {
-      const response = await axios.post(`${this.baseUrl}/api/ai/test-connection`, {
-        config
-      });
-      
-      return response.data;
+      // 直接测试OpenRouter连接
+      if (config.type === 'openrouter') {
+        const response = await fetch('https://openrouter.ai/api/v1/auth/key', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${config.apiKey}`,
+            'HTTP-Referer': window.location.origin
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`测试连接失败: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        // 保存成功的配置
+        this.setOpenRouterConfig({
+          apiKey: config.apiKey,
+          baseUrl: config.baseUrl || 'https://openrouter.ai/api/v1/chat/completions'
+        });
+        
+        return {
+          success: true,
+          data: data
+        };
+      } else {
+        // 通过后端测试其他API连接
+        const response = await axios.post(`${this.baseUrl}/api/ai/test-connection`, {
+          config
+        });
+        
+        return response.data;
+      }
     } catch (error) {
       console.error('测试连接失败:', error);
       throw error;

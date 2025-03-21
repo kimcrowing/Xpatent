@@ -9,13 +9,21 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
   <title>Xpatent - AI专利助手</title>
   <meta name="description" content="Xpatent - 专业的专利撰写和管理助手系统">
-  <!-- 为开发环境提供导入映射，生产环境会被Vite替换 -->
+  
+  <!-- 预加载关键依赖 -->
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="dns-prefetch" href="https://unpkg.com">
+
+  <!-- 为开发环境提供导入映射 - 生产环境下会被替换 -->
   <script type="importmap">
     {
       "imports": {
-        "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js",
-        "vue-router": "https://unpkg.com/vue-router@4/dist/vue-router.esm-browser.js",
-        "pinia": "https://unpkg.com/pinia@2/dist/pinia.esm-browser.js"
+        "vue": "https://unpkg.com/vue@3.2.47/dist/vue.esm-browser.prod.js",
+        "vue-router": "https://unpkg.com/vue-router@4.1.6/dist/vue-router.esm-browser.js",
+        "pinia": "https://unpkg.com/pinia@2.1.6/dist/pinia.esm-browser.js",
+        "uuid": "https://unpkg.com/uuid@11.1.0/dist/esm-browser/index.js",
+        "marked": "https://unpkg.com/marked@9.1.6/lib/marked.esm.js",
+        "dompurify": "https://unpkg.com/dompurify@3.2.4/dist/purify.es.js"
       }
     }
   </script>
@@ -23,5 +31,22 @@
 <body>
   <div id="app"></div>
   <script type="module" src="./src/main.js"></script>
+  
+  <!-- 页面加载状态提示 -->
+  <div id="loading-indicator" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-family: 'Roboto', sans-serif;">
+    <div style="font-size: 24px; margin-bottom: 10px;">Xpatent 正在加载...</div>
+    <div style="width: 60px; height: 60px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+  </div>
+  
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    #app:not(:empty) + #loading-indicator {
+      display: none;
+    }
+  </style>
 </body>
 </html> 

@@ -194,7 +194,19 @@ export default {
     const showPrivacy = ref(false)
     const showTerms = ref(false)
     const currentConversationId = ref('')
-    const availableModels = ref([])
+    const availableModels = ref([
+      { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek (免费)' },
+      { id: 'openai/gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
+      { id: 'anthropic/claude-3-haiku', name: 'Claude 3 Haiku' },
+      { id: 'meta-llama/llama-3-8b-instruct', name: 'Llama 3 (8B)' },
+      { id: 'google/gemma-7b-it', name: 'Gemma (7B)' }
+    ])
+    
+    // 默认API设置
+    const apiConfig = ref({
+      apiKey: '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',
+      baseUrl: 'https://openrouter.ai/api/v1/chat/completions'
+    })
     
     // DOM引用
     const inputRef = ref(null)
@@ -265,12 +277,8 @@ export default {
           content: msg.content
         }))
         
-        // 调用API
-        const response = await aiConversationService.sendMessage(
-          messages,
-          selectedModel.value,
-          { temperature: 0.7 }
-        )
+        // 直接调用OpenRouter API，不经过后端代理
+        const response = await callOpenRouter(messages, selectedModel.value)
         
         // 处理响应
         if (response && response.choices && response.choices[0]) {
@@ -298,168 +306,194 @@ export default {
       } finally {
         isLoading.value = false
         // 滚动到底部
-        nextTick(() => {
-          scrollToBottom()
-        })
+        await nextTick()
+        scrollToBottom()
       }
     }
     
+    // 直接调用OpenRouter API
+    const callOpenRouter = async (messages, model) => {
+      try {
+        const response = await fetch(apiConfig.value.baseUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiConfig.value.apiKey}`,
+            'HTTP-Referer': window.location.origin,
+            'OpenRouter-Bypass-Cache': 'true'
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 2000,
+            stream: false
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || `请求失败：${response.status}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('OpenRouter API调用失败:', error);
+        throw error;
+      }
+    }
+    
+    // 声音输入
     const startVoiceInput = () => {
-      alert('语音输入功能即将上线')
-    }
-    
-    const triggerFileUpload = () => {
-      if (fileInput.value) {
-        fileInput.value.click()
+      if (!window.webkitSpeechRecognition) {
+        alert('很抱歉，您的浏览器不支持语音识别功能。请尝试使用Chrome浏览器。')
+        return
       }
+      
+      const recognition = new window.webkitSpeechRecognition()
+      recognition.lang = 'zh-CN'
+      recognition.continuous = false
+      recognition.interimResults = false
+      
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript
+        userInput.value += transcript
+      }
+      
+      recognition.onerror = (event) => {
+        console.error('语音识别错误:', event.error)
+      }
+      
+      recognition.start()
     }
     
+    // 触发文件上传
+    const triggerFileUpload = () => {
+      fileInput.value.click()
+    }
+    
+    // 处理文件上传
     const handleFileUpload = async (event) => {
       const file = event.target.files[0]
       if (!file) return
       
-      // 如果没有当前对话ID，创建一个新的
-      if (!currentConversationId.value) {
-        initNewConversation()
+      // 文件大小检查 (最大20MB)
+      if (file.size > 20 * 1024 * 1024) {
+        alert('文件大小不能超过20MB')
+        return
       }
       
-      // 添加文件上传消息
+      // 添加用户消息，表明上传了文件
       chatMessages.value.push({
         role: 'user',
         content: `上传文件: ${file.name}`,
         timestamp: new Date()
       })
       
-      // 滚动到底部
-      nextTick(() => {
-        scrollToBottom()
-      })
-      
-      // 处理文件
       isLoading.value = true
       
       try {
+        // 调用服务处理文件
         const result = await aiConversationService.processFile(file)
         
-        if (result.text) {
-          // 添加文件处理结果
-          chatMessages.value.push({
-            role: 'assistant',
-            content: `我已分析您上传的文件 "${file.name}"。\n\n文件内容摘要：\n\n${result.text.substring(0, 300)}${result.text.length > 300 ? '...' : ''}`,
-            timestamp: new Date()
-          })
-          
-          // 保存对话历史
-          aiConversationService.saveConversation(
-            currentConversationId.value, 
-            chatMessages.value
-          )
-        } else {
-          // 处理错误
-          chatMessages.value.push({
-            role: 'assistant',
-            content: `我无法读取文件 "${file.name}" 的内容。请确保文件格式正确，然后重试。`,
-            timestamp: new Date()
-          })
-        }
+        // 添加AI回复
+        chatMessages.value.push({
+          role: 'assistant',
+          content: `文件 ${file.name} 处理成功。\n\n${result.summary || ''}`,
+          timestamp: new Date()
+        })
       } catch (error) {
         console.error('文件处理失败:', error)
+        
         // 添加错误信息
         chatMessages.value.push({
           role: 'assistant',
-          content: `处理文件时出现错误: ${error.message || '未知错误'}`,
+          content: `文件处理失败: ${error.message || '未知错误'}`,
           timestamp: new Date()
         })
       } finally {
         isLoading.value = false
-        // 滚动到底部
-        nextTick(() => {
-          scrollToBottom()
-        })
-        // 清空文件选择器
+        
+        // 清空文件输入
         event.target.value = ''
+        
+        // 滚动到底部
+        await nextTick()
+        scrollToBottom()
       }
     }
     
-    const feelingLucky = () => {
-      const suggestions = [
-        "如何提高专利授权率？",
-        "专利权利要求书的撰写技巧",
-        "怎样应对专利审查意见通知书？",
-        "什么是专利侵权判定规则？",
-        "如何进行专利布局？"
+    // "手气不错"功能
+    const feelingLucky = async () => {
+      // 预设问题列表
+      const questions = [
+        '请帮我分析一下专利申请的基本流程和注意事项',
+        '什么是专利权的保护范围？如何确定？',
+        '独立权利要求和从属权利要求有什么区别？',
+        '如何避免在专利说明书中使用不当的用语？',
+        '专利审查中遇到的常见问题有哪些？'
       ]
       
-      // 随机选择一个建议
-      userInput.value = suggestions[Math.floor(Math.random() * suggestions.length)]
+      // 随机选择一个问题
+      const randomIndex = Math.floor(Math.random() * questions.length)
+      userInput.value = questions[randomIndex]
+      
+      // 提交问题
       handleSubmit()
     }
     
+    // 格式化消息内容（支持Markdown）
+    const formatMessage = (content) => {
+      // 将Markdown转换为HTML，并进行安全过滤
+      const html = DOMPurify.sanitize(marked(content))
+      return html
+    }
+    
+    // 滚动聊天记录到底部
     const scrollToBottom = () => {
       if (chatHistoryRef.value) {
         chatHistoryRef.value.scrollTop = chatHistoryRef.value.scrollHeight
       }
     }
     
-    // 格式化消息内容（支持markdown）
-    const formatMessage = (content) => {
-      if (!content) return ''
-      // 使用marked解析markdown
-      const rawHtml = marked.parse(content)
-      // 使用DOMPurify清理HTML
-      return DOMPurify.sanitize(rawHtml)
-    }
-    
-    // 初始化
+    // 生命周期钩子
     onMounted(async () => {
-      // 获取可用的AI模型
-      try {
-        availableModels.value = await aiConversationService.getAvailableModels()
-        console.log('获取可用模型成功:', availableModels.value)
-      } catch (error) {
-        console.error('获取模型列表失败:', error)
-        // 使用默认模型列表
-        availableModels.value = [
-          { id: 'deepseek/deepseek-r1:free', name: '深度思考 R1' },
-          { id: 'gpt-4', name: 'GPT-4' },
-          { id: 'claude-3', name: 'Claude 3' },
-          { id: 'gemini-pro', name: 'Gemini Pro' },
-          { id: 'local', name: '本地模型' }
-        ]
+      // 初始化聚焦输入框
+      if (inputRef.value) {
+        inputRef.value.focus()
       }
       
-      // 监听点击事件，关闭应用菜单
-      document.addEventListener('click', (event) => {
-        // 如果点击的不是应用菜单或其切换按钮，则关闭菜单
-        const appsMenu = document.querySelector('.apps-menu')
-        const appsToggle = document.querySelector('.apps-menu-toggle')
-        
-        if (showAppsMenu.value && 
-            event.target !== appsMenu && 
-            !appsMenu?.contains(event.target) &&
-            event.target !== appsToggle &&
-            !appsToggle?.contains(event.target)) {
-          showAppsMenu.value = false
-        }
-      })
+      // 加载可用模型
+      try {
+        // 如果后端可用，可以从后端获取模型列表
+        // const models = await aiConversationService.getAvailableModels()
+        // availableModels.value = models
+      } catch (error) {
+        console.error('加载模型列表失败:', error)
+      }
+    })
+    
+    // 监听聊天消息变化，自动滚动到底部
+    watch(chatMessages, () => {
+      nextTick(() => scrollToBottom())
     })
     
     return {
-      isAuthenticated,
-      user,
       userInput,
       chatMessages,
       isLoading,
       selectedModel,
+      availableModels,
       showAppsMenu,
       showAbout,
       showPrivacy,
       showTerms,
-      availableModels,
+      isAuthenticated,
+      user,
+      canSubmit,
       inputRef,
       fileInput,
       chatHistoryRef,
-      canSubmit,
       toggleAppsMenu,
       closeModals,
       handleSubmit,
@@ -612,37 +646,39 @@ export default {
   margin-top: 5px;
 }
 
-/* 聊天框样式 */
+/* 聊天框样式 - 增大尺寸 */
 .chat-container {
   width: 100%;
-  max-width: 650px;
+  max-width: 800px; /* 增大最大宽度 */
 }
 
 .chat-history {
-  max-height: 400px;
+  max-height: 600px; /* 增大最大高度 */
   overflow-y: auto;
   margin-bottom: 30px;
-  border-radius: 8px;
-  box-shadow: 0 1px 6px rgba(32, 33, 36, 0.18);
-  padding: 16px;
+  border-radius: 12px; /* 增大圆角 */
+  box-shadow: 0 1px 8px rgba(32, 33, 36, 0.28); /* 增强阴影效果 */
+  padding: 20px;
+  background-color: #f8f9fa;
 }
 
 .chat-message {
-  margin-bottom: 16px;
-  padding: 10px;
-  border-radius: 8px;
+  margin-bottom: 20px;
+  padding: 15px; /* 增大内边距 */
+  border-radius: 12px;
 }
 
 .chat-message.user {
   background-color: #e3f2fd;
   border: 1px solid #bbdefb;
-  margin-left: 20%;
+  margin-left: 15%;
 }
 
 .chat-message.assistant {
-  background-color: #f8f9fa;
+  background-color: #f1f3f4;
   border: 1px solid #e8eaed;
-  margin-right: 20%;
+  margin-right: 15%;
+  box-shadow: 0 1px 4px rgba(32, 33, 36, 0.15);
 }
 
 .message-content {
@@ -650,7 +686,8 @@ export default {
 }
 
 .message-text {
-  line-height: 1.5;
+  line-height: 1.6;
+  font-size: 1.05rem; /* 增大字体 */
 }
 
 .typing-indicator {
@@ -683,109 +720,80 @@ export default {
   40% { transform: scale(1); }
 }
 
-/* 搜索框样式 */
-.search-box-container {
-  width: 100%;
-}
-
+/* 搜索框样式 - 更新为类似ChatGPT的对话框 */
 .search-box {
   display: flex;
   align-items: center;
-  max-width: 650px;
+  max-width: 800px; /* 与聊天历史匹配 */
   margin: 0 auto;
   border: 1px solid #dfe1e5;
   border-radius: 24px;
-  padding: 8px 15px;
+  padding: 12px 18px; /* 增大内边距 */
   box-shadow: 0 1px 6px rgba(32, 33, 36, 0.18);
   transition: box-shadow 0.2s, border-color 0.2s;
-}
-
-.search-box:hover, .search-box:focus-within {
-  box-shadow: 0 1px 8px rgba(32, 33, 36, 0.25);
-  border-color: rgba(223, 225, 229, 0);
-}
-
-.search-icon {
-  color: #9aa0a6;
-  margin-right: 10px;
+  background-color: white;
 }
 
 .search-input {
   flex: 1;
-  height: 34px;
+  height: 38px; /* 增高输入框 */
   background-color: transparent;
   border: none;
   outline: none;
-  font-size: 1rem;
+  font-size: 1.05rem; /* 增大字体 */
   color: #202124;
 }
 
-.search-actions {
-  display: flex;
-  align-items: center;
-}
-
-.mic-button, .upload-button {
-  background: none;
-  border: none;
-  color: #4285f4;
-  font-size: 1.2rem;
-  padding: 8px;
-  margin-left: 5px;
-  cursor: pointer;
-  border-radius: 50%;
-  transition: background-color 0.2s;
-}
-
-.mic-button:hover, .upload-button:hover {
-  background-color: rgba(66, 133, 244, 0.1);
-}
-
-.search-buttons {
-  display: flex;
-  justify-content: center;
-  margin-top: 30px;
-  gap: 12px;
-}
-
-.search-btn {
-  background-color: #f8f9fa;
-  border: 1px solid #f8f9fa;
-  border-radius: 4px;
-  color: #3c4043;
-  font-size: 14px;
-  padding: 10px 16px;
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.search-btn:hover {
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
-  border-color: #dadce0;
-}
-
-.search-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* 模型选择器样式 */
+/* 模型选择器样式 - 更显眼 */
 .model-selector {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 15px;
-  font-size: 0.9rem;
-  color: #5f6368;
+  margin-top: 20px;
+  font-size: 1rem;
+  color: #3c4043;
+  background-color: white;
+  padding: 10px 15px;
+  border-radius: 20px;
+  box-shadow: 0 1px 4px rgba(32, 33, 36, 0.15);
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .model-selector select {
-  margin-left: 8px;
-  padding: 5px 8px;
-  border-radius: 4px;
+  margin-left: 10px;
+  padding: 6px 12px;
+  border-radius: 8px;
   border: 1px solid #dfe1e5;
   background-color: white;
   outline: none;
+  font-size: 0.95rem;
+  color: #202124;
+  cursor: pointer;
+}
+
+.model-selector select:hover {
+  border-color: #3498db;
+}
+
+/* 响应式调整 */
+@media (max-width: 860px) {
+  .chat-container, .search-box {
+    max-width: 90%;
+  }
+  
+  .chat-history {
+    max-height: 500px;
+  }
+  
+  .chat-message.user {
+    margin-left: 5%;
+  }
+  
+  .chat-message.assistant {
+    margin-right: 5%;
+  }
 }
 
 /* 页脚样式 */
@@ -858,33 +866,6 @@ export default {
 .modal-body {
   padding: 20px;
   line-height: 1.5;
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .main-content {
-    padding: 30px 15px;
-  }
-  
-  .brand-logo {
-    font-size: 1.5rem;
-  }
-  
-  .apps-menu {
-    width: 280px;
-  }
-  
-  .apps-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .chat-message.user {
-    margin-left: 10%;
-  }
-  
-  .chat-message.assistant {
-    margin-right: 10%;
-  }
 }
 
 /* 暗黑模式 */
