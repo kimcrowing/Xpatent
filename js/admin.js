@@ -136,6 +136,24 @@ document.addEventListener('DOMContentLoaded', function() {
     bindEvents();
     
     /**
+     * 初始化各个管理模块
+     */
+    function initModules() {
+        // 加载提示词列表
+        loadPrompts();
+        
+        // 加载用户列表
+        loadUsers();
+        
+        // 加载订阅管理
+        loadSubscriptions();
+        loadSubscriptionStats();
+        
+        // 加载API使用统计
+        loadApiUsageStats();
+    }
+    
+    /**
      * 页面初始化
      */
     function initPage() {
@@ -148,6 +166,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // 加载API配置（如果登录了）
         if (localStorage.getItem('xpat_auth_token')) {
             loadApiConfig();
+            
+            // 初始化各个管理模块
+            initModules();
         }
     }
     
@@ -159,18 +180,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const isGitHubPages = window.location.hostname.includes('github.io');
         
         if (isGitHubPages) {
-            // 从本地存储加载API地址，如果没有则使用默认地址
-            const savedApiUrl = localStorage.getItem('xpat_api_url');
+            // 修改backendApi中的API_BASE_URL
+            // 注意：需要部署后端到支持CORS的服务器上
+            const apiBaseUrl = prompt(
+                '您正在GitHub Pages环境运行，请输入后端API地址（例如：https://your-api-server.com/api）',
+                'http://localhost:3000/api'
+            );
             
-            if (savedApiUrl) {
-                window.API_BASE_URL = savedApiUrl;
-                console.log('从本地存储加载API地址:', savedApiUrl);
-            } else {
-                // 默认使用本地地址，需要管理员在部署时手动修改
-                const defaultApiUrl = 'http://localhost:3000/api';
-                window.API_BASE_URL = defaultApiUrl;
-                localStorage.setItem('xpat_api_url', defaultApiUrl);
-                console.log('已设置默认API地址:', defaultApiUrl);
+            if (apiBaseUrl) {
+                window.API_BASE_URL = apiBaseUrl;
+                console.log('已设置API地址为:', apiBaseUrl);
             }
         }
     }
@@ -335,20 +354,6 @@ document.addEventListener('DOMContentLoaded', function() {
         closeDeleteModalBtn.addEventListener('click', closeDeleteModal);
         cancelDeleteBtn.addEventListener('click', closeDeleteModal);
         confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
-
-        // 从这里开始添加创建用户按钮事件监听
-        if (document.getElementById('createUserBtn')) {
-            document.getElementById('createUserBtn').addEventListener('click', handleAddUser);
-        }
-        
-        // 添加确认删除用户和提交创建用户的事件监听
-        if (document.getElementById('submitCreateUser')) {
-            document.getElementById('submitCreateUser').addEventListener('click', handleCreateUser);
-        }
-        
-        if (document.getElementById('confirmDeleteUser')) {
-            document.getElementById('confirmDeleteUser').addEventListener('click', handleConfirmDeleteUser);
-        }
     }
     
     /**
@@ -679,217 +684,96 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function loadApiConfig() {
         try {
-            // 加载后端API地址
-            const backendApiUrl = localStorage.getItem('xpat_api_url') || window.API_BASE_URL || 'http://localhost:3000/api';
-            document.getElementById('backendApiUrl').value = backendApiUrl;
+            // 假设我们有一个API端点来获取配置
+            // 如果后端API尚未实现，可以先从localStorage加载
+            const savedConfig = localStorage.getItem('xpat_api_config');
             
-            // 从后端获取API配置
-            const config = await window.backendApi.getApiConfig();
-            
-            // 如果获取成功，填充表单
-            if (config) {
-                // OpenAI配置
-                document.getElementById('openaiApiKey').value = config.openai?.apiKey || '';
-                document.getElementById('openaiModel').value = config.openai?.model || 'gpt-4-turbo';
-                document.getElementById('openaiEndpoint').value = config.openai?.endpoint || '';
+            if (savedConfig) {
+                const config = JSON.parse(savedConfig);
                 
-                // Anthropic配置
+                // 填充表单
+                document.getElementById('openaiApiKey').value = config.openai?.apiKey || '';
+                document.getElementById('openaiModel').value = config.openai?.model || 'gpt-4';
+                document.getElementById('openaiEndpoint').value = config.openai?.endpoint || 'https://api.openai.com/v1';
+                
                 document.getElementById('anthropicApiKey').value = config.anthropic?.apiKey || '';
                 document.getElementById('anthropicModel').value = config.anthropic?.model || 'claude-3-opus-20240229';
-                document.getElementById('anthropicEndpoint').value = config.anthropic?.endpoint || '';
+                document.getElementById('anthropicEndpoint').value = config.anthropic?.endpoint || 'https://api.anthropic.com';
                 
-                // OpenRouter配置
-                document.getElementById('openrouterApiKey').value = config.openrouter?.apiKey || '';
-                document.getElementById('openrouterModel').value = config.openrouter?.model || 'deepseek/deepseek-r1:free';
-                document.getElementById('openrouterEndpoint').value = config.openrouter?.endpoint || 'https://openrouter.ai/api/v1/chat/completions';
-                document.getElementById('openrouterReferer').value = config.openrouter?.referer || 'http://localhost';
-                document.getElementById('openrouterTitle').value = config.openrouter?.title || 'AI Chat Test';
-                
-                // 通用设置
                 document.getElementById('defaultProvider').value = config.defaultProvider || 'openai';
                 document.getElementById('allowUserModelSelection').checked = config.allowUserModelSelection || false;
-            } else {
-                // 如果后端未返回配置，从localStorage加载作为备份
-                loadLocalApiConfig();
             }
+            
+            // 当实现后端API后，这里可以替换为真实的API调用
+            // const response = await fetch('/api/admin/config', {
+            //     headers: {
+            //         'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
+            //     }
+            // });
+            // const config = await response.json();
+            // 然后填充表单...
+            
         } catch (error) {
             console.error('加载API配置失败:', error);
-            apiConfigError.textContent = '从服务器加载配置失败，尝试加载本地配置';
-            
-            // 尝试从localStorage加载配置
-            loadLocalApiConfig();
+            apiConfigError.textContent = '加载配置失败: ' + (error.message || '未知错误');
         }
     }
     
     /**
-     * 从localStorage加载API配置（作为备份）
-     */
-    function loadLocalApiConfig() {
-        // OpenAI配置
-        const openaiApiKey = localStorage.getItem('xpat_openai_api_key') || '';
-        const openaiModel = localStorage.getItem('xpat_openai_model') || 'gpt-4-turbo';
-        const openaiEndpoint = localStorage.getItem('xpat_openai_endpoint') || '';
-        
-        // Anthropic配置
-        const anthropicApiKey = localStorage.getItem('xpat_anthropic_api_key') || '';
-        const anthropicModel = localStorage.getItem('xpat_anthropic_model') || 'claude-3-opus-20240229';
-        const anthropicEndpoint = localStorage.getItem('xpat_anthropic_endpoint') || '';
-        
-        // OpenRouter配置
-        const openrouterApiKey = localStorage.getItem('xpat_openrouter_api_key') || '';
-        const openrouterModel = localStorage.getItem('xpat_openrouter_model') || 'deepseek/deepseek-r1:free';
-        const openrouterEndpoint = localStorage.getItem('xpat_openrouter_endpoint') || 'https://openrouter.ai/api/v1/chat/completions';
-        const openrouterReferer = localStorage.getItem('xpat_openrouter_referer') || 'http://localhost';
-        const openrouterTitle = localStorage.getItem('xpat_openrouter_title') || 'AI Chat Test';
-        
-        // 通用设置
-        const defaultProvider = localStorage.getItem('xpat_default_provider') || 'openai';
-        const allowUserModelSelection = localStorage.getItem('xpat_allow_user_model_selection') === 'true';
-        
-        // 填充表单
-        document.getElementById('openaiApiKey').value = openaiApiKey;
-        document.getElementById('openaiModel').value = openaiModel;
-        document.getElementById('openaiEndpoint').value = openaiEndpoint;
-        
-        document.getElementById('anthropicApiKey').value = anthropicApiKey;
-        document.getElementById('anthropicModel').value = anthropicModel;
-        document.getElementById('anthropicEndpoint').value = anthropicEndpoint;
-        
-        document.getElementById('openrouterApiKey').value = openrouterApiKey;
-        document.getElementById('openrouterModel').value = openrouterModel;
-        document.getElementById('openrouterEndpoint').value = openrouterEndpoint;
-        document.getElementById('openrouterReferer').value = openrouterReferer;
-        document.getElementById('openrouterTitle').value = openrouterTitle;
-        
-        document.getElementById('defaultProvider').value = defaultProvider;
-        document.getElementById('allowUserModelSelection').checked = allowUserModelSelection;
-    }
-    
-    /**
-     * 保存API配置
+     * 处理保存API配置
      */
     async function handleSaveApiConfig() {
         try {
-            // 保存后端API地址
-            const backendApiUrl = document.getElementById('backendApiUrl').value.trim();
-            if (backendApiUrl) {
-                localStorage.setItem('xpat_api_url', backendApiUrl);
-                window.API_BASE_URL = backendApiUrl;
-                console.log('已更新后端API地址:', backendApiUrl);
-            }
-            
-            // 获取表单值
-            const openaiApiKey = document.getElementById('openaiApiKey').value.trim();
-            const openaiModel = document.getElementById('openaiModel').value;
-            const openaiEndpoint = document.getElementById('openaiEndpoint').value.trim();
-            
-            const anthropicApiKey = document.getElementById('anthropicApiKey').value.trim();
-            const anthropicModel = document.getElementById('anthropicModel').value;
-            const anthropicEndpoint = document.getElementById('anthropicEndpoint').value.trim();
-            
-            const openrouterApiKey = document.getElementById('openrouterApiKey').value.trim();
-            const openrouterModel = document.getElementById('openrouterModel').value;
-            const openrouterEndpoint = document.getElementById('openrouterEndpoint').value.trim();
-            const openrouterReferer = document.getElementById('openrouterReferer').value.trim();
-            const openrouterTitle = document.getElementById('openrouterTitle').value.trim();
-            
-            const defaultProvider = document.getElementById('defaultProvider').value;
-            const allowUserModelSelection = document.getElementById('allowUserModelSelection').checked;
-            
-            // 构建配置对象
+            // 收集表单数据
             const config = {
                 openai: {
-                    apiKey: openaiApiKey,
-                    model: openaiModel,
-                    endpoint: openaiEndpoint
+                    apiKey: document.getElementById('openaiApiKey').value,
+                    model: document.getElementById('openaiModel').value,
+                    endpoint: document.getElementById('openaiEndpoint').value
                 },
                 anthropic: {
-                    apiKey: anthropicApiKey,
-                    model: anthropicModel,
-                    endpoint: anthropicEndpoint
+                    apiKey: document.getElementById('anthropicApiKey').value,
+                    model: document.getElementById('anthropicModel').value,
+                    endpoint: document.getElementById('anthropicEndpoint').value
                 },
-                openrouter: {
-                    apiKey: openrouterApiKey,
-                    model: openrouterModel,
-                    endpoint: openrouterEndpoint,
-                    referer: openrouterReferer,
-                    title: openrouterTitle
-                },
-                defaultProvider,
-                allowUserModelSelection
+                defaultProvider: document.getElementById('defaultProvider').value,
+                allowUserModelSelection: document.getElementById('allowUserModelSelection').checked
             };
             
-            // 保存到后端
-            await window.backendApi.saveApiConfig(config);
+            // 保存到localStorage（临时方案，直到后端API实现）
+            localStorage.setItem('xpat_api_config', JSON.stringify(config));
             
-            // 同时保存到localStorage作为备份
-            saveLocalApiConfig(config);
-            
+            // 提示保存成功
             apiConfigError.textContent = '';
-            alert('API配置已保存到服务器');
+            apiConfigError.style.color = '#4caf50';
+            apiConfigError.textContent = '配置保存成功';
+            
+            // 当后端API实现后，这里应该发送至服务器
+            // const response = await fetch('/api/admin/config', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
+            //     },
+            //     body: JSON.stringify(config)
+            // });
+            
+            // if (!response.ok) {
+            //     throw new Error('保存配置失败');
+            // }
+            
+            // 三秒后清除成功消息
+            setTimeout(() => {
+                if (apiConfigError.style.color === '#4caf50') {
+                    apiConfigError.textContent = '';
+                }
+            }, 3000);
             
         } catch (error) {
             console.error('保存API配置失败:', error);
-            apiConfigError.textContent = '保存到服务器失败: ' + error.message;
-            
-            // 尝试只保存到本地
-            try {
-                const config = collectFormConfig();
-                saveLocalApiConfig(config);
-                alert('无法保存到服务器，但已保存到本地');
-            } catch (localError) {
-                console.error('本地保存也失败:', localError);
-            }
+            apiConfigError.style.color = '#f44336';
+            apiConfigError.textContent = '保存配置失败: ' + (error.message || '未知错误');
         }
-    }
-    
-    /**
-     * 收集表单中的配置数据
-     */
-    function collectFormConfig() {
-        return {
-            openai: {
-                apiKey: document.getElementById('openaiApiKey').value.trim(),
-                model: document.getElementById('openaiModel').value,
-                endpoint: document.getElementById('openaiEndpoint').value.trim()
-            },
-            anthropic: {
-                apiKey: document.getElementById('anthropicApiKey').value.trim(),
-                model: document.getElementById('anthropicModel').value,
-                endpoint: document.getElementById('anthropicEndpoint').value.trim()
-            },
-            openrouter: {
-                apiKey: document.getElementById('openrouterApiKey').value.trim(),
-                model: document.getElementById('openrouterModel').value,
-                endpoint: document.getElementById('openrouterEndpoint').value.trim(),
-                referer: document.getElementById('openrouterReferer').value.trim(),
-                title: document.getElementById('openrouterTitle').value.trim()
-            },
-            defaultProvider: document.getElementById('defaultProvider').value,
-            allowUserModelSelection: document.getElementById('allowUserModelSelection').checked
-        };
-    }
-    
-    /**
-     * 保存API配置到localStorage（作为备份）
-     */
-    function saveLocalApiConfig(config) {
-        localStorage.setItem('xpat_openai_api_key', config.openai.apiKey);
-        localStorage.setItem('xpat_openai_model', config.openai.model);
-        localStorage.setItem('xpat_openai_endpoint', config.openai.endpoint);
-        
-        localStorage.setItem('xpat_anthropic_api_key', config.anthropic.apiKey);
-        localStorage.setItem('xpat_anthropic_model', config.anthropic.model);
-        localStorage.setItem('xpat_anthropic_endpoint', config.anthropic.endpoint);
-        
-        localStorage.setItem('xpat_openrouter_api_key', config.openrouter.apiKey);
-        localStorage.setItem('xpat_openrouter_model', config.openrouter.model);
-        localStorage.setItem('xpat_openrouter_endpoint', config.openrouter.endpoint);
-        localStorage.setItem('xpat_openrouter_referer', config.openrouter.referer);
-        localStorage.setItem('xpat_openrouter_title', config.openrouter.title);
-        
-        localStorage.setItem('xpat_default_provider', config.defaultProvider);
-        localStorage.setItem('xpat_allow_user_model_selection', config.allowUserModelSelection);
     }
     
     /**
@@ -947,75 +831,105 @@ document.addEventListener('DOMContentLoaded', function() {
      * 渲染用户表格
      */
     function renderUsersTable(users) {
-        if (!usersTable) return;
-        
-        // 清空表格
         const tbody = usersTable.querySelector('tbody');
-        if (!tbody) return;
-        
         tbody.innerHTML = '';
         
-        // 显示用户数据
-        if (users && users.length > 0) {
-            users.forEach(user => {
-                const tr = document.createElement('tr');
-                
-                tr.innerHTML = `
-                    <td>${user.username}</td>
-                    <td>${user.email}</td>
-                    <td>${user.role === 'admin' ? '管理员' : '普通用户'}</td>
-                    <td>${user.api_quota || '无限制'}</td>
-                    <td>${new Date(user.created_at).toLocaleString()}</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary edit-role-btn" data-id="${user.id}" data-role="${user.role}">修改角色</button>
-                        <button class="btn btn-sm btn-warning reset-quota-btn" data-id="${user.id}">重置配额</button>
-                        <button class="btn btn-sm btn-danger delete-user-btn" data-id="${user.id}" data-username="${user.username}">删除</button>
-                    </td>
-                `;
-                
-                tbody.appendChild(tr);
-            });
+        users.forEach(user => {
+            const tr = document.createElement('tr');
             
-            // 绑定按钮事件
-            tbody.querySelectorAll('.edit-role-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    const currentRole = this.getAttribute('data-role');
-                    const newRole = currentRole === 'admin' ? 'user' : 'admin';
-                    const user = users.find(u => u.id == id);
-                    
-                    if (user) {
-                        showRoleConfirmModal(user, newRole);
-                    }
-                });
-            });
+            // 格式化创建时间
+            const createdAt = new Date(user.created_at);
+            const formattedDate = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}-${String(createdAt.getDate()).padStart(2, '0')}`;
             
-            tbody.querySelectorAll('.reset-quota-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    handleResetQuota(id, users);
-                });
-            });
+            // 角色显示
+            const roleDisplay = user.role === 'admin' 
+                ? '<span class="role-badge role-admin">管理员</span>' 
+                : '<span class="role-badge role-user">普通用户</span>';
             
-            // 添加删除用户按钮事件
-            tbody.querySelectorAll('.delete-user-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    const username = this.getAttribute('data-username');
-                    handleDeleteUser(id, username);
-                });
-            });
+            tr.innerHTML = `
+                <td>${user.id}</td>
+                <td>${user.username}</td>
+                <td>${user.email}</td>
+                <td>${roleDisplay}</td>
+                <td>${user.api_quota}</td>
+                <td>${user.api_usage}</td>
+                <td>${formattedDate}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-button edit-user-button" data-id="${user.id}" title="编辑">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11 4H4C3.44772 4 3 4.44772 3 5V19C3 19.5523 3.44772 20 4 20H18C18.5523 20 19 19.5523 19 19V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M18.5 2.5C18.7626 2.23735 19.1189 2.07855 19.5 2.07855C19.8811 2.07855 20.2374 2.23735 20.5 2.5C20.7626 2.76265 20.9214 3.11895 20.9214 3.5C20.9214 3.88105 20.7626 4.23735 20.5 4.5L12 13L9 14L10 11L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <button class="action-button reset-quota-button" data-id="${user.id}" title="重置配额">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M23 4V10H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M1 20V14H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M20.49 9C19.2462 6.28075 16.7512 4.39139 13.8163 3.87541C10.8813 3.35943 7.882 4.25908 5.61723 6.32332C3.35247 8.38756 2.10566 11.3987 2.22597 14.4876C2.34628 17.5765 3.82394 20.4853 6.26 22.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M3.51 15C4.75379 17.7193 7.24876 19.6086 10.1837 20.1246C13.1187 20.6406 16.118 19.7409 18.3828 17.6767C20.6475 15.6124 21.8943 12.6013 21.774 9.51237C21.6537 6.42346 20.1761 3.51465 17.74 1.64001" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            `;
             
-            // 显示表格，隐藏空状态和加载状态
-            usersTable.style.display = 'table';
-            if (usersEmptyState) usersEmptyState.style.display = 'none';
-            if (usersLoadingState) usersLoadingState.style.display = 'none';
-        } else {
-            // 显示空状态，隐藏表格和加载状态
-            usersTable.style.display = 'none';
-            if (usersEmptyState) usersEmptyState.style.display = 'block';
-            if (usersLoadingState) usersLoadingState.style.display = 'none';
+            tbody.appendChild(tr);
+        });
+        
+        // 绑定编辑和重置配额按钮事件
+        document.querySelectorAll('.edit-user-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                handleEditUser(id, users);
+            });
+        });
+        
+        document.querySelectorAll('.reset-quota-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                handleResetQuota(id, users);
+            });
+        });
+    }
+    
+    /**
+     * 处理编辑用户
+     */
+    function handleEditUser(id, users) {
+        // 查找用户数据
+        const user = users.find(u => u.id.toString() === id.toString());
+        
+        if (!user) {
+            console.error('找不到用户数据:', id);
+            return;
         }
+        
+        // 填充表单
+        userId.value = user.id;
+        userUsername.value = user.username;
+        userEmail.value = user.email;
+        userRole.value = user.role;
+        userApiQuota.value = user.api_quota;
+        
+        // 清除错误信息
+        userFormError.textContent = '';
+        
+        // 设置模态框标题
+        userModalTitle.textContent = '编辑用户';
+        
+        // 显示模态框
+        userModalOverlay.style.display = 'flex';
+        
+        // 监听角色变更
+        const originalRole = user.role;
+        userRole.addEventListener('change', function() {
+            if (this.value !== originalRole) {
+                showRoleConfirmModal(user, this.value);
+                // 重置选择
+                this.value = originalRole;
+            }
+        });
     }
     
     /**
@@ -1190,8 +1104,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${plan.apiQuota}</td>
                 <td>${plan.subscriberCount || 0}</td>
                 <td>
-                    <button class="btn btn-sm btn-edit" data-id="${plan.id}">编辑</button>
-                    <button class="btn btn-sm btn-delete" data-id="${plan.id}">删除</button>
+                    <button class="btn btn-sm btn-primary edit-plan-btn" data-id="${plan.id}">编辑</button>
+                    <button class="btn btn-sm btn-danger delete-plan-btn" data-id="${plan.id}">删除</button>
                 </td>
             `;
             
@@ -1199,7 +1113,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // 添加编辑和删除按钮的事件监听
-        tbody.querySelectorAll('.btn-edit').forEach(btn => {
+        tbody.querySelectorAll('.edit-plan-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const planId = this.getAttribute('data-id');
                 const plan = plans.find(p => p.id == planId);
@@ -1209,7 +1123,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        tbody.querySelectorAll('.btn-delete').forEach(btn => {
+        tbody.querySelectorAll('.delete-plan-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const planId = this.getAttribute('data-id');
                 openDeleteSubscriptionModal(planId);
@@ -1271,14 +1185,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // 显示模态框
-        subscriptionModalOverlay.classList.remove('hidden');
+        subscriptionModalOverlay.style.display = 'flex';
     }
 
     /**
      * 关闭订阅计划编辑模态框
      */
     function closeSubscriptionModal() {
-        subscriptionModalOverlay.classList.add('hidden');
+        subscriptionModalOverlay.style.display = 'none';
     }
 
     /**
@@ -1305,99 +1219,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!featureText) {
             featureItem.querySelector('.feature-input').focus();
         }
-        
-        return featureItem;
-    }
-
-    /**
-     * 保存订阅计划
-     */
-    function handleSaveSubscription() {
-        const subscriptionId = document.getElementById('subscriptionId');
-        const subscriptionName = document.getElementById('subscriptionName');
-        const subscriptionPrice = document.getElementById('subscriptionPrice');
-        const subscriptionDuration = document.getElementById('subscriptionDuration');
-        const subscriptionApiQuota = document.getElementById('subscriptionApiQuota');
-        const featureList = document.getElementById('featureList');
-        const subscriptionFormError = document.getElementById('subscriptionFormError');
-        const saveSubscriptionBtn = document.getElementById('saveSubscriptionBtn');
-        
-        // 获取表单数据
-        const id = subscriptionId.value.trim();
-        const name = subscriptionName.value.trim();
-        const price = parseFloat(subscriptionPrice.value);
-        const duration = parseInt(subscriptionDuration.value);
-        const apiQuota = parseInt(subscriptionApiQuota.value);
-        
-        // 获取特性列表
-        const features = [];
-        featureList.querySelectorAll('.feature-input').forEach(input => {
-            const value = input.value.trim();
-            if (value) {
-                features.push(value);
-            }
-        });
-        
-        // 表单验证
-        if (!name) {
-            subscriptionFormError.textContent = '请输入订阅计划名称';
-            return;
-        }
-        
-        if (isNaN(price) || price <= 0) {
-            subscriptionFormError.textContent = '请输入有效的价格';
-            return;
-        }
-        
-        if (isNaN(duration) || duration <= 0) {
-            subscriptionFormError.textContent = '请输入有效的有效期天数';
-            return;
-        }
-        
-        if (isNaN(apiQuota) || apiQuota <= 0) {
-            subscriptionFormError.textContent = '请输入有效的API配额';
-            return;
-        }
-        
-        // 显示保存中状态
-        saveSubscriptionBtn.disabled = true;
-        saveSubscriptionBtn.textContent = '保存中...';
-        subscriptionFormError.textContent = '';
-        
-        // 准备数据
-        const data = {
-            name,
-            price,
-            duration,
-            apiQuota,
-            features
-        };
-        
-        // 创建或更新订阅计划
-        const promise = id 
-            ? BackendAPI.updateSubscriptionPlan(id, data)
-            : BackendAPI.createSubscriptionPlan(name, price, duration, apiQuota, features);
-        
-        promise
-            .then(() => {
-                closeSubscriptionModal();
-                loadSubscriptions();
-                loadSubscriptionStats();
-            })
-            .catch(error => {
-                subscriptionFormError.textContent = `保存失败: ${error.message || '未知错误'}`;
-            })
-            .finally(() => {
-                saveSubscriptionBtn.disabled = false;
-                saveSubscriptionBtn.textContent = '保存';
-            });
-    }
-
-    /**
-     * 处理添加订阅计划按钮点击
-     */
-    function handleAddSubscription() {
-        openSubscriptionModal();
     }
 
     /**
@@ -1405,283 +1226,13 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function openDeleteSubscriptionModal(planId) {
         deleteSubscriptionId.value = planId;
-        deleteSubscriptionModalOverlay.classList.remove('hidden');
+        deleteSubscriptionModalOverlay.style.display = 'flex';
     }
 
     /**
      * 关闭删除订阅计划确认模态框
      */
     function closeDeleteSubscriptionModal() {
-        deleteSubscriptionModalOverlay.classList.add('hidden');
-    }
-
-    /**
-     * 处理确认删除订阅计划
-     */
-    function handleConfirmDeleteSubscription() {
-        const planId = deleteSubscriptionId.value;
-        
-        // 显示删除中状态
-        confirmDeleteSubscriptionBtn.disabled = true;
-        confirmDeleteSubscriptionBtn.textContent = '删除中...';
-        
-        BackendAPI.deleteSubscriptionPlan(planId)
-            .then(() => {
-                closeDeleteSubscriptionModal();
-                loadSubscriptions();
-                loadSubscriptionStats();
-            })
-            .catch(error => {
-                alert(`删除失败: ${error.message || '未知错误'}`);
-            })
-            .finally(() => {
-                confirmDeleteSubscriptionBtn.disabled = false;
-                confirmDeleteSubscriptionBtn.textContent = '确认删除';
-            });
-    }
-    
-    /**
-     * 加载API使用统计数据
-     */
-    function loadApiUsageStats() {
-        // 显示加载状态
-        apiUsageTable.classList.add('hidden');
-        apiUsageEmptyState.classList.add('hidden');
-        apiUsageLoadingState.classList.remove('hidden');
-        
-        BackendAPI.getApiUsageStats()
-            .then(stats => {
-                apiUsageLoadingState.classList.add('hidden');
-                
-                // 更新统计卡片
-                todayApiCallsValue.textContent = stats.todayApiCalls;
-                totalApiCallsValue.textContent = stats.totalApiCalls;
-                activeUsersValue.textContent = stats.activeUsers;
-                
-                // 渲染用户API使用排行
-                if (stats.userRankings && stats.userRankings.length > 0) {
-                    renderApiUsageTable(stats.userRankings);
-                    apiUsageTable.classList.remove('hidden');
-                } else {
-                    apiUsageEmptyState.classList.remove('hidden');
-                }
-                
-                // 渲染图表
-                renderApiUsageCharts(stats);
-            })
-            .catch(error => {
-                console.error('加载API使用统计失败:', error);
-                apiUsageLoadingState.classList.add('hidden');
-                apiUsageEmptyState.classList.remove('hidden');
-                
-                // 重置统计卡片
-                todayApiCallsValue.textContent = '0';
-                totalApiCallsValue.textContent = '0';
-                activeUsersValue.textContent = '0';
-            });
-    }
-    
-    /**
-     * 渲染API使用表格
-     */
-    function renderApiUsageTable(users) {
-        const tbody = apiUsageTable.querySelector('tbody');
-        tbody.innerHTML = '';
-        
-        users.forEach(user => {
-            const tr = document.createElement('tr');
-            
-            // 计算配额使用率
-            const quotaUsage = user.apiQuota > 0 ? (user.apiCalls / user.apiQuota * 100).toFixed(1) : 0;
-            
-            tr.innerHTML = `
-                <td>${user.id}</td>
-                <td>${user.username}</td>
-                <td>${user.apiCalls}</td>
-                <td>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: ${Math.min(quotaUsage, 100)}%"></div>
-                        <span>${quotaUsage}%</span>
-                    </div>
-                </td>
-                <td>${user.commonModels || '无数据'}</td>
-                <td>${user.lastUsage ? new Date(user.lastUsage).toLocaleString() : '从未使用'}</td>
-            `;
-            
-            tbody.appendChild(tr);
-        });
-    }
-    
-    /**
-     * 渲染API使用图表
-     */
-    function renderApiUsageCharts(stats) {
-        // 这里应该使用图表库如Chart.js来渲染图表
-        // 以下为示例，实际实现需要引入相应的图表库
-        
-        // 日调用量图表
-        if (stats.dailyApiCalls && typeof Chart !== 'undefined') {
-            // 假设已经引入了Chart.js
-            const dailyCtx = dailyApiCallsChart.getContext('2d');
-            
-            // 清除之前的图表实例
-            if (window.dailyApiChart) {
-                window.dailyApiChart.destroy();
-            }
-            
-            // 准备数据
-            const labels = Object.keys(stats.dailyApiCalls);
-            const data = Object.values(stats.dailyApiCalls);
-            
-            // 创建新图表
-            window.dailyApiChart = new Chart(dailyCtx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '日API调用量',
-                        data: data,
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        } else {
-            // 如果没有引入Chart.js，则显示文本数据
-            dailyApiCallsChart.innerHTML = '图表库未引入，无法显示图表';
-        }
-        
-        // 模型分布图表
-        if (stats.modelDistribution && typeof Chart !== 'undefined') {
-            const modelCtx = modelDistributionChart.getContext('2d');
-            
-            // 清除之前的图表实例
-            if (window.modelDistChart) {
-                window.modelDistChart.destroy();
-            }
-            
-            // 准备数据
-            const labels = Object.keys(stats.modelDistribution);
-            const data = Object.values(stats.modelDistribution);
-            
-            // 创建新图表
-            window.modelDistChart = new Chart(modelCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.6)',
-                            'rgba(54, 162, 235, 0.6)',
-                            'rgba(255, 206, 86, 0.6)',
-                            'rgba(75, 192, 192, 0.6)',
-                            'rgba(153, 102, 255, 0.6)',
-                            'rgba(255, 159, 64, 0.6)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true
-                }
-            });
-        } else {
-            // 如果没有引入Chart.js，则显示文本数据
-            modelDistributionChart.innerHTML = '图表库未引入，无法显示图表';
-        }
-    }
-
-    /**
-     * 显示添加用户模态框
-     */
-    function handleAddUser() {
-        // 清空表单
-        document.getElementById('newUsername').value = '';
-        document.getElementById('newEmail').value = '';
-        document.getElementById('newPassword').value = '';
-        document.getElementById('newRole').value = 'user';
-        document.getElementById('newApiQuota').value = '100';
-        
-        // 显示模态框
-        const modal = new bootstrap.Modal(document.getElementById('createUserModal'));
-        modal.show();
-    }
-    
-    /**
-     * 处理创建用户
-     */
-    async function handleCreateUser() {
-        const username = document.getElementById('newUsername').value;
-        const email = document.getElementById('newEmail').value;
-        const password = document.getElementById('newPassword').value;
-        const role = document.getElementById('newRole').value;
-        const apiQuota = parseInt(document.getElementById('newApiQuota').value);
-        
-        if (!username || !email || !password) {
-            alert('请填写完整的用户信息');
-            return;
-        }
-        
-        try {
-            await backendApi.createUser(username, email, password, role, apiQuota);
-            alert('用户创建成功');
-            
-            // 关闭模态框
-            const modal = bootstrap.Modal.getInstance(document.getElementById('createUserModal'));
-            modal.hide();
-            
-            // 重新加载用户列表
-            loadUsers();
-        } catch (error) {
-            alert('创建用户失败: ' + (error.message || '未知错误'));
-            console.error('创建用户错误:', error);
-        }
-    }
-
-    /**
-     * 删除用户变量
-     */
-    let deleteUserId = null;
-    
-    /**
-     * 打开删除用户确认模态框
-     */
-    function handleDeleteUser(id, username) {
-        deleteUserId = id;
-        document.getElementById('deleteUserName').textContent = username;
-        const modal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
-        modal.show();
-    }
-    
-    /**
-     * 确认删除用户
-     */
-    async function handleConfirmDeleteUser() {
-        if (!deleteUserId) return;
-        
-        try {
-            await backendApi.deleteUser(deleteUserId);
-            alert('用户删除成功');
-            
-            // 关闭模态框
-            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteUserModal'));
-            modal.hide();
-            
-            // 重新加载用户列表
-            loadUsers();
-        } catch (error) {
-            alert('删除用户失败: ' + (error.message || '未知错误'));
-            console.error('删除用户错误:', error);
-        }
+        deleteSubscriptionModalOverlay.style.display = 'none';
     }
 }); 
