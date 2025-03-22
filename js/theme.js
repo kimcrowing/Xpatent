@@ -75,14 +75,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const themeIcon = themeToggle.querySelector('.theme-icon');
-        const themeText = themeToggle.querySelector('span');
-        
-        // 确保找到了图标和文本元素
         if (!themeIcon) {
             console.log('更新主题图标失败：未找到.theme-icon元素');
             return;
         }
         
+        const themeText = themeToggle.querySelector('span');
         if (!themeText) {
             console.log('更新主题图标失败：未找到span文本元素');
             return;
