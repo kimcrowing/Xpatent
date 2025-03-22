@@ -1,6 +1,6 @@
-# Grok克隆
+# 克隆
 
-一个类似Grok的AI聊天网站，使用React和OpenRouter API构建。该项目旨在提供类似Grok的用户界面，同时支持多种大型语言模型进行聊天对话。
+一个类似的AI聊天网站，使用React和API构建。该项目旨在提供类似Grok的用户界面，同时支持多种大型语言模型进行聊天对话。
 
 ## 功能特点
 
@@ -11,12 +11,11 @@
 - 流式响应显示
 - 支持Markdown格式输出
 - 响应式设计，适配移动和桌面设备
-- 预配置OpenRouter API密钥，可直接使用
+- 预配置 API密钥，可直接使用
 
 ## 技术栈
 
 - React 18
-- OpenRouter API
 - GitHub Pages (用于部署)
 
 ## 本地开发
