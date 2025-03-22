@@ -220,22 +220,38 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 添加用户菜单点击事件处理
     if (userMenuBtn && userMenu) {
+        console.log('初始化用户菜单点击事件');
+        
+        // 初始化时隐藏菜单
+        userMenu.style.display = 'none';
+        
         userMenuBtn.addEventListener('click', function(e) {
             e.preventDefault();
+            e.stopPropagation(); // 阻止事件冒泡
+            
+            console.log('用户菜单按钮点击');
+            
             // 切换用户菜单显示状态
             if (userMenu.style.display === 'block') {
                 userMenu.style.display = 'none';
+                console.log('用户菜单已隐藏');
             } else {
                 userMenu.style.display = 'block';
+                console.log('用户菜单已显示');
             }
         });
         
         // 点击页面其他区域关闭菜单
         document.addEventListener('click', function(e) {
-            if (!userMenuBtn.contains(e.target) && !userMenu.contains(e.target)) {
+            if (userMenu.style.display === 'block' && 
+                !userMenuBtn.contains(e.target) && 
+                !userMenu.contains(e.target)) {
                 userMenu.style.display = 'none';
+                console.log('点击页面其他区域，用户菜单已关闭');
             }
         });
+    } else {
+        console.warn('未找到用户菜单或用户菜单按钮，用户菜单功能将不可用');
     }
     
     // 绑定退出登录按钮

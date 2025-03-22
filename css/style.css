@@ -82,17 +82,24 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     width: 200px;
     z-index: 1000;
-    display: none;
     transition: all 0.3s ease;
     border: 1px solid var(--border-color);
-    opacity: 0;
-    visibility: hidden;
 }
 
-.user-menu.active {
-    display: block !important;
-    opacity: 1;
-    visibility: visible;
+/* 为菜单添加显示状态 */
+.user-menu[style*="display: block"] {
+    animation: fadeInMenu 0.2s ease-out forwards;
+}
+
+@keyframes fadeInMenu {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .user-menu ul {
