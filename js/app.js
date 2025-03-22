@@ -142,16 +142,21 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // 调用登录API
-        window.backendApi.login(email, password)
-            .then(response => {
-                closeLoginModalWindow();
-                updateUserLoginState();
-            })
-            .catch(error => {
-                loginError.textContent = '登录失败: ' + (error.message || '请检查邮箱和密码');
-                loginError.style.display = 'block';
-            });
+        try {
+            window.backendApi.login(email, password)
+                .then(() => {
+                    closeLoginModalWindow();
+                    updateUserLoginState();
+                    // 登录成功后刷新页面，以初始化聊天界面
+                    window.location.reload();
+                })
+                .catch(error => {
+                    loginError.textContent = '登录失败: ' + (error.message || '请检查邮箱和密码');
+                    loginError.style.display = 'block';
+                });
+        } catch (error) {
+            console.error('登录处理错误:', error);
+        }
     }
     
     if (userMenuBtn && userMenu) {
