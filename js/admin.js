@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const nextPageBtn = document.getElementById('nextPageBtn');
     const currentPageEl = document.getElementById('currentPage');
     const totalPagesEl = document.getElementById('totalPages');
+    const addUserBtn = document.getElementById('addUserBtn');
     
     // 订阅管理相关元素
     const subscriptionsTable = document.getElementById('subscriptionsTable');
@@ -129,29 +130,27 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentUserRole = '';
     let currentUserSearch = '';
     
+    // 新增用户相关变量和事件处理
+    const addUserModalOverlay = document.getElementById('addUserModalOverlay');
+    const closeAddUserModalBtn = document.getElementById('closeAddUserModalBtn');
+    const cancelAddUserBtn = document.getElementById('cancelAddUserBtn');
+    const saveAddUserBtn = document.getElementById('saveAddUserBtn');
+    const addUserForm = document.getElementById('addUserForm');
+    const addUserFormError = document.getElementById('addUserFormError');
+    
+    // 删除用户模态框元素
+    const deleteUserModalOverlay = document.getElementById('deleteUserModalOverlay');
+    const closeDeleteUserModalBtn = document.getElementById('closeDeleteUserModalBtn');
+    const deleteUserName = document.getElementById('deleteUserName');
+    const deleteUserId = document.getElementById('deleteUserId');
+    const cancelDeleteUserBtn = document.getElementById('cancelDeleteUserBtn');
+    const confirmDeleteUserBtn = document.getElementById('confirmDeleteUserBtn');
+    
     // 页面初始化
     initPage();
     
     // 绑定事件
     bindEvents();
-    
-    /**
-     * 初始化各个管理模块
-     */
-    function initModules() {
-        // 加载提示词列表
-        loadPrompts();
-        
-        // 加载用户列表
-        loadUsers();
-        
-        // 加载订阅管理
-        loadSubscriptions();
-        loadSubscriptionStats();
-        
-        // 加载API使用统计
-        loadApiUsageStats();
-    }
     
     /**
      * 页面初始化
@@ -166,9 +165,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // 加载API配置（如果登录了）
         if (localStorage.getItem('xpat_auth_token')) {
             loadApiConfig();
-            
-            // 初始化各个管理模块
-            initModules();
         }
     }
     
@@ -180,16 +176,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const isGitHubPages = window.location.hostname.includes('github.io');
         
         if (isGitHubPages) {
-            // 修改backendApi中的API_BASE_URL
-            // 注意：需要部署后端到支持CORS的服务器上
-            const apiBaseUrl = prompt(
-                '您正在GitHub Pages环境运行，请输入后端API地址（例如：https://your-api-server.com/api）',
-                'http://localhost:3000/api'
-            );
+            // 从本地存储加载API地址，如果没有则使用默认地址
+            const savedApiUrl = localStorage.getItem('xpat_api_url');
             
-            if (apiBaseUrl) {
-                window.API_BASE_URL = apiBaseUrl;
-                console.log('已设置API地址为:', apiBaseUrl);
+            if (savedApiUrl) {
+                window.API_BASE_URL = savedApiUrl;
+                console.log('从本地存储加载API地址:', savedApiUrl);
+            } else {
+                // 默认使用本地地址，需要管理员在部署时手动修改
+                const defaultApiUrl = 'http://localhost:3000/api';
+                window.API_BASE_URL = defaultApiUrl;
+                localStorage.setItem('xpat_api_url', defaultApiUrl);
+                console.log('已设置默认API地址:', defaultApiUrl);
             }
         }
     }
@@ -259,6 +257,46 @@ document.addEventListener('DOMContentLoaded', function() {
         
         addPromptBtn.addEventListener('click', handleAddPrompt);
         
+        // 用户管理相关事件
+        userRoleFilter.addEventListener('change', function() {
+            currentUserRole = this.value;
+            currentUserPage = 1;
+            loadUsers();
+        });
+        
+        userSearchBtn.addEventListener('click', function() {
+            currentUserSearch = userSearchInput.value.trim();
+            currentUserPage = 1;
+            loadUsers();
+        });
+        
+        userSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                currentUserSearch = this.value.trim();
+                currentUserPage = 1;
+                loadUsers();
+            }
+        });
+        
+        prevPageBtn.addEventListener('click', function() {
+            if (currentUserPage > 1) {
+                currentUserPage--;
+                loadUsers();
+            }
+        });
+        
+        nextPageBtn.addEventListener('click', function() {
+            if (currentUserPage < totalUserPages) {
+                currentUserPage++;
+                loadUsers();
+            }
+        });
+        
+        // 新增用户按钮事件
+        if (addUserBtn) {
+            addUserBtn.addEventListener('click', handleAddUser);
+        }
+        
         // 订阅管理相关事件
         if (addSubscriptionBtn) {
             addSubscriptionBtn.addEventListener('click', handleAddSubscription);
@@ -294,42 +332,6 @@ document.addEventListener('DOMContentLoaded', function() {
             confirmDeleteSubscriptionBtn.addEventListener('click', handleConfirmDeleteSubscription);
         }
         
-        // 用户管理相关事件
-        userRoleFilter.addEventListener('change', function() {
-            currentUserRole = this.value;
-            currentUserPage = 1;
-            loadUsers();
-        });
-        
-        userSearchBtn.addEventListener('click', function() {
-            currentUserSearch = userSearchInput.value.trim();
-            currentUserPage = 1;
-            loadUsers();
-        });
-        
-        userSearchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                currentUserSearch = userSearchInput.value.trim();
-                currentUserPage = 1;
-                loadUsers();
-            }
-        });
-        
-        // 分页按钮
-        prevPageBtn.addEventListener('click', function() {
-            if (currentUserPage > 1) {
-                currentUserPage--;
-                loadUsers();
-            }
-        });
-        
-        nextPageBtn.addEventListener('click', function() {
-            if (currentUserPage < totalUserPages) {
-                currentUserPage++;
-                loadUsers();
-            }
-        });
-        
         // 用户编辑模态框事件
         closeUserModalBtn.addEventListener('click', closeUserModal);
         cancelUserBtn.addEventListener('click', closeUserModal);
@@ -354,6 +356,24 @@ document.addEventListener('DOMContentLoaded', function() {
         closeDeleteModalBtn.addEventListener('click', closeDeleteModal);
         cancelDeleteBtn.addEventListener('click', closeDeleteModal);
         confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
+        
+        // 绑定新增用户模态框相关事件
+        if (closeAddUserModalBtn) {
+            closeAddUserModalBtn.addEventListener('click', closeAddUserModal);
+        }
+        
+        if (cancelAddUserBtn) {
+            cancelAddUserBtn.addEventListener('click', closeAddUserModal);
+        }
+        
+        if (saveAddUserBtn) {
+            saveAddUserBtn.addEventListener('click', handleSaveAddUser);
+        }
+        
+        // 删除用户模态框事件
+        closeDeleteUserModalBtn.addEventListener('click', closeDeleteUserModal);
+        cancelDeleteUserBtn.addEventListener('click', closeDeleteUserModal);
+        confirmDeleteUserBtn.addEventListener('click', handleDeleteUser);
     }
     
     /**
@@ -684,38 +704,81 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function loadApiConfig() {
         try {
-            // 假设我们有一个API端点来获取配置
-            // 如果后端API尚未实现，可以先从localStorage加载
-            const savedConfig = localStorage.getItem('xpat_api_config');
+            const config = await window.backendApi.getApiConfig();
             
-            if (savedConfig) {
-                const config = JSON.parse(savedConfig);
-                
-                // 填充表单
-                document.getElementById('openaiApiKey').value = config.openai?.apiKey || '';
-                document.getElementById('openaiModel').value = config.openai?.model || 'gpt-4';
-                document.getElementById('openaiEndpoint').value = config.openai?.endpoint || 'https://api.openai.com/v1';
-                
-                document.getElementById('anthropicApiKey').value = config.anthropic?.apiKey || '';
-                document.getElementById('anthropicModel').value = config.anthropic?.model || 'claude-3-opus-20240229';
-                document.getElementById('anthropicEndpoint').value = config.anthropic?.endpoint || 'https://api.anthropic.com';
-                
-                document.getElementById('defaultProvider').value = config.defaultProvider || 'openai';
-                document.getElementById('allowUserModelSelection').checked = config.allowUserModelSelection || false;
-            }
+            // 填充表单
+            document.getElementById('openaiApiKey').value = config.openai?.apiKey || '';
+            document.getElementById('openaiModel').value = config.openai?.model || 'gpt-3.5-turbo';
+            document.getElementById('openaiEndpoint').value = config.openai?.endpoint || '';
             
-            // 当实现后端API后，这里可以替换为真实的API调用
-            // const response = await fetch('/api/admin/config', {
-            //     headers: {
-            //         'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
-            //     }
-            // });
-            // const config = await response.json();
-            // 然后填充表单...
+            document.getElementById('anthropicApiKey').value = config.anthropic?.apiKey || '';
+            document.getElementById('anthropicModel').value = config.anthropic?.model || 'claude-3-opus-20240229';
+            document.getElementById('anthropicEndpoint').value = config.anthropic?.endpoint || '';
             
+            document.getElementById('openrouterApiKey').value = config.openrouter?.apiKey || '';
+            document.getElementById('openrouterModel').value = config.openrouter?.model || 'openai/gpt-3.5-turbo';
+            document.getElementById('openrouterEndpoint').value = config.openrouter?.endpoint || '';
+            document.getElementById('openrouterReferer').value = config.openrouter?.referer || '';
+            document.getElementById('openrouterTitle').value = config.openrouter?.title || '';
+            
+            document.getElementById('defaultProvider').value = config.defaultProvider || 'openai';
+            document.getElementById('allowUserModelSelection').checked = config.allowUserModelSelection || false;
+            
+            return config;
         } catch (error) {
             console.error('加载API配置失败:', error);
-            apiConfigError.textContent = '加载配置失败: ' + (error.message || '未知错误');
+            // 尝试从本地存储加载备份数据
+            try {
+                const backupConfig = {
+                    openai: {
+                        apiKey: localStorage.getItem('xpat_openai_api_key') || '',
+                        model: localStorage.getItem('xpat_openai_model') || 'gpt-3.5-turbo',
+                        endpoint: localStorage.getItem('xpat_openai_endpoint') || ''
+                    },
+                    anthropic: {
+                        apiKey: localStorage.getItem('xpat_anthropic_api_key') || '',
+                        model: localStorage.getItem('xpat_anthropic_model') || 'claude-3-opus-20240229',
+                        endpoint: localStorage.getItem('xpat_anthropic_endpoint') || ''
+                    },
+                    openrouter: {
+                        apiKey: localStorage.getItem('xpat_openrouter_api_key') || '',
+                        model: localStorage.getItem('xpat_openrouter_model') || 'openai/gpt-3.5-turbo',
+                        endpoint: localStorage.getItem('xpat_openrouter_endpoint') || '',
+                        referer: localStorage.getItem('xpat_openrouter_referer') || '',
+                        title: localStorage.getItem('xpat_openrouter_title') || ''
+                    },
+                    defaultProvider: localStorage.getItem('xpat_default_provider') || 'openai',
+                    allowUserModelSelection: localStorage.getItem('xpat_allow_user_model_selection') === 'true'
+                };
+                
+                // 填充表单
+                document.getElementById('openaiApiKey').value = backupConfig.openai.apiKey;
+                document.getElementById('openaiModel').value = backupConfig.openai.model;
+                document.getElementById('openaiEndpoint').value = backupConfig.openai.endpoint;
+                
+                document.getElementById('anthropicApiKey').value = backupConfig.anthropic.apiKey;
+                document.getElementById('anthropicModel').value = backupConfig.anthropic.model;
+                document.getElementById('anthropicEndpoint').value = backupConfig.anthropic.endpoint;
+                
+                document.getElementById('openrouterApiKey').value = backupConfig.openrouter.apiKey;
+                document.getElementById('openrouterModel').value = backupConfig.openrouter.model;
+                document.getElementById('openrouterEndpoint').value = backupConfig.openrouter.endpoint;
+                document.getElementById('openrouterReferer').value = backupConfig.openrouter.referer;
+                document.getElementById('openrouterTitle').value = backupConfig.openrouter.title;
+                
+                document.getElementById('defaultProvider').value = backupConfig.defaultProvider;
+                document.getElementById('allowUserModelSelection').checked = backupConfig.allowUserModelSelection;
+                
+                document.getElementById('apiConfigError').textContent = '从服务器加载失败，使用本地缓存数据。';
+                document.getElementById('apiConfigError').style.color = '#f39c12';
+                
+                return backupConfig;
+            } catch (backupError) {
+                console.error('本地配置加载也失败:', backupError);
+                document.getElementById('apiConfigError').textContent = '无法加载配置。请手动输入配置信息。';
+                document.getElementById('apiConfigError').style.color = '#e74c3c';
+                return {};
+            }
         }
     }
     
@@ -724,56 +787,77 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function handleSaveApiConfig() {
         try {
-            // 收集表单数据
-            const config = {
-                openai: {
-                    apiKey: document.getElementById('openaiApiKey').value,
-                    model: document.getElementById('openaiModel').value,
-                    endpoint: document.getElementById('openaiEndpoint').value
-                },
-                anthropic: {
-                    apiKey: document.getElementById('anthropicApiKey').value,
-                    model: document.getElementById('anthropicModel').value,
-                    endpoint: document.getElementById('anthropicEndpoint').value
-                },
-                defaultProvider: document.getElementById('defaultProvider').value,
-                allowUserModelSelection: document.getElementById('allowUserModelSelection').checked
-            };
+            // 构建配置对象
+            const config = collectFormConfig();
             
-            // 保存到localStorage（临时方案，直到后端API实现）
-            localStorage.setItem('xpat_api_config', JSON.stringify(config));
+            // 首先保存到本地存储作为备份
+            saveLocalApiConfig(config);
             
-            // 提示保存成功
-            apiConfigError.textContent = '';
-            apiConfigError.style.color = '#4caf50';
-            apiConfigError.textContent = '配置保存成功';
-            
-            // 当后端API实现后，这里应该发送至服务器
-            // const response = await fetch('/api/admin/config', {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //         'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
-            //     },
-            //     body: JSON.stringify(config)
-            // });
-            
-            // if (!response.ok) {
-            //     throw new Error('保存配置失败');
-            // }
-            
-            // 三秒后清除成功消息
-            setTimeout(() => {
-                if (apiConfigError.style.color === '#4caf50') {
-                    apiConfigError.textContent = '';
-                }
-            }, 3000);
-            
+            try {
+                // 尝试保存到后端
+                await window.backendApi.saveApiConfig(config);
+                apiConfigError.textContent = '';
+                apiConfigError.style.color = '#2ecc71';
+                apiConfigError.textContent = '配置已成功保存到服务器和本地。';
+            } catch (serverError) {
+                console.error('保存到服务器失败:', serverError);
+                apiConfigError.style.color = '#f39c12';
+                apiConfigError.textContent = '保存到服务器失败，但已保存到本地。下次使用时会优先尝试从服务器加载。';
+            }
         } catch (error) {
             console.error('保存API配置失败:', error);
-            apiConfigError.style.color = '#f44336';
-            apiConfigError.textContent = '保存配置失败: ' + (error.message || '未知错误');
+            apiConfigError.style.color = '#e74c3c';
+            apiConfigError.textContent = '保存失败: ' + (error.message || '未知错误');
         }
+    }
+    
+    /**
+     * 收集表单中的配置数据
+     */
+    function collectFormConfig() {
+        return {
+            openai: {
+                apiKey: document.getElementById('openaiApiKey').value.trim(),
+                model: document.getElementById('openaiModel').value,
+                endpoint: document.getElementById('openaiEndpoint').value.trim()
+            },
+            anthropic: {
+                apiKey: document.getElementById('anthropicApiKey').value.trim(),
+                model: document.getElementById('anthropicModel').value,
+                endpoint: document.getElementById('anthropicEndpoint').value.trim()
+            },
+            openrouter: {
+                apiKey: document.getElementById('openrouterApiKey').value.trim(),
+                model: document.getElementById('openrouterModel').value,
+                endpoint: document.getElementById('openrouterEndpoint').value.trim(),
+                referer: document.getElementById('openrouterReferer').value.trim(),
+                title: document.getElementById('openrouterTitle').value.trim()
+            },
+            defaultProvider: document.getElementById('defaultProvider').value,
+            allowUserModelSelection: document.getElementById('allowUserModelSelection').checked
+        };
+    }
+    
+    /**
+     * 保存API配置到localStorage（作为备份）
+     */
+    function saveLocalApiConfig(config) {
+        localStorage.setItem('xpat_openai_api_key', config.openai.apiKey);
+        localStorage.setItem('xpat_openai_model', config.openai.model);
+        localStorage.setItem('xpat_openai_endpoint', config.openai.endpoint);
+        
+        localStorage.setItem('xpat_anthropic_api_key', config.anthropic.apiKey);
+        localStorage.setItem('xpat_anthropic_model', config.anthropic.model);
+        localStorage.setItem('xpat_anthropic_endpoint', config.anthropic.endpoint);
+        
+        localStorage.setItem('xpat_openrouter_api_key', config.openrouter.apiKey);
+        localStorage.setItem('xpat_openrouter_model', config.openrouter.model);
+        localStorage.setItem('xpat_openrouter_endpoint', config.openrouter.endpoint);
+        localStorage.setItem('xpat_openrouter_referer', config.openrouter.referer);
+        localStorage.setItem('xpat_openrouter_title', config.openrouter.title);
+        
+        localStorage.setItem('xpat_default_provider', config.defaultProvider);
+        localStorage.setItem('xpat_allow_user_model_selection', config.allowUserModelSelection);
     }
     
     /**
@@ -846,9 +930,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? '<span class="role-badge role-admin">管理员</span>' 
                 : '<span class="role-badge role-user">普通用户</span>';
             
+            // 创建用户头像
+            const userInitials = user.username.slice(0, 2).toUpperCase();
+            const userAvatar = `<div class="user-avatar">${userInitials}</div>`;
+            
             tr.innerHTML = `
                 <td>${user.id}</td>
-                <td>${user.username}</td>
+                <td>${userAvatar} ${user.username}</td>
                 <td>${user.email}</td>
                 <td>${roleDisplay}</td>
                 <td>${user.api_quota}</td>
@@ -870,6 +958,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <path d="M3.51 15C4.75379 17.7193 7.24876 19.6086 10.1837 20.1246C13.1187 20.6406 16.118 19.7409 18.3828 17.6767C20.6475 15.6124 21.8943 12.6013 21.774 9.51237C21.6537 6.42346 20.1761 3.51465 17.74 1.64001" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </button>
+                        ${user.role !== 'admin' ? `
+                        <button class="action-button delete-user-button" data-id="${user.id}" data-name="${user.username}" title="删除">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        ` : ''}
                     </div>
                 </td>
             `;
@@ -889,6 +985,15 @@ document.addEventListener('DOMContentLoaded', function() {
             button.addEventListener('click', function() {
                 const id = this.getAttribute('data-id');
                 handleResetQuota(id, users);
+            });
+        });
+        
+        // 绑定删除用户按钮事件
+        document.querySelectorAll('.delete-user-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name');
+                showDeleteUserConfirmModal(id, name);
             });
         });
     }
@@ -1068,30 +1173,23 @@ document.addEventListener('DOMContentLoaded', function() {
         subscriptionsEmptyState.classList.add('hidden');
         subscriptionsLoadingState.classList.remove('hidden');
         
-        // 修复：改用window.backendApi代替BackendAPI
-        if (window.backendApi && typeof window.backendApi.getAllSubscriptionPlans === 'function') {
-            window.backendApi.getAllSubscriptionPlans()
-                .then(plans => {
-                    subscriptionsLoadingState.classList.add('hidden');
-                    
-                    if (plans && plans.length > 0) {
-                        renderSubscriptionsTable(plans);
-                        subscriptionsTable.classList.remove('hidden');
-                    } else {
-                        subscriptionsEmptyState.classList.remove('hidden');
-                    }
-                })
-                .catch(error => {
-                    console.error('加载订阅计划失败:', error);
-                    subscriptionsLoadingState.classList.add('hidden');
+        window.backendApi.getAllSubscriptionPlans()
+            .then(plans => {
+                subscriptionsLoadingState.classList.add('hidden');
+                
+                if (plans && plans.length > 0) {
+                    renderSubscriptionsTable(plans);
+                    subscriptionsTable.classList.remove('hidden');
+                } else {
                     subscriptionsEmptyState.classList.remove('hidden');
-                });
-        } else {
-            console.error('backendApi未加载或不包含getAllSubscriptionPlans方法');
-            subscriptionsLoadingState.classList.add('hidden');
-            subscriptionsEmptyState.classList.remove('hidden');
-            subscriptionsEmptyState.textContent = 'API服务不可用，请检查配置';
-        }
+                }
+            })
+            .catch(error => {
+                console.error('加载订阅计划失败:', error);
+                subscriptionsLoadingState.classList.add('hidden');
+                subscriptionsEmptyState.classList.remove('hidden');
+                subscriptionsEmptyState.textContent = '加载订阅计划失败';
+            });
     }
 
     /**
@@ -1112,8 +1210,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${plan.apiQuota}</td>
                 <td>${plan.subscriberCount || 0}</td>
                 <td>
-                    <button class="btn btn-sm btn-primary edit-plan-btn" data-id="${plan.id}">编辑</button>
-                    <button class="btn btn-sm btn-danger delete-plan-btn" data-id="${plan.id}">删除</button>
+                    <button class="btn btn-sm btn-edit" data-id="${plan.id}">编辑</button>
+                    <button class="btn btn-sm btn-delete" data-id="${plan.id}">删除</button>
                 </td>
             `;
             
@@ -1121,7 +1219,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // 添加编辑和删除按钮的事件监听
-        tbody.querySelectorAll('.edit-plan-btn').forEach(btn => {
+        tbody.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', function() {
                 const planId = this.getAttribute('data-id');
                 const plan = plans.find(p => p.id == planId);
@@ -1131,7 +1229,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        tbody.querySelectorAll('.delete-plan-btn').forEach(btn => {
+        tbody.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', function() {
                 const planId = this.getAttribute('data-id');
                 openDeleteSubscriptionModal(planId);
@@ -1143,30 +1241,19 @@ document.addEventListener('DOMContentLoaded', function() {
      * 加载订阅统计数据
      */
     function loadSubscriptionStats() {
-        const statsContainer = document.getElementById('subscriptionStatsContainer');
-        const loadingIndicator = document.getElementById('subscriptionStatsLoading');
-        
-        if (statsContainer && loadingIndicator) {
-            statsContainer.style.display = 'none';
-            loadingIndicator.style.display = 'block';
-            
-            // 修复：改用window.backendApi代替BackendAPI
-            if (window.backendApi && typeof window.backendApi.getSubscriptionStats === 'function') {
-                window.backendApi.getSubscriptionStats()
-                    .then(stats => {
-                        // 渲染订阅统计数据...
-                        loadingIndicator.style.display = 'none';
-                        statsContainer.style.display = 'block';
-                    })
-                    .catch(error => {
-                        console.error('加载订阅统计失败:', error);
-                        loadingIndicator.style.display = 'none';
-                    });
-            } else {
-                console.error('backendApi未加载或不包含getSubscriptionStats方法');
-                loadingIndicator.style.display = 'none';
-            }
-        }
+        BackendAPI.getSubscriptionStats()
+            .then(stats => {
+                // 更新统计卡片
+                totalSubscriptionsValue.textContent = stats.totalSubscriptions;
+                activeSubscriptionsValue.textContent = stats.activeSubscriptions;
+                monthlyRevenueValue.textContent = `¥${stats.monthlyRevenue.toFixed(2)}`;
+            })
+            .catch(error => {
+                console.error('加载订阅统计失败:', error);
+                totalSubscriptionsValue.textContent = '0';
+                activeSubscriptionsValue.textContent = '0';
+                monthlyRevenueValue.textContent = '¥0.00';
+            });
     }
 
     /**
@@ -1204,14 +1291,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // 显示模态框
-        subscriptionModalOverlay.style.display = 'flex';
+        subscriptionModalOverlay.classList.remove('hidden');
     }
 
     /**
      * 关闭订阅计划编辑模态框
      */
     function closeSubscriptionModal() {
-        subscriptionModalOverlay.style.display = 'none';
+        subscriptionModalOverlay.classList.add('hidden');
     }
 
     /**
@@ -1238,6 +1325,99 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!featureText) {
             featureItem.querySelector('.feature-input').focus();
         }
+        
+        return featureItem;
+    }
+
+    /**
+     * 保存订阅计划
+     */
+    function handleSaveSubscription() {
+        const subscriptionId = document.getElementById('subscriptionId');
+        const subscriptionName = document.getElementById('subscriptionName');
+        const subscriptionPrice = document.getElementById('subscriptionPrice');
+        const subscriptionDuration = document.getElementById('subscriptionDuration');
+        const subscriptionApiQuota = document.getElementById('subscriptionApiQuota');
+        const featureList = document.getElementById('featureList');
+        const subscriptionFormError = document.getElementById('subscriptionFormError');
+        const saveSubscriptionBtn = document.getElementById('saveSubscriptionBtn');
+        
+        // 获取表单数据
+        const id = subscriptionId.value.trim();
+        const name = subscriptionName.value.trim();
+        const price = parseFloat(subscriptionPrice.value);
+        const duration = parseInt(subscriptionDuration.value);
+        const apiQuota = parseInt(subscriptionApiQuota.value);
+        
+        // 获取特性列表
+        const features = [];
+        featureList.querySelectorAll('.feature-input').forEach(input => {
+            const value = input.value.trim();
+            if (value) {
+                features.push(value);
+            }
+        });
+        
+        // 表单验证
+        if (!name) {
+            subscriptionFormError.textContent = '请输入订阅计划名称';
+            return;
+        }
+        
+        if (isNaN(price) || price <= 0) {
+            subscriptionFormError.textContent = '请输入有效的价格';
+            return;
+        }
+        
+        if (isNaN(duration) || duration <= 0) {
+            subscriptionFormError.textContent = '请输入有效的有效期天数';
+            return;
+        }
+        
+        if (isNaN(apiQuota) || apiQuota <= 0) {
+            subscriptionFormError.textContent = '请输入有效的API配额';
+            return;
+        }
+        
+        // 显示保存中状态
+        saveSubscriptionBtn.disabled = true;
+        saveSubscriptionBtn.textContent = '保存中...';
+        subscriptionFormError.textContent = '';
+        
+        // 准备数据
+        const data = {
+            name,
+            price,
+            duration,
+            apiQuota,
+            features
+        };
+        
+        // 创建或更新订阅计划
+        const promise = id 
+            ? BackendAPI.updateSubscriptionPlan(id, data)
+            : BackendAPI.createSubscriptionPlan(name, price, duration, apiQuota, features);
+        
+        promise
+            .then(() => {
+                closeSubscriptionModal();
+                loadSubscriptions();
+                loadSubscriptionStats();
+            })
+            .catch(error => {
+                subscriptionFormError.textContent = `保存失败: ${error.message || '未知错误'}`;
+            })
+            .finally(() => {
+                saveSubscriptionBtn.disabled = false;
+                saveSubscriptionBtn.textContent = '保存';
+            });
+    }
+
+    /**
+     * 处理添加订阅计划按钮点击
+     */
+    function handleAddSubscription() {
+        openSubscriptionModal();
     }
 
     /**
@@ -1245,40 +1425,65 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function openDeleteSubscriptionModal(planId) {
         deleteSubscriptionId.value = planId;
-        deleteSubscriptionModalOverlay.style.display = 'flex';
+        deleteSubscriptionModalOverlay.classList.remove('hidden');
     }
 
     /**
      * 关闭删除订阅计划确认模态框
      */
     function closeDeleteSubscriptionModal() {
-        deleteSubscriptionModalOverlay.style.display = 'none';
+        deleteSubscriptionModalOverlay.classList.add('hidden');
     }
 
+    /**
+     * 处理确认删除订阅计划
+     */
+    function handleConfirmDeleteSubscription() {
+        const planId = deleteSubscriptionId.value;
+        
+        // 显示删除中状态
+        confirmDeleteSubscriptionBtn.disabled = true;
+        confirmDeleteSubscriptionBtn.textContent = '删除中...';
+        
+        BackendAPI.deleteSubscriptionPlan(planId)
+            .then(() => {
+                closeDeleteSubscriptionModal();
+                loadSubscriptions();
+                loadSubscriptionStats();
+            })
+            .catch(error => {
+                alert(`删除失败: ${error.message || '未知错误'}`);
+            })
+            .finally(() => {
+                confirmDeleteSubscriptionBtn.disabled = false;
+                confirmDeleteSubscriptionBtn.textContent = '确认删除';
+            });
+    }
+    
     /**
      * 加载API使用统计数据
      */
     function loadApiUsageStats() {
         // 显示加载状态
-        apiUsageTable.style.display = 'none';
-        apiUsageEmptyState.style.display = 'none';
-        apiUsageLoadingState.style.display = 'block';
+        apiUsageTable.classList.add('hidden');
+        apiUsageEmptyState.classList.add('hidden');
+        apiUsageLoadingState.classList.remove('hidden');
         
-        window.backendApi.getApiUsageStats()
+        BackendAPI.getApiUsageStats()
             .then(stats => {
-                apiUsageLoadingState.style.display = 'none';
+                apiUsageLoadingState.classList.add('hidden');
                 
                 // 更新统计卡片
-                todayApiCallsValue.textContent = stats.todayApiCalls || 0;
-                totalApiCallsValue.textContent = stats.totalApiCalls || 0;
-                activeUsersValue.textContent = stats.activeUsers || 0;
+                todayApiCallsValue.textContent = stats.todayApiCalls;
+                totalApiCallsValue.textContent = stats.totalApiCalls;
+                activeUsersValue.textContent = stats.activeUsers;
                 
                 // 渲染用户API使用排行
                 if (stats.userRankings && stats.userRankings.length > 0) {
                     renderApiUsageTable(stats.userRankings);
-                    apiUsageTable.style.display = 'table';
+                    apiUsageTable.classList.remove('hidden');
                 } else {
-                    apiUsageEmptyState.style.display = 'block';
+                    apiUsageEmptyState.classList.remove('hidden');
                 }
                 
                 // 渲染图表
@@ -1286,8 +1491,8 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('加载API使用统计失败:', error);
-                apiUsageLoadingState.style.display = 'none';
-                apiUsageEmptyState.style.display = 'block';
+                apiUsageLoadingState.classList.add('hidden');
+                apiUsageEmptyState.classList.remove('hidden');
                 
                 // 重置统计卡片
                 todayApiCallsValue.textContent = '0';
@@ -1295,7 +1500,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 activeUsersValue.textContent = '0';
             });
     }
-
+    
     /**
      * 渲染API使用表格
      */
@@ -1303,130 +1508,260 @@ document.addEventListener('DOMContentLoaded', function() {
         const tbody = apiUsageTable.querySelector('tbody');
         tbody.innerHTML = '';
         
-        users.forEach((user, index) => {
+        users.forEach(user => {
             const tr = document.createElement('tr');
             
             // 计算配额使用率
             const quotaUsage = user.apiQuota > 0 ? (user.apiCalls / user.apiQuota * 100).toFixed(1) : 0;
             
-            // 进度条颜色
-            let progressClass = 'progress-normal';
-            if (quotaUsage > 90) {
-                progressClass = 'progress-danger';
-            } else if (quotaUsage > 70) {
-                progressClass = 'progress-warning';
-            }
+            // 创建用户头像
+            const userInitials = user.username.slice(0, 2).toUpperCase();
+            const userAvatar = `<div class="user-avatar">${userInitials}</div>`;
             
             tr.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${user.username}</td>
-                <td>${user.email}</td>
+                <td>${user.id}</td>
+                <td>${userAvatar} ${user.username}</td>
                 <td>${user.apiCalls}</td>
-                <td>${user.apiQuota}</td>
                 <td>
                     <div class="progress-bar-container">
-                        <div class="progress-bar ${progressClass}" style="width: ${Math.min(100, quotaUsage)}%"></div>
+                        <div class="progress-bar" style="width: ${Math.min(quotaUsage, 100)}%"></div>
                         <span>${quotaUsage}%</span>
                     </div>
                 </td>
-                <td>${new Date(user.lastActivity).toLocaleString()}</td>
+                <td>${user.commonModels || '无数据'}</td>
+                <td>${user.lastUsage ? new Date(user.lastUsage).toLocaleString() : '从未使用'}</td>
             `;
             
             tbody.appendChild(tr);
         });
     }
-
+    
     /**
      * 渲染API使用图表
      */
     function renderApiUsageCharts(stats) {
-        // 清除之前的图表
-        if (window.apiCallsChart) {
-            window.apiCallsChart.destroy();
-        }
+        // 这里应该使用图表库如Chart.js来渲染图表
+        // 以下为示例，实际实现需要引入相应的图表库
         
-        if (window.modelDistChart) {
-            window.modelDistChart.destroy();
-        }
-        
-        // 日API调用趋势图
-        if (stats.dailyStats && stats.dailyStats.length > 0 && dailyApiCallsChart) {
-            const dates = stats.dailyStats.map(item => item.date);
-            const apiCalls = stats.dailyStats.map(item => item.apiCalls);
+        // 日调用量图表
+        if (stats.dailyApiCalls && typeof Chart !== 'undefined') {
+            // 假设已经引入了Chart.js
+            const dailyCtx = dailyApiCallsChart.getContext('2d');
             
-            const ctx = dailyApiCallsChart.getContext('2d');
-            window.apiCallsChart = new Chart(ctx, {
+            // 清除之前的图表实例
+            if (window.dailyApiChart) {
+                window.dailyApiChart.destroy();
+            }
+            
+            // 准备数据
+            const labels = Object.keys(stats.dailyApiCalls);
+            const data = Object.values(stats.dailyApiCalls);
+            
+            // 创建新图表
+            window.dailyApiChart = new Chart(dailyCtx, {
                 type: 'line',
                 data: {
-                    labels: dates,
+                    labels: labels,
                     datasets: [{
-                        label: 'API调用次数',
-                        data: apiCalls,
-                        backgroundColor: 'rgba(88, 101, 242, 0.2)',
-                        borderColor: 'rgba(88, 101, 242, 1)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        pointRadius: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // 模型使用分布图
-        if (stats.modelDistribution && Object.keys(stats.modelDistribution).length > 0 && modelDistributionChart) {
-            const models = Object.keys(stats.modelDistribution);
-            const counts = Object.values(stats.modelDistribution);
-            const colors = [
-                'rgba(88, 101, 242, 0.8)',
-                'rgba(114, 137, 218, 0.8)',
-                'rgba(66, 135, 245, 0.8)',
-                'rgba(32, 156, 238, 0.8)',
-                'rgba(52, 179, 231, 0.8)'
-            ];
-            
-            const ctx = modelDistributionChart.getContext('2d');
-            window.modelDistChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: models,
-                    datasets: [{
-                        data: counts,
-                        backgroundColor: colors,
+                        label: '日API调用量',
+                        data: data,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
                         borderWidth: 1
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
+                    scales: {
+                        y: {
+                            beginAtZero: true
                         }
-                    },
-                    cutout: '60%'
+                    }
                 }
             });
+        } else {
+            // 如果没有引入Chart.js，则显示文本数据
+            dailyApiCallsChart.innerHTML = '图表库未引入，无法显示图表';
         }
+        
+        // 模型分布图表
+        if (stats.modelDistribution && typeof Chart !== 'undefined') {
+            const modelCtx = modelDistributionChart.getContext('2d');
+            
+            // 清除之前的图表实例
+            if (window.modelDistChart) {
+                window.modelDistChart.destroy();
+            }
+            
+            // 准备数据
+            const labels = Object.keys(stats.modelDistribution);
+            const data = Object.values(stats.modelDistribution);
+            
+            // 创建新图表
+            window.modelDistChart = new Chart(modelCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.6)',
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(153, 102, 255, 0.6)',
+                            'rgba(255, 159, 64, 0.6)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        } else {
+            // 如果没有引入Chart.js，则显示文本数据
+            modelDistributionChart.innerHTML = '图表库未引入，无法显示图表';
+        }
+    }
+
+    /**
+     * 处理新增用户按钮点击
+     */
+    function handleAddUser() {
+        // 重置表单
+        addUserForm.reset();
+        // 设置默认API配额
+        document.getElementById('newApiQuota').value = '100';
+        // 清除错误信息
+        addUserFormError.textContent = '';
+        // 显示模态框
+        addUserModalOverlay.style.display = 'flex';
+    }
+
+    /**
+     * 关闭新增用户模态框
+     */
+    function closeAddUserModal() {
+        addUserModalOverlay.style.display = 'none';
+    }
+
+    /**
+     * 处理保存新用户
+     */
+    async function handleSaveAddUser() {
+        // 获取表单数据
+        const username = document.getElementById('newUsername').value.trim();
+        const email = document.getElementById('newEmail').value.trim();
+        const password = document.getElementById('newPassword').value.trim();
+        const role = document.getElementById('newRole').value;
+        const apiQuota = parseInt(document.getElementById('newApiQuota').value);
+        
+        // 表单验证
+        if (!username) {
+            addUserFormError.textContent = '请输入用户名';
+            return;
+        }
+        
+        if (!email) {
+            addUserFormError.textContent = '请输入邮箱';
+            return;
+        }
+        
+        if (!password) {
+            addUserFormError.textContent = '请输入密码';
+            return;
+        }
+        
+        if (isNaN(apiQuota) || apiQuota < 0) {
+            addUserFormError.textContent = '请输入有效的配额值（大于等于0的整数）';
+            return;
+        }
+        
+        try {
+            // 创建用户
+            await window.backendApi.createUser(username, email, password, role, apiQuota);
+            
+            // 关闭模态框
+            closeAddUserModal();
+            
+            // 重新加载用户列表
+            loadUsers();
+        } catch (error) {
+            console.error('创建用户失败:', error);
+            addUserFormError.textContent = '创建用户失败: ' + (error.message || '未知错误');
+        }
+    }
+
+    /**
+     * 显示删除用户确认模态框
+     */
+    function showDeleteUserConfirmModal(userId, username) {
+        deleteUserId.value = userId;
+        deleteUserName.textContent = username;
+        deleteUserModalOverlay.style.display = 'flex';
+    }
+    
+    /**
+     * 关闭删除用户模态框
+     */
+    function closeDeleteUserModal() {
+        deleteUserModalOverlay.style.display = 'none';
+        deleteUserId.value = '';
+        deleteUserName.textContent = '';
+    }
+    
+    /**
+     * 处理删除用户
+     */
+    async function handleDeleteUser() {
+        const userId = deleteUserId.value;
+        
+        if (!userId) {
+            console.error('用户ID为空');
+            return;
+        }
+        
+        try {
+            // 调用API删除用户
+            await window.backendApi.deleteUser(userId);
+            
+            // 关闭模态框
+            closeDeleteUserModal();
+            
+            // 显示成功提示
+            showToast('用户已成功删除');
+            
+            // 重新加载用户列表
+            loadUsers();
+        } catch (error) {
+            console.error('删除用户失败:', error);
+            showToast('删除用户失败: ' + (error.message || '未知错误'), 'error');
+        }
+    }
+
+    /**
+     * 显示消息提示
+     */
+    function showToast(message, type = 'success') {
+        // 查找现有的toast元素，如果不存在则创建
+        let toast = document.getElementById('toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'toast';
+            document.body.appendChild(toast);
+        }
+        
+        // 设置类型和消息
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        
+        // 显示toast
+        toast.classList.add('show');
+        
+        // 3秒后隐藏
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
     }
 }); 

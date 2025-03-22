@@ -1,337 +1,255 @@
-// 定义全局toggleUserMenu函数，处理用户菜单的显示/隐藏
-function toggleUserMenu(event) {
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM完全加载，开始初始化应用');
+    // 获取当前时间显示合适的问候语
+    function getGreeting() {
+        const hour = new Date().getHours();
+        if (hour < 12) return "早上好";
+        if (hour < 18) return "下午好";
+        return "晚上好";
     }
     
-    console.log('toggleUserMenu被调用!');
-    
-    // 获取用户菜单元素
-    const userMenu = document.getElementById('userMenu');
-    if (!userMenu) {
-        console.error('未找到用户菜单元素!');
-        return;
+    // 设置问候语
+    const welcomeTitle = document.querySelector('.welcome-message h2');
+    if (welcomeTitle) {
+        const userName = localStorage.getItem('userName') || 'Kim';
+        welcomeTitle.textContent = `${getGreeting()}, ${userName}`;
     }
     
-    // 切换菜单显示状态
-    if (userMenu.style.display === 'block') {
-        userMenu.style.display = 'none';
-        console.log('用户菜单已关闭');
-    } else {
-        userMenu.style.display = 'block';
-        console.log('用户菜单已打开');
+    // 检查用户登录状态并更新UI
+    function updateUserLoginState() {
+        const userInfo = window.backendApi.getUserInfo();
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const adminEntry = document.getElementById('admin-entry');
+        
+        if (userInfo) {
+            // 用户已登录
+            if (loginBtn) loginBtn.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'list-item';
+            
+            // 更新欢迎信息
+            if (welcomeTitle && userInfo.username) {
+                welcomeTitle.textContent = `${getGreeting()}, ${userInfo.username}`;
+            }
+            
+            // 如果是管理员，显示管理入口
+            if (adminEntry && window.backendApi.isAdmin()) {
+                adminEntry.style.display = 'list-item';
+            }
+        } else {
+            // 用户未登录
+            if (loginBtn) loginBtn.style.display = 'list-item';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            if (adminEntry) adminEntry.style.display = 'none';
+        }
     }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    // 初始化UI元素引用
-    const loginPage = document.getElementById('loginPage');
-    const registerPage = document.getElementById('registerPage');
-    const appContent = document.getElementById('appContent');
-    const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
-    const showRegisterBtn = document.getElementById('showRegisterBtn');
-    const showLoginBtn = document.getElementById('showLoginBtn');
-    const loginError = document.getElementById('loginError');
-    const registerError = document.getElementById('registerError');
     
-    // 确保获取到用户菜单按钮
-    const userMenuBtn = document.getElementById('userMenuBtn');
-    console.log('用户菜单按钮元素:', userMenuBtn); // 添加日志，查看是否找到元素
+    // 初始检查登录状态
+    updateUserLoginState();
     
-    const featureMenuBtn = document.getElementById('featureMenuBtn');
-    const userMenu = document.getElementById('userMenu');
-    console.log('用户菜单元素:', userMenu); // 添加日志，查看是否找到元素
+    // 处理登录点击事件
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            // 显示登录模态窗口
+            const loginModalContainer = document.getElementById('loginModalContainer');
+            loginModalContainer.style.display = 'flex';
+            
+            // 清空表单内容和错误信息
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').style.display = 'none';
+            
+            // 关闭用户菜单
+            const userMenu = document.getElementById('userMenu');
+            if (userMenu) userMenu.classList.remove('active');
+        });
+    }
     
+    // 处理退出点击事件
     const logoutBtn = document.getElementById('logoutBtn');
-
-    // 初始化应用状态
-    let currentUser = null;
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            window.backendApi.clearAuth();
+            // 更新状态
+            updateUserLoginState();
+            // 关闭菜单
+            const userMenu = document.getElementById('userMenu');
+            if (userMenu) userMenu.classList.remove('active');
+        });
+    }
     
-    // 检查用户登录状态
-    function checkAuthStatus() {
-        const token = localStorage.getItem(TOKEN_KEY); // 使用backend-api.js中定义的常量
+    // 用户菜单交互 - 完全重写
+    const userMenuBtn = document.getElementById('userMenuBtn');
+    const userMenu = document.getElementById('userMenu');
+    
+    console.log('用户菜单元素检查:', {
+        userMenuBtn: userMenuBtn ? '找到' : '未找到',
+        userMenu: userMenu ? '找到' : '未找到',
+        userMenuBtnId: userMenuBtn ? userMenuBtn.id : 'N/A',
+        userMenuId: userMenu ? userMenu.id : 'N/A'
+    });
+    
+    // 添加登录模态窗口相关事件处理
+    const loginModalContainer = document.getElementById('loginModalContainer');
+    const closeLoginModal = document.getElementById('closeLoginModal');
+    const cancelLogin = document.getElementById('cancelLogin');
+    const confirmLogin = document.getElementById('confirmLogin');
+    const loginModalForm = document.getElementById('loginModalForm');
+    const loginError = document.getElementById('loginError');
+    
+    // 关闭登录模态窗口函数
+    function closeLoginModalWindow() {
+        loginModalContainer.style.display = 'none';
+    }
+    
+    // 关闭按钮点击事件
+    if (closeLoginModal) {
+        closeLoginModal.addEventListener('click', closeLoginModalWindow);
+    }
+    
+    // 取消按钮点击事件
+    if (cancelLogin) {
+        cancelLogin.addEventListener('click', closeLoginModalWindow);
+    }
+    
+    // 点击模态窗口外部关闭
+    if (loginModalContainer) {
+        loginModalContainer.querySelector('.modal-overlay').addEventListener('click', closeLoginModalWindow);
+    }
+    
+    // 登录确认按钮点击事件
+    if (confirmLogin) {
+        confirmLogin.addEventListener('click', handleLogin);
+    }
+    
+    // 表单回车提交
+    if (loginModalForm) {
+        loginModalForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleLogin();
+        });
+    }
+    
+    // 处理登录逻辑
+    function handleLogin() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
         
-        if (token) {
-            try {
-                // 验证token有效性
-                if (window.backendApi && typeof window.backendApi.validateToken === 'function') {
-                    window.backendApi.validateToken(token)
-                        .then(isValid => {
-                            if (isValid) {
-                                loadUserProfile();
-                                showAppContent();
-                            } else {
-                                // Token无效，清除并显示登录页面
-                                window.backendApi.clearAuth();
-                                showLoginPage();
-                            }
-                        })
-                        .catch(err => {
-                            console.error('验证token时出错:', err);
-                            showLoginPage();
-                        });
-                } else {
-                    // 如果validateToken函数不可用，尝试使用用户信息判断
-                    const userInfo = window.backendApi.getUserInfo();
-                    if (userInfo) {
-                        currentUser = userInfo;
-                        updateUserUI(userInfo);
-                        showAppContent();
-                    } else {
-                        showLoginPage();
-                    }
-                }
-            } catch (error) {
-                console.error('检查认证状态时出错:', error);
-                showLoginPage();
-            }
-        } else {
-            // 无token，显示登录页面
-            showLoginPage();
-        }
-    }
-    
-    // 加载用户个人资料
-    function loadUserProfile() {
-        try {
-            // 从本地存储获取用户信息
-            const userInfo = window.backendApi.getUserInfo();
-            if (userInfo) {
-                currentUser = userInfo;
-                updateUserUI(userInfo);
-                
-                // 如果是管理员，显示管理后台入口
-                if (window.backendApi.isAdmin()) {
-                    // 管理后台入口逻辑
-                    const adminEntry = document.getElementById('admin-entry');
-                    if (adminEntry) {
-                        adminEntry.style.display = 'block';
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('加载用户资料时出错:', error);
-        }
-    }
-    
-    // 更新用户界面元素
-    function updateUserUI(profile) {
-        // 设置用户头像显示
-        const userAvatar = document.querySelector('.user-avatar');
-        if (userAvatar && profile.username) {
-            const initials = profile.username
-                .split(' ')
-                .map(word => word[0])
-                .join('')
-                .toUpperCase()
-                .substring(0, 2);
-            userAvatar.textContent = initials;
-        }
-    }
-    
-    // 显示登录页面
-    function showLoginPage() {
-        if (loginPage) loginPage.style.display = 'flex';
-        if (registerPage) registerPage.style.display = 'none';
-        if (appContent) appContent.style.display = 'none';
-    }
-    
-    // 显示注册页面
-    function showRegisterPage() {
-        if (loginPage) loginPage.style.display = 'none';
-        if (registerPage) registerPage.style.display = 'flex';
-        if (appContent) appContent.style.display = 'none';
-    }
-    
-    // 显示主应用内容
-    function showAppContent() {
-        if (loginPage) loginPage.style.display = 'none';
-        if (registerPage) registerPage.style.display = 'none';
-        if (appContent) appContent.style.display = 'flex';
-    }
-    
-    // 处理登录
-    function handleLogin(email, password) {
-        if (loginError) loginError.textContent = '';
-        
-        // 检查backendApi对象是否存在且有login方法
-        if (window.backendApi && typeof window.backendApi.login === 'function') {
-            window.backendApi.login(email, password)
-                .then(result => {
-                    if (result.token || result.success) {
-                        loadUserProfile();
-                        showAppContent();
-                    } else {
-                        if (loginError) loginError.textContent = '登录失败：' + (result.message || '未知错误');
-                    }
-                })
-                .catch(err => {
-                    if (loginError) loginError.textContent = '登录失败：' + (err.message || '服务器错误');
-                });
-        } else {
-            if (loginError) loginError.textContent = '登录功能不可用，请联系管理员';
-        }
-    }
-    
-    // 处理注册
-    function handleRegister(username, email, password) {
-        if (registerError) registerError.textContent = '';
-        
-        const confirmPassword = document.getElementById('registerPasswordConfirm')?.value;
-        if (password !== confirmPassword) {
-            if (registerError) registerError.textContent = '两次密码输入不一致';
+        if (!email || !password) {
+            loginError.textContent = '请输入邮箱和密码';
+            loginError.style.display = 'block';
             return;
         }
         
-        // 检查backendApi对象是否存在且有register方法
-        if (window.backendApi && typeof window.backendApi.register === 'function') {
-            window.backendApi.register(username, email, password)
-                .then(result => {
-                    if (result.success) {
-                        // 注册成功后自动登录
-                        handleLogin(email, password);
-                    } else {
-                        if (registerError) registerError.textContent = '注册失败：' + (result.message || '未知错误');
-                    }
-                })
-                .catch(err => {
-                    if (registerError) registerError.textContent = '注册失败：' + (err.message || '服务器错误');
-                });
-        } else {
-            if (registerError) registerError.textContent = '注册功能不可用，请联系管理员';
-        }
+        // 调用登录API
+        window.backendApi.login(email, password)
+            .then(response => {
+                closeLoginModalWindow();
+                updateUserLoginState();
+            })
+            .catch(error => {
+                loginError.textContent = '登录失败: ' + (error.message || '请检查邮箱和密码');
+                loginError.style.display = 'block';
+            });
     }
     
-    // 处理退出登录
-    function handleLogout() {
-        if (window.backendApi && typeof window.backendApi.clearAuth === 'function') {
-            window.backendApi.clearAuth();
-        } else {
-            localStorage.removeItem(TOKEN_KEY);
-            localStorage.removeItem(USER_INFO_KEY);
-        }
-        currentUser = null;
-        showLoginPage();
-    }
-    
-    // 绑定事件监听器
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail')?.value || '';
-            const password = document.getElementById('loginPassword')?.value || '';
-            handleLogin(email, password);
-        });
-    }
-    
-    if (registerForm) {
-        registerForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const username = document.getElementById('registerUsername')?.value || '';
-            const email = document.getElementById('registerEmail')?.value || '';
-            const password = document.getElementById('registerPassword')?.value || '';
-            handleRegister(username, email, password);
-        });
-    }
-    
-    if (showRegisterBtn) {
-        showRegisterBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            showRegisterPage();
-        });
-    }
-    
-    if (showLoginBtn) {
-        showLoginBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            showLoginPage();
-        });
-    }
-    
-    // 添加用户菜单点击事件处理
     if (userMenuBtn && userMenu) {
-        console.log('初始化用户菜单点击事件 - 按钮:', userMenuBtn);
-        console.log('初始化用户菜单点击事件 - 菜单:', userMenu);
+        console.log('正在初始化用户菜单按钮事件处理...');
         
-        // 初始化时隐藏菜单
-        userMenu.style.display = 'none';
-        
-        // 移除可能存在的旧事件监听器
-        const newUserMenuBtn = userMenuBtn.cloneNode(true);
-        userMenuBtn.parentNode.replaceChild(newUserMenuBtn, userMenuBtn);
-        
-        // 重新添加点击事件监听器
-        newUserMenuBtn.addEventListener('click', function(e) {
-            console.log('用户菜单按钮被点击了!');
+        // 注册单一点击事件处理器
+        userMenuBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
             e.preventDefault();
-            e.stopPropagation(); // 阻止事件冒泡
+            console.log('用户菜单按钮被点击');
             
-            // 切换用户菜单显示状态
-            if (userMenu.style.display === 'block') {
-                userMenu.style.display = 'none';
-                console.log('用户菜单已隐藏');
+            // 关闭功能菜单
+            const featureMenu = document.getElementById('featureMenu');
+            if (featureMenu && featureMenu.classList.contains('active')) {
+                featureMenu.classList.remove('active');
+            }
+            
+            // 简单地切换active类
+            if (userMenu.classList.contains('active')) {
+                userMenu.classList.remove('active');
+                console.log('用户菜单状态: 隐藏');
             } else {
-                userMenu.style.display = 'block';
-                console.log('用户菜单已显示');
+                userMenu.classList.add('active');
+                console.log('用户菜单状态: 显示');
             }
         });
         
-        // 点击页面其他区域关闭菜单
+        // 点击外部关闭菜单
         document.addEventListener('click', function(e) {
-            if (userMenu.style.display === 'block' && 
-                !newUserMenuBtn.contains(e.target) && 
-                !userMenu.contains(e.target)) {
-                userMenu.style.display = 'none';
-                console.log('点击页面其他区域，用户菜单已关闭');
+            if (userMenu.classList.contains('active') && !userMenuBtn.contains(e.target) && !userMenu.contains(e.target)) {
+                userMenu.classList.remove('active');
+                console.log('用户菜单已通过外部点击关闭');
             }
         });
-    } else {
-        console.warn('未找到用户菜单或用户菜单按钮，用户菜单功能将不可用');
-        // 调试：查找所有可能的菜单按钮
-        const allButtons = document.querySelectorAll('button');
-        console.log('页面上的所有按钮:', allButtons);
-    }
-    
-    // 绑定退出登录按钮
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function() {
-            handleLogout();
-            // 关闭用户菜单
-            if (userMenu) userMenu.style.display = 'none';
-        });
-    }
-    
-    // 需要确保backend-api.js已加载完毕
-    if (window.backendApi) {
-        // 初始化应用
-        checkAuthStatus();
-    } else {
-        // 如果backend-api.js尚未加载完毕，等待一段时间后重试
-        console.log('等待backendApi初始化...');
-        setTimeout(() => {
-            if (window.backendApi) {
-                checkAuthStatus();
-            } else {
-                console.error('backendApi未加载，默认显示登录页面');
-                showLoginPage();
-            }
-        }, 500);
-    }
-
-    // 添加点击文档其他区域关闭用户菜单的事件
-    document.addEventListener('click', function(event) {
-        const userMenu = document.getElementById('userMenu');
-        const userMenuBtn = document.getElementById('userMenuBtn');
         
-        if (userMenu && 
-            userMenu.style.display === 'block' && 
-            userMenuBtn && 
-            !userMenuBtn.contains(event.target) && 
-            !userMenu.contains(event.target)) {
-            userMenu.style.display = 'none';
-            console.log('点击外部区域，用户菜单已关闭');
+        console.log('用户菜单按钮事件初始化完成');
+    } else {
+        console.error('找不到用户菜单元素', { 按钮: userMenuBtn, 菜单: userMenu });
+    }
+    
+    // 功能菜单交互
+    const featureMenuBtn = document.getElementById('featureMenuBtn');
+    const featureMenu = document.getElementById('featureMenu');
+    
+    if (featureMenuBtn && featureMenu) {
+        console.log('功能菜单按钮已注册事件');
+        featureMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            featureMenu.classList.toggle('active');
+            console.log('功能菜单状态:', featureMenu.classList.contains('active') ? '显示' : '隐藏');
+        });
+        
+        // 点击外部关闭菜单
+        document.addEventListener('click', (e) => {
+            if (featureMenu.classList.contains('active') && !featureMenuBtn.contains(e.target) && !featureMenu.contains(e.target)) {
+                featureMenu.classList.remove('active');
+                console.log('功能菜单已关闭');
+            }
+        });
+    } else {
+        console.error('找不到功能菜单元素', { 按钮: featureMenuBtn, 菜单: featureMenu });
+    }
+    
+    // 输入框焦点效果
+    const userInput = document.getElementById('userInput');
+    const inputWrapper = document.querySelector('.input-wrapper');
+    
+    userInput.addEventListener('focus', () => {
+        inputWrapper.classList.add('focus');
+    });
+    
+    userInput.addEventListener('blur', () => {
+        inputWrapper.classList.remove('focus');
+    });
+    
+    // 键盘快捷键：按Enter发送消息
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            // 修改为使用sendButton而不是sendBtn
+            const sendButton = document.getElementById('sendButton');
+            if (sendButton) {
+                sendButton.click();
+            }
+        }
+    });
+    
+    // 根据输入内容启用/禁用发送按钮
+    userInput.addEventListener('input', () => {
+        const sendBtn = document.getElementById('sendBtn');
+        const sendButton = document.getElementById('sendButton');
+        
+        if (userInput.value.trim()) {
+            if (sendBtn) sendBtn.removeAttribute('disabled');
+            if (sendButton) sendButton.removeAttribute('disabled');
+        } else {
+            if (sendBtn) sendBtn.setAttribute('disabled', true);
+            if (sendButton) sendButton.setAttribute('disabled', true);
         }
     });
 }); 

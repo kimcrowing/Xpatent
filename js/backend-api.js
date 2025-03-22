@@ -3,460 +3,384 @@
  * 这个模块负责与后端API进行通信，包括用户登录、获取和管理提示词等功能
  */
 
-// 常量定义
-const API_BASE_URL = localStorage.getItem('api_base_url') || 'http://localhost:3000/api';
-const TOKEN_KEY = 'jwt_token';
-const USER_INFO_KEY = 'user_info';
+// 后端API基础URL - 可以动态修改，以支持GitHub Pages环境
+window.API_BASE_URL = 'http://localhost:3000/api';
 
 // 本地存储密钥
-const TOKEN_KEY_OLD = 'xpat_auth_token';
-const USER_INFO_KEY_OLD = 'xpat_user_info';
+const TOKEN_KEY = 'xpat_auth_token';
+const USER_INFO_KEY = 'xpat_user_info';
 
-// 加密API密钥函数 - 简单的Base64编码，实际应用中应使用更安全的方法
-window.encryptMyApiKey = function(apiKey) {
-    if (!apiKey) return '';
-    try {
-        // 简单的Base64编码
-        const encrypted = btoa(apiKey);
-        console.log('API密钥已加密');
-        return encrypted;
-    } catch (error) {
-        console.error('加密API密钥时出错:', error);
-        return '';
-    }
-};
-
-// 创建API调用基础函数
-async function apiCall(endpoint, method = 'GET', data = null, includeToken = true) {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const headers = {
-        'Content-Type': 'application/json'
-    };
-    
-    // 如果需要包含token，从localStorage获取
-    if (includeToken) {
-        const token = localStorage.getItem(TOKEN_KEY);
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-    }
-    
-    const options = {
-        method,
-        headers,
-        mode: 'cors'
-    };
-    
-    if (data) {
-        options.body = JSON.stringify(data);
-    }
-    
-    try {
-        const response = await fetch(url, options);
-        
-        // 尝试解析JSON响应
-        let result;
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-            result = await response.json();
-        } else {
-            // 如果不是JSON，获取文本
-            const text = await response.text();
-            result = { message: text };
-        }
-        
-        if (!response.ok) {
-            throw new Error(result.message || '请求失败');
-        }
-        
-        return result;
-    } catch (error) {
-        console.error(`API调用失败: ${endpoint}`, error);
-        throw error;
-    }
-}
-
-// 用户认证相关功能
+/**
+ * 从本地存储获取令牌
+ */
 function getToken() {
-    return localStorage.getItem(TOKEN_KEY);
+  return localStorage.getItem(TOKEN_KEY);
 }
 
+/**
+ * 从本地存储获取用户信息
+ */
 function getUserInfo() {
-    try {
-        const userInfoStr = localStorage.getItem(USER_INFO_KEY);
-        return userInfoStr ? JSON.parse(userInfoStr) : null;
-    } catch (error) {
-        console.error('获取用户信息失败:', error);
-        return null;
-    }
+  const userInfo = localStorage.getItem(USER_INFO_KEY);
+  return userInfo ? JSON.parse(userInfo) : null;
 }
 
+/**
+ * 检查用户是否是管理员
+ */
 function isAdmin() {
-    const userInfo = getUserInfo();
-    return userInfo && (userInfo.role === 'admin' || userInfo.isAdmin === true);
+  const userInfo = getUserInfo();
+  return userInfo && userInfo.role === 'admin';
 }
 
+/**
+ * 设置认证信息到本地存储
+ */
 function setAuth(token, user) {
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
 }
 
+/**
+ * 清除认证信息
+ */
 function clearAuth() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_INFO_KEY);
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_INFO_KEY);
 }
 
-// 从本地存储加载API地址
-(function() {
-    const savedApiUrl = localStorage.getItem('xpat_api_url');
-    if (savedApiUrl) {
-        window.API_BASE_URL = savedApiUrl;
+/**
+ * 通用API请求函数
+ */
+async function apiRequest(endpoint, method = 'GET', data = null, requireAuth = true) {
+  const url = `${window.API_BASE_URL}${endpoint}`;
+  
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  
+  if (requireAuth) {
+    const token = getToken();
+    if (!token) {
+      throw new Error('未登录，请先登录');
     }
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const options = {
+    method,
+    headers,
+    mode: 'cors'
+  };
+  
+  if (data && (method === 'POST' || method === 'PUT')) {
+    options.body = JSON.stringify(data);
+  }
+  
+  try {
+    const response = await fetch(url, options);
+    const responseData = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(responseData.error?.message || '请求失败');
+    }
+    
+    return responseData;
+  } catch (error) {
+    console.error('API请求错误:', error);
+    throw error;
+  }
+}
+
+/**
+ * 用户登录
+ */
+async function login(email, password) {
+  const response = await apiRequest('/auth/login', 'POST', { email, password }, false);
+  
+  if (response.token && response.user) {
+    setAuth(response.token, response.user);
+  }
+  
+  return response;
+}
+
+/**
+ * 用户注册
+ */
+async function register(username, email, password) {
+  return apiRequest('/auth/register', 'POST', { username, email, password }, false);
+}
+
+/**
+ * 获取用户资料
+ */
+async function getUserProfile() {
+  return apiRequest('/users/profile');
+}
+
+/**
+ * 获取所有提示词模板
+ */
+async function getAllPrompts(category = null) {
+  let endpoint = '/prompts';
+  if (category) {
+    endpoint += `?category=${encodeURIComponent(category)}`;
+  }
+  return apiRequest(endpoint);
+}
+
+/**
+ * 获取单个提示词模板
+ */
+async function getPrompt(id) {
+  return apiRequest(`/prompts/${id}`);
+}
+
+/**
+ * 创建新的提示词模板
+ */
+async function createPrompt(name, category, content, isPublic = false) {
+  return apiRequest('/prompts', 'POST', { name, category, content, isPublic });
+}
+
+/**
+ * 更新提示词模板
+ */
+async function updatePrompt(id, data) {
+  return apiRequest(`/prompts/${id}`, 'PUT', data);
+}
+
+/**
+ * 删除提示词模板
+ */
+async function deletePrompt(id) {
+  return apiRequest(`/prompts/${id}`, 'DELETE');
+}
+
+/**
+ * 获取订阅计划
+ */
+async function getSubscriptionPlans() {
+  return apiRequest('/subscriptions');
+}
+
+/**
+ * 获取API使用情况
+ */
+async function getApiUsage() {
+  return apiRequest('/usage/status');
+}
+
+/**
+ * 获取所有用户列表 (仅管理员)
+ */
+async function getAllUsers(page = 1, limit = 10) {
+  return apiRequest(`/users?page=${page}&limit=${limit}`);
+}
+
+/**
+ * 更新用户角色 (仅管理员)
+ */
+async function updateUserRole(userId, role) {
+  return apiRequest(`/users/${userId}/role`, 'PUT', { role });
+}
+
+/**
+ * 重置用户API配额 (仅管理员)
+ */
+async function resetUserApiQuota(userId, quota) {
+  return apiRequest(`/admin/users/${userId}/quota`, 'PUT', { quota });
+}
+
+/**
+ * 获取所有订阅计划 (仅管理员)
+ */
+async function getAllSubscriptionPlans() {
+  return apiRequest('/subscriptions');
+}
+
+/**
+ * 创建订阅计划 (仅管理员)
+ */
+async function createSubscriptionPlan(name, price, duration, apiQuota, features) {
+  return apiRequest('/admin/subscriptions', 'POST', {
+    name, price, duration, apiQuota, features
+  });
+}
+
+/**
+ * 更新订阅计划 (仅管理员)
+ */
+async function updateSubscriptionPlan(id, data) {
+  return apiRequest(`/admin/subscriptions/${id}`, 'PUT', data);
+}
+
+/**
+ * 删除订阅计划 (仅管理员)
+ */
+async function deleteSubscriptionPlan(id) {
+  return apiRequest(`/admin/subscriptions/${id}`, 'DELETE');
+}
+
+/**
+ * 获取所有用户的API使用统计 (仅管理员)
+ */
+async function getApiUsageStats() {
+  return apiRequest('/admin/usage/stats');
+}
+
+/**
+ * 获取用户订阅统计 (仅管理员)
+ */
+async function getSubscriptionStats() {
+  return apiRequest('/admin/subscriptions/stats');
+}
+
+/**
+ * 获取API配置 (从后端)
+ */
+async function getApiConfig() {
+  return apiRequest('/config');
+}
+
+/**
+ * 保存API配置 (到后端)
+ */
+async function saveApiConfig(config) {
+  return apiRequest('/config', 'POST', config);
+}
+
+/**
+ * 创建新用户
+ */
+async function createUser(username, email, password, role, apiQuota) {
+  return apiRequest('/admin/users', 'POST', { 
+    username, 
+    email, 
+    password, 
+    role, 
+    api_quota: apiQuota 
+  });
+}
+
+/**
+ * 删除用户
+ */
+async function deleteUser(userId) {
+  return apiRequest(`/admin/users/${userId}`, 'DELETE');
+}
+
+// 检测是否在GitHub Pages环境，并尝试设置API地址
+(function detectEnvironment() {
+  // 检测是否在GitHub Pages环境
+  const isGitHubPages = window.location.hostname.includes('github.io');
+  
+  if (isGitHubPages) {
+    // 从本地存储中获取API地址
+    const savedApiUrl = localStorage.getItem('xpat_api_url');
+    
+    if (savedApiUrl) {
+      window.API_BASE_URL = savedApiUrl;
+      console.log('从本地存储加载API地址:', savedApiUrl);
+    } else {
+      // 默认使用本地地址，需要管理员在部署时手动修改
+      const defaultApiUrl = 'http://localhost:3000/api';
+      window.API_BASE_URL = defaultApiUrl;
+      localStorage.setItem('xpat_api_url', defaultApiUrl);
+      console.log('已设置默认API地址:', defaultApiUrl);
+    }
+  }
 })();
 
-// API请求基础函数
-async function apiRequest(endpoint, method = 'GET', data = null, requiresAuth = true) {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const headers = {
-        'Content-Type': 'application/json'
-    };
-    
-    if (requiresAuth) {
-        const token = getToken();
-        if (!token) {
-            throw new Error('未授权，请先登录');
-        }
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const options = {
-        method,
-        headers,
-        mode: 'cors'
-    };
-    
-    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-        options.body = JSON.stringify(data);
-    }
-    
-    try {
-        console.log(`发送${method}请求到: ${url}`);
-        const response = await fetch(url, options);
-        
-        // 尝试解析JSON
-        let result;
-        try {
-            result = await response.json();
-        } catch (e) {
-            const text = await response.text();
-            result = { success: response.ok, message: text || '请求处理成功' };
-        }
-        
-        if (!response.ok) {
-            console.error('API请求错误:', result);
-            throw new Error(result.message || '请求失败');
-        }
-        
-        return result;
-    } catch (error) {
-        console.error('API请求错误:', error);
-        throw error;
-    }
-}
-
-// 验证令牌
-async function validateToken(token) {
-    try {
-        // 如果没有提供token，尝试从本地存储获取
-        const tokenToValidate = token || getToken();
-        if (!tokenToValidate) return false;
-        
-        try {
-            // 尝试通过API验证token
-            const result = await apiRequest('/auth/validate', 'POST', { token: tokenToValidate }, false);
-            return result.valid === true;
-        } catch (error) {
-            console.warn('验证token接口不可用，可能是后端未启动或未实现此功能，将使用本地用户信息验证');
-            
-            // 如果API验证失败，直接从localStorage获取用户信息进行本地验证
-            const userInfo = getUserInfo();
-            if (userInfo && tokenToValidate) {
-                console.log('使用本地存储的用户信息验证token有效性');
-                // 本地有token和用户信息，视为有效
-                return true;
-            }
-            return false;
-        }
-    } catch (error) {
-        console.error('验证token时出错:', error);
-        return false;
-    }
-}
-
-// 用户登录
-async function login(email, password) {
-    try {
-        const response = await apiRequest('/auth/login', 'POST', { email, password }, false);
-        
-        if (response.token && response.user) {
-            // 保存认证信息
-            setAuth(response.token, response.user);
-        }
-        
-        return response;
-    } catch (error) {
-        console.error('登录失败:', error);
-        throw error;
-    }
-}
-
-// 用户注册
-async function register(username, email, password) {
-    return apiRequest('/auth/register', 'POST', { username, email, password }, false);
-}
-
-// 获取用户资料
-async function getUserProfile() {
-    return apiRequest('/users/profile', 'GET', null, true);
-}
-
-// 获取所有提示词
-async function getAllPrompts(category = null) {
-    let endpoint = '/prompts';
-    if (category) {
-        endpoint += `?category=${encodeURIComponent(category)}`;
-    }
-    return apiRequest(endpoint, 'GET');
-}
-
-// 获取单个提示词
-async function getPrompt(id) {
-    return apiRequest(`/prompts/${id}`, 'GET');
-}
-
-// 创建提示词
-async function createPrompt(name, category, content, isPublic = false) {
-    return apiRequest('/prompts', 'POST', { name, category, content, isPublic });
-}
-
-// 更新提示词
-async function updatePrompt(id, data) {
-    return apiRequest(`/prompts/${id}`, 'PUT', data);
-}
-
-// 删除提示词
-async function deletePrompt(id) {
-    return apiRequest(`/prompts/${id}`, 'DELETE');
-}
-
-// 获取订阅计划
-async function getSubscriptionPlans() {
-    return apiRequest('/subscription-plans', 'GET', null, false);
-}
-
-// 获取API使用量
-async function getApiUsage() {
-    return apiRequest('/users/api-usage', 'GET');
-}
-
-// 获取API配置
-async function getApiConfig() {
-    return apiRequest('/config', 'GET', null, false);
-}
-
-// 保存API配置
-async function saveApiConfig(config) {
-    return apiRequest('/config', 'POST', config);
-}
-
-// 使用OpenRouter API
-async function sendOpenRouterRequest(input, options = {}) {
-    try {
-        // 尝试从后端获取API配置
-        let apiKey, model, apiUrl, referer, title;
-        
-        try {
-            // 获取后端下发的API配置
-            const config = await getApiConfig();
-            apiKey = config.openrouter?.apiKey;
-            model = options.model || config.openrouter?.model || 'deepseek/deepseek-r1:free';
-            apiUrl = config.openrouter?.endpoint || 'https://openrouter.ai/api/v1/chat/completions';
-            referer = config.openrouter?.referer || 'http://localhost';
-            title = config.openrouter?.title || 'AI Chat Test';
-        } catch (error) {
-            console.warn('无法从后端获取API配置，尝试使用本地配置:', error);
-            // 如果后端不可用，尝试使用本地配置作为备份
-            apiKey = localStorage.getItem('xpat_openrouter_api_key');
-            model = options.model || localStorage.getItem('xpat_openrouter_model') || 'deepseek/deepseek-r1:free';
-            apiUrl = localStorage.getItem('xpat_openrouter_endpoint') || 'https://openrouter.ai/api/v1/chat/completions';
-            referer = localStorage.getItem('xpat_openrouter_referer') || 'http://localhost';
-            title = localStorage.getItem('xpat_openrouter_title') || 'AI Chat Test';
-        }
-        
-        if (!apiKey) {
-            throw new Error('未配置API密钥，请联系管理员');
-        }
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': referer,
-                'X-Title': title
-            },
-            body: JSON.stringify({
-                model: model,
-                messages: [{ role: 'user', content: input }],
-                stream: false
-            })
-        });
-
-        if (!response.ok) {
-            const errorResult = await response.json();
-            throw new Error(errorResult.error?.message || '外部API调用失败');
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error('OpenRouter API调用失败:', error);
-        throw error;
-    }
-}
-
-// 更新后端API URL
-function updateBackendApiUrl(url) {
-    localStorage.setItem('api_base_url', url);
-    return { success: true, message: 'API基础URL已更新' };
-}
-
-// 获取所有用户
-async function getAllUsers() {
-    return apiRequest('/admin/users', 'GET');
-}
-
-// 创建用户
-async function createUser(userData) {
-    return apiRequest('/admin/users', 'POST', userData);
-}
-
-// 更新用户
-async function updateUser(userId, userData) {
-    return apiRequest(`/admin/users/${userId}`, 'PUT', userData);
-}
-
-// 删除用户
-async function deleteUser(userId) {
-    return apiRequest(`/admin/users/${userId}`, 'DELETE');
-}
-
-// 获取API使用量统计
-async function getApiUsageStats(period = 'daily') {
-    return apiRequest(`/admin/stats/api-usage?period=${period}`, 'GET');
-}
-
-// 获取用户API使用量
-async function getUserApiUsage(userId) {
-    return apiRequest(`/admin/stats/user-api-usage/${userId}`, 'GET');
-}
-
-// 获取所有订阅计划
-async function getAllSubscriptionPlans() {
-    return apiRequest('/admin/subscription-plans', 'GET');
-}
-
-// 创建订阅计划
-async function createSubscriptionPlan(planData) {
-    return apiRequest('/admin/subscription-plans', 'POST', planData);
-}
-
-// 更新订阅计划
-async function updateSubscriptionPlan(planId, planData) {
-    return apiRequest(`/admin/subscription-plans/${planId}`, 'PUT', planData);
-}
-
-// 删除订阅计划
-async function deleteSubscriptionPlan(planId) {
-    return apiRequest(`/admin/subscription-plans/${planId}`, 'DELETE');
-}
-
-// 获取应用设置
-async function getApplicationSettings() {
-    return apiRequest('/admin/settings', 'GET');
-}
-
-// 更新应用设置
-async function updateApplicationSettings(settings) {
-    return apiRequest('/admin/settings', 'PUT', settings);
-}
-
-// 对外暴露的API接口
-const backendApi = {
-    // 认证相关
-    login,
-    register,
-    validateToken,
-    clearAuth,
-    getUserInfo,
-    isAdmin,
-    getUserProfile,
-    
-    // 提示词管理
-    getAllPrompts,
-    getPrompt,
-    createPrompt,
-    updatePrompt,
-    deletePrompt,
-    
-    // 订阅计划管理
-    getSubscriptionPlans,
-    getAllSubscriptionPlans,
-    createSubscriptionPlan,
-    updateSubscriptionPlan,
-    deleteSubscriptionPlan,
-    
-    // API使用量统计
-    getApiUsage,
-    getApiUsageStats,
-    getUserApiUsage,
-    
-    // 用户管理
-    getAllUsers,
-    createUser,
-    updateUser,
-    deleteUser,
-    
-    // 配置管理
-    getApiConfig,
-    saveApiConfig,
-    sendOpenRouterRequest,
-    updateBackendApiUrl,
-    
-    // 设置管理
-    getApplicationSettings,
-    updateApplicationSettings
+// 导出API函数
+window.backendApi = {
+  login,
+  register,
+  getUserProfile,
+  getAllPrompts,
+  getPrompt,
+  createPrompt,
+  updatePrompt,
+  deletePrompt,
+  getSubscriptionPlans,
+  getApiUsage,
+  isAdmin,
+  clearAuth,
+  getUserInfo,
+  getAllUsers,
+  updateUserRole,
+  resetUserApiQuota,
+  getAllSubscriptionPlans,
+  createSubscriptionPlan,
+  updateSubscriptionPlan,
+  deleteSubscriptionPlan,
+  getApiUsageStats,
+  getSubscriptionStats,
+  getApiConfig,
+  saveApiConfig,
+  sendOpenRouterRequest,
+  createUser,
+  deleteUser
 };
 
-// 设置为全局对象
-window.backendApi = backendApi;
-
-// 自检当GitHub Pages环境时设置API
-(function() {
-    // 检查是否在GitHub Pages环境下
-    const isGitHubPages = window.location.hostname.includes('github.io');
+/**
+ * 使用OpenRouter API发送请求
+ */
+async function sendOpenRouterRequest(input, options = {}) {
+  try {
+    // 尝试从后端获取API配置
+    let apiKey, model, apiUrl, referer, title;
     
-    if (isGitHubPages) {
-        console.log('检测到GitHub Pages环境，尝试加载API地址');
-        
-        // 从本地存储加载API地址
-        const savedApiUrl = localStorage.getItem('api_base_url');
-        
-        // 如果有保存的API地址，直接使用
-        if (savedApiUrl) {
-            console.log('使用已保存的API地址:', savedApiUrl);
-        } else {
-            // 默认使用本地开发地址
-            console.log('未找到已保存的API地址，使用默认地址');
-        }
+    try {
+      // 获取后端下发的API配置
+      const config = await getApiConfig();
+      apiKey = config.openrouter?.apiKey;
+      model = options.model || config.openrouter?.model || 'deepseek/deepseek-r1:free';
+      apiUrl = config.openrouter?.endpoint || 'https://openrouter.ai/api/v1/chat/completions';
+      referer = config.openrouter?.referer || 'http://localhost';
+      title = config.openrouter?.title || 'AI Chat Test';
+    } catch (error) {
+      console.warn('无法从后端获取API配置，尝试使用本地配置:', error);
+      // 如果后端不可用，尝试使用本地配置作为备份
+      apiKey = localStorage.getItem('xpat_openrouter_api_key');
+      model = options.model || localStorage.getItem('xpat_openrouter_model') || 'deepseek/deepseek-r1:free';
+      apiUrl = localStorage.getItem('xpat_openrouter_endpoint') || 'https://openrouter.ai/api/v1/chat/completions';
+      referer = localStorage.getItem('xpat_openrouter_referer') || 'http://localhost';
+      title = localStorage.getItem('xpat_openrouter_title') || 'AI Chat Test';
     }
-})(); 
+    
+    if (!apiKey) {
+      throw new Error('未配置API密钥，请联系管理员');
+    }
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': referer,
+        'X-Title': title
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [{ role: 'user', content: input }],
+        stream: false
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || '请求OpenRouter API失败');
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('OpenRouter API请求错误:', error);
+    throw error;
+  }
+}
+
+// 将新函数添加到导出对象中
+window.backendApi.sendOpenRouterRequest = sendOpenRouterRequest; 
