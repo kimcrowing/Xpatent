@@ -6,17 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const LIGHT_THEME = 'light-theme';
     const THEME_KEY = 'xpatent-preferred-theme';
 
-    // 检查本地存储中是否有保存的主题偏好
-    const savedTheme = localStorage.getItem(THEME_KEY);
+    // 清除之前的主题设置，强制使用暗色主题作为默认值
+    localStorage.setItem(THEME_KEY, DARK_THEME);
     
-    // 如果有保存的主题，则应用它；否则默认使用暗色主题
-    if (savedTheme) {
-        applyTheme(savedTheme);
-    } else {
-        // 确保默认应用暗色主题
-        applyTheme(DARK_THEME);
-    }
-
+    // 始终应用暗色主题作为默认主题
+    applyTheme(DARK_THEME);
+    
     // 初始化主题图标
     updateThemeIcon();
 
