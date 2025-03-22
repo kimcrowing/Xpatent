@@ -15,6 +15,70 @@ document.addEventListener('DOMContentLoaded', () => {
         welcomeTitle.textContent = `${getGreeting()}, ${userName}`;
     }
     
+    // 检查用户登录状态并更新UI
+    function updateUserLoginState() {
+        const userInfo = window.backendApi.getUserInfo();
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const adminEntry = document.getElementById('admin-entry');
+        
+        if (userInfo) {
+            // 用户已登录
+            if (loginBtn) loginBtn.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'list-item';
+            
+            // 更新欢迎信息
+            if (welcomeTitle && userInfo.username) {
+                welcomeTitle.textContent = `${getGreeting()}, ${userInfo.username}`;
+            }
+            
+            // 如果是管理员，显示管理入口
+            if (adminEntry && window.backendApi.isAdmin()) {
+                adminEntry.style.display = 'list-item';
+            }
+        } else {
+            // 用户未登录
+            if (loginBtn) loginBtn.style.display = 'list-item';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            if (adminEntry) adminEntry.style.display = 'none';
+        }
+    }
+    
+    // 初始检查登录状态
+    updateUserLoginState();
+    
+    // 处理登录点击事件
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            // 显示登录模态窗口
+            const loginModalContainer = document.getElementById('loginModalContainer');
+            loginModalContainer.style.display = 'flex';
+            
+            // 清空表单内容和错误信息
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').style.display = 'none';
+            
+            // 关闭用户菜单
+            const userMenu = document.getElementById('userMenu');
+            if (userMenu) userMenu.classList.remove('active');
+        });
+    }
+    
+    // 处理退出点击事件
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            window.backendApi.clearAuth();
+            // 更新状态
+            updateUserLoginState();
+            // 关闭菜单
+            const userMenu = document.getElementById('userMenu');
+            if (userMenu) userMenu.classList.remove('active');
+        });
+    }
+    
     // 用户菜单交互 - 完全重写
     const userMenuBtn = document.getElementById('userMenuBtn');
     const userMenu = document.getElementById('userMenu');
@@ -25,6 +89,70 @@ document.addEventListener('DOMContentLoaded', () => {
         userMenuBtnId: userMenuBtn ? userMenuBtn.id : 'N/A',
         userMenuId: userMenu ? userMenu.id : 'N/A'
     });
+    
+    // 添加登录模态窗口相关事件处理
+    const loginModalContainer = document.getElementById('loginModalContainer');
+    const closeLoginModal = document.getElementById('closeLoginModal');
+    const cancelLogin = document.getElementById('cancelLogin');
+    const confirmLogin = document.getElementById('confirmLogin');
+    const loginModalForm = document.getElementById('loginModalForm');
+    const loginError = document.getElementById('loginError');
+    
+    // 关闭登录模态窗口函数
+    function closeLoginModalWindow() {
+        loginModalContainer.style.display = 'none';
+    }
+    
+    // 关闭按钮点击事件
+    if (closeLoginModal) {
+        closeLoginModal.addEventListener('click', closeLoginModalWindow);
+    }
+    
+    // 取消按钮点击事件
+    if (cancelLogin) {
+        cancelLogin.addEventListener('click', closeLoginModalWindow);
+    }
+    
+    // 点击模态窗口外部关闭
+    if (loginModalContainer) {
+        loginModalContainer.querySelector('.modal-overlay').addEventListener('click', closeLoginModalWindow);
+    }
+    
+    // 登录确认按钮点击事件
+    if (confirmLogin) {
+        confirmLogin.addEventListener('click', handleLogin);
+    }
+    
+    // 表单回车提交
+    if (loginModalForm) {
+        loginModalForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleLogin();
+        });
+    }
+    
+    // 处理登录逻辑
+    function handleLogin() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        
+        if (!email || !password) {
+            loginError.textContent = '请输入邮箱和密码';
+            loginError.style.display = 'block';
+            return;
+        }
+        
+        // 调用登录API
+        window.backendApi.login(email, password)
+            .then(response => {
+                closeLoginModalWindow();
+                updateUserLoginState();
+            })
+            .catch(error => {
+                loginError.textContent = '登录失败: ' + (error.message || '请检查邮箱和密码');
+                loginError.style.display = 'block';
+            });
+    }
     
     if (userMenuBtn && userMenu) {
         console.log('正在初始化用户菜单按钮事件处理...');
