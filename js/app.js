@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
         welcomeTitle.textContent = `${getGreeting()}, ${userName}`;
     }
     
-    // 用户菜单交互
+    // 用户菜单交互 - 完全重写
     const userMenuBtn = document.getElementById('userMenuBtn');
     const userMenu = document.getElementById('userMenu');
     
@@ -27,34 +27,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     if (userMenuBtn && userMenu) {
-        console.log('用户菜单按钮已注册事件');
+        console.log('正在初始化用户菜单按钮事件处理...');
         
-        // 检查按钮是否正确设置了样式和内容
-        console.log('用户菜单按钮属性:', {
-            classes: userMenuBtn.className,
-            内容: userMenuBtn.innerHTML,
-            可见性: window.getComputedStyle(userMenuBtn).display
-        });
+        // 取消所有现有的事件处理器，防止重复绑定
+        userMenuBtn.removeEventListener('click', userMenuClickHandler);
         
-        // 检查菜单初始状态
-        console.log('用户菜单初始样式:', {
-            classes: userMenu.className,
-            display: window.getComputedStyle(userMenu).display,
-            visibility: window.getComputedStyle(userMenu).visibility,
-            opacity: window.getComputedStyle(userMenu).opacity,
-            position: window.getComputedStyle(userMenu).position
-        });
-        
-        userMenuBtn.addEventListener('click', (e) => {
-            console.log('用户菜单按钮被点击', e.target);
+        // 注册单一点击事件处理器
+        userMenuBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            // 强制确保其他菜单已关闭
+            e.preventDefault();
+            console.log('用户菜单按钮被点击');
+            
+            // 关闭功能菜单
             const featureMenu = document.getElementById('featureMenu');
             if (featureMenu && featureMenu.classList.contains('active')) {
                 featureMenu.classList.remove('active');
             }
             
-            // 直接设置显示状态，不使用toggle
+            // 简单地切换active类
             if (userMenu.classList.contains('active')) {
                 userMenu.classList.remove('active');
                 console.log('用户菜单状态: 隐藏');
@@ -65,17 +55,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         // 点击外部关闭菜单
-        document.addEventListener('click', (e) => {
+        document.addEventListener('click', function(e) {
             if (userMenu.classList.contains('active') && !userMenuBtn.contains(e.target) && !userMenu.contains(e.target)) {
                 userMenu.classList.remove('active');
-                console.log('用户菜单已关闭');
+                console.log('用户菜单已通过外部点击关闭');
             }
         });
         
-        // 添加菜单修复功能 - 在页面加载后短暂延迟执行
-        setTimeout(() => {
-            fixUserMenu();
-        }, 500);
+        console.log('用户菜单按钮事件初始化完成');
     } else {
         console.error('找不到用户菜单元素', { 按钮: userMenuBtn, 菜单: userMenu });
     }
@@ -140,64 +127,4 @@ document.addEventListener('DOMContentLoaded', () => {
             if (sendButton) sendButton.setAttribute('disabled', true);
         }
     });
-});
-
-// 用户菜单修复函数
-function fixUserMenu() {
-    console.log('尝试修复用户菜单显示问题');
-    const userMenuBtn = document.getElementById('userMenuBtn');
-    const userMenu = document.getElementById('userMenu');
-    
-    if (!userMenuBtn || !userMenu) {
-        console.error('修复失败：找不到用户菜单元素');
-        return;
-    }
-    
-    // 确保CSS样式正确应用
-    const style = document.createElement('style');
-    style.textContent = `
-        .user-menu {
-            display: none !important;
-            opacity: 0;
-            visibility: hidden;
-        }
-        .user-menu.active {
-            display: block !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // 重新绑定点击事件，确保事件触发时正确显示菜单
-    userMenuBtn.removeEventListener('click', userMenuClickHandler);
-    userMenuBtn.addEventListener('click', userMenuClickHandler);
-    
-    console.log('用户菜单修复完成');
-}
-
-// 独立的点击处理函数，便于重新绑定
-function userMenuClickHandler(e) {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    const userMenu = document.getElementById('userMenu');
-    if (!userMenu) return;
-    
-    console.log('用户菜单点击处理器被调用');
-    
-    // 隐藏其他可能打开的菜单
-    const featureMenu = document.getElementById('featureMenu');
-    if (featureMenu && featureMenu.classList.contains('active')) {
-        featureMenu.classList.remove('active');
-    }
-    
-    // 切换菜单显示状态
-    if (userMenu.classList.contains('active')) {
-        userMenu.classList.remove('active');
-        console.log('用户菜单已隐藏');
-    } else {
-        userMenu.classList.add('active');
-        console.log('用户菜单已显示');
-    }
-} 
+}); 

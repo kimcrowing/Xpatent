@@ -17,24 +17,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const featureOptions = featureMenu.querySelectorAll('li');
     console.log(`找到${featureOptions.length}个功能选项`);
     
-    // 点击功能菜单按钮时显示/隐藏下拉菜单
+    // 简化的点击功能菜单按钮事件处理
     featureMenuBtn.addEventListener('click', function(e) {
         e.stopPropagation();
+        e.preventDefault();
         console.log('功能菜单按钮点击');
         
-        // 切换功能菜单显示状态
+        // 关闭用户菜单
+        const userMenu = document.getElementById('userMenu');
+        if (userMenu && userMenu.classList.contains('active')) {
+            userMenu.classList.remove('active');
+        }
+        
+        // 简单地切换功能菜单的active类
         if (featureMenu.classList.contains('active')) {
             featureMenu.classList.remove('active');
             console.log('功能菜单状态: 隐藏');
         } else {
             featureMenu.classList.add('active');
             console.log('功能菜单状态: 显示');
-        }
-        
-        // 如果用户菜单是打开的，关闭它
-        const userMenu = document.getElementById('userMenu');
-        if (userMenu && userMenu.classList.contains('active')) {
-            userMenu.classList.remove('active');
         }
     });
     
