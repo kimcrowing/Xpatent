@@ -357,77 +357,77 @@ function getRandomYear() {
     return (new Date().getFullYear() - Math.floor(Math.random() * 5)).toString();
 }
 
-// 修改系统提示词
-function buildAPIRequest(message) {
-    const activeFeature = localStorage.getItem('activeFeature') || '通用对话';
-    let systemPrompt = '';
+// 分析文本内容，识别专利技术领域
+function identifyPatentDomain(text) {
+    // 如果没有文本，返回默认领域
+    if (!text || text.trim().length === 0) {
+        return 'general';
+    }
     
-    // 检查消息中是否包含附件内容
-    const hasAttachment = message.includes('===== 附件内容 =====');
+    // 将文本转为小写，用于匹配
+    const lowerText = text.toLowerCase();
     
-    // 如果已加载提示词模板，则使用模板中的提示词
-    if (window.PROMPT_TEMPLATES) {
-        // 根据当前聊天模式获取提示词
-        const currentModeId = localStorage.getItem('selected_chat_mode') || 'general';
-        const chatMode = window.PROMPT_TEMPLATES.chatModes.find(mode => mode.id === currentModeId);
-        
-        if (chatMode) {
-            systemPrompt = chatMode.systemPrompt;
-            
-            // 如果有附件，添加附件相关提示
-            if (hasAttachment) {
-                if (currentModeId === 'general') {
-                    systemPrompt += ' ' + window.PROMPT_TEMPLATES.attachmentPrompts.general;
-                } else if (currentModeId === 'patent-writing') {
-                    systemPrompt += ' ' + window.PROMPT_TEMPLATES.attachmentPrompts.content;
-                } else {
-                    systemPrompt += ' ' + window.PROMPT_TEMPLATES.attachmentPrompts.document;
-                }
+    // 各领域关键词匹配规则
+    const domainKeywords = {
+        'electronics': ['电路', '芯片', '半导体', '集成电路', '微处理器', '传感器', '信号处理', 
+                        'PCB', '电子设备', '通信协议', '无线', '5G', '网络', '服务器', '路由', 
+                        '算法', '软件', '程序', '代码', '接口', 'API', '数据库', '云计算', 
+                        '人工智能', '机器学习', '深度学习', '神经网络', '计算机视觉'],
+                        
+        'mechanical': ['机械', '结构', '装置', '设备', '齿轮', '轴承', '阀门', '泵', '液压', 
+                       '气动', '传动', '连接件', '紧固件', '模具', '机床', '工具', '夹具', 
+                       '弹性', '应力', '强度', '刚度', '摩擦', '润滑', '密封'],
+                       
+        'chemical': ['化学', '化合物', '聚合物', '催化剂', '反应', '合成', '分子', '原子', 
+                     '溶液', '溶剂', '浓度', 'pH值', '酸', '碱', '盐', '氧化', '还原', 
+                     '材料', '陶瓷', '金属', '合金', '复合材料', '涂层', '薄膜'],
+                     
+        'medical': ['医药', '药物', '治疗', '诊断', '检测', '生物', '基因', '蛋白质', '抗体', 
+                    '酶', '细胞', '组织', '器官', '疫苗', '给药', '剂量', '配方', '制剂', 
+                    '药效', '药代动力学', '临床', '疾病', '病症', '病理'],
+                    
+        'energy': ['能源', '发电', '储能', '电池', '太阳能', '风能', '水能', '地热', 
+                  '生物质能', '核能', '燃料', '燃烧', '燃气', '热交换', '保温', '节能', 
+                  '电网', '输电', '配电', '变压器', '电动机', '发动机', '涡轮'],
+                  
+        'aerospace': ['航空', '航天', '飞机', '直升机', '卫星', '火箭', '发射器', '推进剂', 
+                     '轨道', '姿态控制', '导航', '制导', '气动', '流体', '空气动力学', 
+                     '结构强度', '复合材料', '热防护', '降落系统']
+    };
+    
+    // 计算各领域匹配分数
+    const scores = {};
+    for (const [domain, keywords] of Object.entries(domainKeywords)) {
+        scores[domain] = 0;
+        for (const keyword of keywords) {
+            // 统计关键词出现次数
+            const regex = new RegExp(keyword, 'gi');
+            const matches = lowerText.match(regex);
+            if (matches) {
+                scores[domain] += matches.length;
             }
-        } else {
-            // 后备到默认提示词
-            systemPrompt = window.PROMPT_TEMPLATES.chatModes[0].systemPrompt;
-        }
-    } else {
-        // 如果模板未加载，使用原有的提示词逻辑（作为后备）
-        switch(activeFeature) {
-            case '通用对话':
-                systemPrompt = '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。';
-                if (hasAttachment) {
-                    systemPrompt += '用户提供了附件内容，请认真阅读并基于附件内容回答问题。';
-                }
-                break;
-            case '内容创作':
-                systemPrompt = '你是Xpat创作助手，擅长帮助用户创作各类内容。根据用户的描述，提供创意建议、内容结构和详细内容。';
-                if (hasAttachment) {
-                    systemPrompt += '用户提供了附件内容，请将附件内容作为参考或素材进行创作。';
-                }
-                break;
-            case '文档分析':
-                systemPrompt = '你是Xpat分析助手，擅长分析文档并提取重要信息。';
-                if (hasAttachment) {
-                    systemPrompt += '请重点分析用户提供的附件内容，提取关键信息，归纳要点，并提供深入见解。用户问题可能是针对附件内容提出的，请优先考虑附件内容进行回答。';
-                } else {
-                    systemPrompt += '请分析用户提供的文本，归纳要点，并提供见解。';
-                }
-                break;
-            default:
-                systemPrompt = '你是Xpat助手，为用户提供智能对话服务。';
-                if (hasAttachment) {
-                    systemPrompt += '用户提供了附件内容，请认真阅读并基于附件内容回答问题。';
-                }
         }
     }
     
-    console.log('使用系统提示词:', systemPrompt);
+    // 找出得分最高的领域
+    let maxScore = 0;
+    let detectedDomain = 'general';
     
-    return {
-        message: message,
-        systemPrompt: systemPrompt
-    };
+    for (const [domain, score] of Object.entries(scores)) {
+        if (score > maxScore) {
+            maxScore = score;
+            detectedDomain = domain;
+        }
+    }
+    
+    // 只在控制台输出识别结果，不在界面显示
+    console.log('识别的专利领域:', detectedDomain);
+    console.log('各领域匹配分数:', scores);
+    
+    return detectedDomain;
 }
 
-// 模拟从后端获取提示词的函数
+// 修改fetchPromptTemplates函数，添加领域提示词
 async function fetchPromptTemplates() {
     try {
         // 模拟API延迟
@@ -464,6 +464,14 @@ async function fetchPromptTemplates() {
                     content: '用户提供了附件内容，请将附件内容作为参考或素材进行创作。',
                     document: '请重点分析用户提供的附件内容，提取关键信息，归纳要点，并提供深入见解。用户问题可能是针对附件内容提出的，请优先考虑附件内容进行回答。'
                 },
+                domainPrompts: {
+                    'electronics': '你是专精于电子、通信和计算机技术的专利助手。请注重算法、系统架构的描述，关注软硬结合点，避免纯软件方法，使用图表说明，区分功能性特征。',
+                    'mechanical': '你是专精于机械结构和工程设计的专利助手。请详细描述部件形状、结构、材料和连接关系，明确配合方式和相对位置，突出新颖结构的技术效果。',
+                    'chemical': '你是专精于材料科学和化学技术的专利助手。请准确描述材料成分、比例和制备方法，详细说明实验参数和步骤，提供充分实施例和验证数据。',
+                    'medical': '你是专精于医药和生物技术的专利助手。请详细描述活性化合物结构或生物序列，提供实验数据支持，明确给药途径和剂量，严格区分预防性撰写和已验证效果。',
+                    'energy': '你是专精于能源和环保技术的专利助手。请突出技术方案的节能环保效果，详细描述能量转换过程，提供性能参数和比较数据，关注技术与法规的符合性。',
+                    'aerospace': '你是专精于航空航天技术的专利助手。请强调方案的可靠性和安全性，详细说明材料选择和结构设计，提供系统集成和控制逻辑，区分关键技术点。'
+                },
                 formatInstruction: '请使用Markdown格式回复，支持标题、列表、表格、代码块等Markdown语法。'
             }
         };
@@ -498,4 +506,84 @@ async function initPromptTemplates() {
 // 页面加载时初始化提示词
 document.addEventListener('DOMContentLoaded', function() {
     initPromptTemplates();
-}); 
+});
+
+// 修改buildAPIRequest函数，集成领域特定提示词
+function buildAPIRequest(message) {
+    const activeFeature = localStorage.getItem('activeFeature') || '通用对话';
+    let systemPrompt = '';
+    
+    // 检查消息中是否包含附件内容
+    const hasAttachment = message.includes('===== 附件内容 =====');
+    
+    // 获取当前识别的专利领域(如果有)
+    const detectedDomain = window.DETECTED_PATENT_DOMAIN || 'general';
+    
+    // 如果已加载提示词模板，则使用模板中的提示词
+    if (window.PROMPT_TEMPLATES) {
+        // 根据当前聊天模式获取提示词
+        const currentModeId = localStorage.getItem('selected_chat_mode') || 'general';
+        const chatMode = window.PROMPT_TEMPLATES.chatModes.find(mode => mode.id === currentModeId);
+        
+        if (chatMode) {
+            systemPrompt = chatMode.systemPrompt;
+            
+            // 添加领域特定提示词，如果有的话
+            if (detectedDomain !== 'general' && window.PROMPT_TEMPLATES.domainPrompts 
+                && window.PROMPT_TEMPLATES.domainPrompts[detectedDomain]) {
+                systemPrompt += ' ' + window.PROMPT_TEMPLATES.domainPrompts[detectedDomain];
+            }
+            
+            // 如果有附件，添加附件相关提示
+            if (hasAttachment) {
+                if (currentModeId === 'general') {
+                    systemPrompt += ' ' + window.PROMPT_TEMPLATES.attachmentPrompts.general;
+                } else if (currentModeId === 'patent-writing') {
+                    systemPrompt += ' ' + window.PROMPT_TEMPLATES.attachmentPrompts.content;
+                } else {
+                    systemPrompt += ' ' + window.PROMPT_TEMPLATES.attachmentPrompts.document;
+                }
+            }
+        } else {
+            // 后备到默认提示词
+            systemPrompt = window.PROMPT_TEMPLATES.chatModes[0].systemPrompt;
+        }
+    } else {
+        // 如果模板未加载，使用原有的提示词逻辑
+        switch(activeFeature) {
+            case '通用对话':
+                systemPrompt = '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。';
+                if (hasAttachment) {
+                    systemPrompt += '用户提供了附件内容，请认真阅读并基于附件内容回答问题。';
+                }
+                break;
+            case '内容创作':
+                systemPrompt = '你是Xpat创作助手，擅长帮助用户创作各类内容。根据用户的描述，提供创意建议、内容结构和详细内容。';
+                if (hasAttachment) {
+                    systemPrompt += '用户提供了附件内容，请将附件内容作为参考或素材进行创作。';
+                }
+                break;
+            case '文档分析':
+                systemPrompt = '你是Xpat分析助手，擅长分析文档并提取重要信息。';
+                if (hasAttachment) {
+                    systemPrompt += '请重点分析用户提供的附件内容，提取关键信息，归纳要点，并提供深入见解。用户问题可能是针对附件内容提出的，请优先考虑附件内容进行回答。';
+                } else {
+                    systemPrompt += '请分析用户提供的文本，归纳要点，并提供见解。';
+                }
+                break;
+            default:
+                systemPrompt = '你是Xpat助手，为用户提供智能对话服务。';
+                if (hasAttachment) {
+                    systemPrompt += '用户提供了附件内容，请认真阅读并基于附件内容回答问题。';
+                }
+        }
+    }
+    
+    console.log('使用系统提示词:', systemPrompt);
+    console.log('检测到的专利领域:', detectedDomain);
+    
+    return {
+        message: message,
+        systemPrompt: systemPrompt
+    };
+} 
