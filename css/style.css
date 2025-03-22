@@ -12,7 +12,7 @@ body {
     height: 100vh;
     overflow: hidden;
     transition: none;
-    background-color: transparent !important; /* 确保不被覆盖 */
+    background-color: var(--bg-color); /* 使用变量而非透明背景 */
 }
 
 /* 导航栏样式 */
@@ -549,7 +549,7 @@ body {
 /* 主题切换过渡效果 */
 body {
     transition: none;
-    background-color: transparent !important; /* 确保不被覆盖 */
+    background-color: var(--bg-color); /* 使用变量而非透明背景 */
 }
 
 .navbar, .logo, .user-menu, .input-wrapper, .search-options, .think-btn, .model-selector, 
