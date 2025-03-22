@@ -45,20 +45,20 @@ body {
 }
 
 .icon-btn {
-    background: none;
+    background: transparent;
     border: none;
     cursor: pointer;
-    width: 36px;
-    height: 36px;
+    padding: 6px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s ease;
+    color: var(--text-secondary);
+    transition: background-color 0.2s;
 }
 
 .icon-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--hover-color);
 }
 
 .user-avatar {
@@ -312,43 +312,31 @@ body {
     font-weight: 500;
 }
 
-/* 输入区域 */
-.input-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 20px 24px 40px;
-    background-color: var(--bg-color);
-    transition: all 0.3s ease;
-    z-index: 10;
-}
-
+/* 输入区域布局 */
 .input-area {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 20px;
+    padding: 10px 20px 16px;
     background-color: var(--bg-color);
     border-top: 1px solid var(--border-color);
     z-index: 10;
     display: flex;
-    justify-content: center;
-    width: 100%;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .input-wrapper {
-    background-color: var(--input-bg);
-    border-radius: 24px;
-    padding: 12px 16px;
     display: flex;
     align-items: center;
+    background-color: var(--input-bg);
     border: 1px solid var(--border-color);
-    position: relative;
-    max-width: 800px;
+    border-radius: 20px;
+    padding: 5px 5px 5px 16px;
     margin: 0 auto;
     width: 100%;
+    max-width: 900px;
 }
 
 .input-wrapper:focus-within {
@@ -360,77 +348,58 @@ body {
     flex: 1;
     border: none;
     background: transparent;
-    padding: 10px 14px;
+    padding: 10px 2px;
     font-size: 16px;
     color: var(--text-color);
     outline: none;
     min-height: 44px;
+    width: 100%;
 }
 
 .input-wrapper input[type="text"]::placeholder {
     color: var(--placeholder-color);
 }
 
-.icon-btn {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 6px;
-    border-radius: 50%;
+/* 控制栏布局 */
+.controls-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 10px;
+}
+
+.left-controls {
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: var(--text-secondary);
-    transition: background-color 0.2s;
+    gap: 10px;
 }
 
-.icon-btn:hover {
-    background-color: var(--hover-color);
-}
-
-.input-buttons {
+.right-controls {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
-.send-btn {
-    background-color: var(--primary-color);
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.send-btn:hover {
-    background-color: var(--primary-hover);
-}
-
-.send-btn:disabled {
-    background-color: var(--disabled-color);
-    cursor: not-allowed;
-}
-
-/* 附件上传样式 */
+/* 附件信息样式优化 */
 #attachmentInfo {
     display: flex;
     align-items: center;
-    padding: 4px 8px;
-    margin-right: 8px;
-    background-color: rgba(88, 101, 242, 0.1);
+    padding: 6px 12px;
+    background-color: var(--attachment-bg);
     border-radius: 16px;
-    max-width: 200px;
+    max-width: 300px;
+    margin: 0;
 }
 
 #fileName {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 14px;
+    max-width: 250px;
 }
 
 #removeAttachment {
@@ -441,6 +410,9 @@ body {
     cursor: pointer;
     padding: 0 0 0 8px;
     margin-left: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* 输入状态指示器 */
@@ -558,17 +530,17 @@ svg path {
     }
 }
 
-/* 模型选择器样式 */
+/* 模型选择器样式优化 */
 .model-selector {
     display: flex;
     align-items: center;
-    padding: 4px 10px;
-    background-color: var(--model-selector-bg, rgba(255, 255, 255, 0.05));
-    border-radius: 12px;
+    gap: 6px;
+    background-color: var(--model-selector-bg);
+    border-radius: 16px;
+    padding: 6px 12px;
     cursor: pointer;
     transition: background-color 0.2s;
-    border: none;
-    color: var(--text-color);
+    border: 1px solid var(--border-color);
 }
 
 .model-selector:hover {
@@ -576,8 +548,8 @@ svg path {
 }
 
 .model-selector span {
-    margin-right: 6px;
-    font-size: 13px;
+    font-size: 14px;
+    color: var(--text-color);
 }
 
 .model-dropdown {
@@ -758,4 +730,27 @@ svg path {
     max-width: 900px;
     padding: 0 20px;
     margin: 0 auto;
+}
+
+.send-btn {
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-left: 8px;
+}
+
+.send-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+.send-btn:disabled {
+    background-color: var(--disabled-color);
+    cursor: not-allowed;
 } 
