@@ -209,7 +209,4 @@ function userMenuClickHandler(e) {
         }
         console.log('用户菜单已显示');
     }
-    
-    // 强制重绘
-    void userMenu.offsetHeight;
 } 
