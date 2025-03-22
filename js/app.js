@@ -1,3 +1,29 @@
+// 定义全局toggleUserMenu函数，处理用户菜单的显示/隐藏
+function toggleUserMenu(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    console.log('toggleUserMenu被调用!');
+    
+    // 获取用户菜单元素
+    const userMenu = document.getElementById('userMenu');
+    if (!userMenu) {
+        console.error('未找到用户菜单元素!');
+        return;
+    }
+    
+    // 切换菜单显示状态
+    if (userMenu.style.display === 'block') {
+        userMenu.style.display = 'none';
+        console.log('用户菜单已关闭');
+    } else {
+        userMenu.style.display = 'block';
+        console.log('用户菜单已打开');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化UI元素引用
     const loginPage = document.getElementById('loginPage');
@@ -9,9 +35,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const showLoginBtn = document.getElementById('showLoginBtn');
     const loginError = document.getElementById('loginError');
     const registerError = document.getElementById('registerError');
+    
+    // 确保获取到用户菜单按钮
     const userMenuBtn = document.getElementById('userMenuBtn');
+    console.log('用户菜单按钮元素:', userMenuBtn); // 添加日志，查看是否找到元素
+    
     const featureMenuBtn = document.getElementById('featureMenuBtn');
     const userMenu = document.getElementById('userMenu');
+    console.log('用户菜单元素:', userMenu); // 添加日志，查看是否找到元素
+    
     const logoutBtn = document.getElementById('logoutBtn');
 
     // 初始化应用状态
@@ -220,16 +252,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 添加用户菜单点击事件处理
     if (userMenuBtn && userMenu) {
-        console.log('初始化用户菜单点击事件');
+        console.log('初始化用户菜单点击事件 - 按钮:', userMenuBtn);
+        console.log('初始化用户菜单点击事件 - 菜单:', userMenu);
         
         // 初始化时隐藏菜单
         userMenu.style.display = 'none';
         
-        userMenuBtn.addEventListener('click', function(e) {
+        // 移除可能存在的旧事件监听器
+        const newUserMenuBtn = userMenuBtn.cloneNode(true);
+        userMenuBtn.parentNode.replaceChild(newUserMenuBtn, userMenuBtn);
+        
+        // 重新添加点击事件监听器
+        newUserMenuBtn.addEventListener('click', function(e) {
+            console.log('用户菜单按钮被点击了!');
             e.preventDefault();
             e.stopPropagation(); // 阻止事件冒泡
-            
-            console.log('用户菜单按钮点击');
             
             // 切换用户菜单显示状态
             if (userMenu.style.display === 'block') {
@@ -244,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 点击页面其他区域关闭菜单
         document.addEventListener('click', function(e) {
             if (userMenu.style.display === 'block' && 
-                !userMenuBtn.contains(e.target) && 
+                !newUserMenuBtn.contains(e.target) && 
                 !userMenu.contains(e.target)) {
                 userMenu.style.display = 'none';
                 console.log('点击页面其他区域，用户菜单已关闭');
@@ -252,6 +289,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     } else {
         console.warn('未找到用户菜单或用户菜单按钮，用户菜单功能将不可用');
+        // 调试：查找所有可能的菜单按钮
+        const allButtons = document.querySelectorAll('button');
+        console.log('页面上的所有按钮:', allButtons);
     }
     
     // 绑定退出登录按钮
@@ -279,4 +319,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 500);
     }
+
+    // 添加点击文档其他区域关闭用户菜单的事件
+    document.addEventListener('click', function(event) {
+        const userMenu = document.getElementById('userMenu');
+        const userMenuBtn = document.getElementById('userMenuBtn');
+        
+        if (userMenu && 
+            userMenu.style.display === 'block' && 
+            userMenuBtn && 
+            !userMenuBtn.contains(event.target) && 
+            !userMenu.contains(event.target)) {
+            userMenu.style.display = 'none';
+            console.log('点击外部区域，用户菜单已关闭');
+        }
+    });
 }); 
