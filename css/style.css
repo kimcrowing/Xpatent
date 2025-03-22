@@ -1037,4 +1037,46 @@ svg path {
     height: 100vh;
     display: flex;
     flex-direction: column;
+}
+
+/* 主题切换按钮样式 */
+#themeToggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#themeToggle:hover {
+    background-color: var(--hover-color);
+}
+
+#themeToggle .theme-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#themeToggle svg {
+    width: 18px;
+    height: 18px;
+    color: var(--text-color);
+}
+
+#themeToggle span {
+    display: none; /* 在小屏幕上隐藏文字 */
+}
+
+@media (min-width: 768px) {
+    #themeToggle {
+        padding: 4px 10px;
+    }
+    
+    #themeToggle span {
+        display: inline-block;
+        font-size: 14px;
+    }
 } 
