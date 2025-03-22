@@ -101,32 +101,19 @@ document.addEventListener('DOMContentLoaded', () => {
         messageDiv.className = 'message ai-message';
         messageDiv.innerHTML = `
             <div class="message-avatar ai">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10 2C14.4183 2 18 5.58172 18 10C18 14.4183 14.4183 18 10 18C5.58172 18 2 14.4183 2 10C2 5.58172 5.58172 2 10 2ZM10 4C6.68629 4 4 6.68629 4 10C4 13.3137 6.68629 16 10 16C13.3137 16 16 13.3137 16 10C16 6.68629 13.3137 4 10 4Z" fill="white"/>
+                <svg width="20" height="20" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 2C7.373 2 2 7.373 2 14C2 20.627 7.373 26 14 26C20.627 26 26 20.627 26 14C26 7.373 20.627 2 14 2ZM14 5C18.418 5 22 8.582 22 13C22 17.418 18.418 21 14 21C9.582 21 6 17.418 6 13C6 8.582 9.582 5 14 5Z" fill="#5865f2"/>
                 </svg>
             </div>
-            <div class="message-content">${formatMessage(content)}</div>
-            <div class="message-actions">
-                <button class="action-btn" title="重新生成">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8 3V1L4 5L8 9V7C10.7614 7 13 9.23858 13 12C13 14.7614 10.7614 17 8 17C5.23858 17 3 14.7614 3 12H1C1 15.866 4.13401 19 8 19C11.866 19 15 15.866 15 12C15 8.13401 11.866 5 8 5V3Z" fill="white"/>
-                    </svg>
-                </button>
-                <button class="action-btn" title="复制">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M2 2V11H5V14H14V5H11V2H2ZM3 3H10V10H3V3ZM11 6H13V13H6V11H11V6Z" fill="white"/>
-                    </svg>
-                </button>
-                <button class="action-btn" title="点赞">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8 14L2 8C0.9 6.9 0.9 5.1 2 4C3.1 2.9 4.9 2.9 6 4L8 6L10 4C11.1 2.9 12.9 2.9 14 4C15.1 5.1 15.1 6.9 14 8L8 14Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-                <button class="action-btn" title="踩">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8 14L2 8C0.9 6.9 0.9 5.1 2 4C3.1 2.9 4.9 2.9 6 4L8 6L10 4C11.1 2.9 12.9 2.9 14 4C15.1 5.1 15.1 6.9 14 8L8 14Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" transform="rotate(180 8 9)"/>
-                    </svg>
-                </button>
+            <div class="message-content">
+                <div class="message-actions">
+                    <button class="action-btn" title="复制">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2 2V11H5V14H14V5H11V2H2ZM3 3H10V10H3V3ZM11 6H13V13H6V11H11V6Z" fill="white"/>
+                        </svg>
+                    </button>
+                </div>
+                ${formatMessage(content)}
             </div>
         `;
         chatMessages.appendChild(messageDiv);
@@ -139,8 +126,8 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingDiv.className = 'message ai-message loading';
         loadingDiv.innerHTML = `
             <div class="message-avatar ai">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10 2C14.4183 2 18 5.58172 18 10C18 14.4183 14.4183 18 10 18C5.58172 18 2 14.4183 2 10C2 5.58172 5.58172 2 10 2ZM10 4C6.68629 4 4 6.68629 4 10C4 13.3137 6.68629 16 10 16C13.3137 16 16 13.3137 16 10C16 6.68629 13.3137 4 10 4Z" fill="white"/>
+                <svg width="20" height="20" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 2C7.373 2 2 7.373 2 14C2 20.627 7.373 26 14 26C20.627 26 26 20.627 26 14C26 7.373 20.627 2 14 2ZM14 5C18.418 5 22 8.582 22 13C22 17.418 18.418 21 14 21C9.582 21 6 17.418 6 13C6 8.582 9.582 5 14 5Z" fill="#5865f2"/>
                 </svg>
             </div>
             <div class="message-content">
@@ -299,39 +286,65 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 直接调用OpenRouter API
     async function callOpenRouterAPI(messages, model) {
-        // 获取API配置
-        const config = await getApiConfig();
-        
-        const response = await fetch(config.endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${config.apiKey}`,
-                'HTTP-Referer': config.referer,
-                'X-Title': config.title
-            },
-            body: JSON.stringify({
+        try {
+            // 清除先前缓存的API配置，确保获取最新配置
+            apiConfig = null;
+            
+            // 获取API配置
+            const config = await getApiConfig();
+            
+            if (!config || !config.apiKey) {
+                throw new Error('无法获取有效的API配置或API密钥');
+            }
+            
+            // 安全地显示API密钥（只显示前6位和后4位）
+            const apiKeyStart = config.apiKey.substring(0, 6);
+            const apiKeyEnd = config.apiKey.substring(config.apiKey.length - 4);
+            const maskedApiKey = `${apiKeyStart}...${apiKeyEnd}`;
+            
+            console.log('正在使用API配置:', {
+                endpoint: config.endpoint,
                 model: model || config.model,
-                messages: messages,
-                max_tokens: 2000,
-                stream: false
-            })
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            const errorMessage = errorData.error?.message || `状态码: ${response.status} - ${response.statusText}`;
-            throw new Error(`OpenRouter API请求失败: ${errorMessage}`);
+                apiKey: maskedApiKey  // 显示部分masked的API密钥
+            });
+            
+            // 处理标题中可能包含的非ISO-8859-1字符
+            const safeTitle = encodeURIComponent(config.title);
+            
+            const response = await fetch(config.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${config.apiKey}`,
+                    'HTTP-Referer': config.referer,
+                    'X-Title': safeTitle
+                },
+                body: JSON.stringify({
+                    model: model || config.model,
+                    messages: messages,
+                    max_tokens: 2000,
+                    stream: false
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.error?.message || `状态码: ${response.status} - ${response.statusText}`;
+                throw new Error(`OpenRouter API请求失败: ${errorMessage}`);
+            }
+            
+            const data = await response.json();
+            
+            // 记录API使用情况
+            if (data.usage && data.usage.total_tokens) {
+                logApiUsage(data.model, data.usage.total_tokens);
+            }
+            
+            return data.choices[0].message.content;
+        } catch (error) {
+            console.error('调用API时出错:', error);
+            throw error;
         }
-        
-        const data = await response.json();
-        
-        // 记录API使用情况
-        if (data.usage && data.usage.total_tokens) {
-            logApiUsage(data.model, data.usage.total_tokens);
-        }
-        
-        return data.choices[0].message.content;
     }
     
     // 发送消息
