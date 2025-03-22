@@ -1,0 +1,219 @@
+/**
+ * 后端API通信模块
+ * 这个模块负责与后端API进行通信，包括用户登录、获取和管理提示词等功能
+ */
+
+// 后端API基础URL - 可以动态修改，以支持GitHub Pages环境
+window.API_BASE_URL = 'http://localhost:3000/api';
+
+// 本地存储密钥
+const TOKEN_KEY = 'xpat_auth_token';
+const USER_INFO_KEY = 'xpat_user_info';
+
+/**
+ * 从本地存储获取令牌
+ */
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+/**
+ * 从本地存储获取用户信息
+ */
+function getUserInfo() {
+  const userInfo = localStorage.getItem(USER_INFO_KEY);
+  return userInfo ? JSON.parse(userInfo) : null;
+}
+
+/**
+ * 检查用户是否是管理员
+ */
+function isAdmin() {
+  const userInfo = getUserInfo();
+  return userInfo && userInfo.role === 'admin';
+}
+
+/**
+ * 设置认证信息到本地存储
+ */
+function setAuth(token, user) {
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
+}
+
+/**
+ * 清除认证信息
+ */
+function clearAuth() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_INFO_KEY);
+}
+
+/**
+ * 通用API请求函数
+ */
+async function apiRequest(endpoint, method = 'GET', data = null, requireAuth = true) {
+  const url = `${window.API_BASE_URL}${endpoint}`;
+  
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  
+  if (requireAuth) {
+    const token = getToken();
+    if (!token) {
+      throw new Error('未登录，请先登录');
+    }
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const options = {
+    method,
+    headers,
+    mode: 'cors'
+  };
+  
+  if (data && (method === 'POST' || method === 'PUT')) {
+    options.body = JSON.stringify(data);
+  }
+  
+  try {
+    const response = await fetch(url, options);
+    const responseData = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(responseData.error?.message || '请求失败');
+    }
+    
+    return responseData;
+  } catch (error) {
+    console.error('API请求错误:', error);
+    throw error;
+  }
+}
+
+/**
+ * 用户登录
+ */
+async function login(email, password) {
+  const response = await apiRequest('/auth/login', 'POST', { email, password }, false);
+  
+  if (response.token && response.user) {
+    setAuth(response.token, response.user);
+  }
+  
+  return response;
+}
+
+/**
+ * 用户注册
+ */
+async function register(username, email, password) {
+  return apiRequest('/auth/register', 'POST', { username, email, password }, false);
+}
+
+/**
+ * 获取用户资料
+ */
+async function getUserProfile() {
+  return apiRequest('/users/profile');
+}
+
+/**
+ * 获取所有提示词模板
+ */
+async function getAllPrompts(category = null) {
+  let endpoint = '/prompts';
+  if (category) {
+    endpoint += `?category=${encodeURIComponent(category)}`;
+  }
+  return apiRequest(endpoint);
+}
+
+/**
+ * 获取单个提示词模板
+ */
+async function getPrompt(id) {
+  return apiRequest(`/prompts/${id}`);
+}
+
+/**
+ * 创建新的提示词模板
+ */
+async function createPrompt(name, category, content, isPublic = false) {
+  return apiRequest('/prompts', 'POST', { name, category, content, isPublic });
+}
+
+/**
+ * 更新提示词模板
+ */
+async function updatePrompt(id, data) {
+  return apiRequest(`/prompts/${id}`, 'PUT', data);
+}
+
+/**
+ * 删除提示词模板
+ */
+async function deletePrompt(id) {
+  return apiRequest(`/prompts/${id}`, 'DELETE');
+}
+
+/**
+ * 获取订阅计划
+ */
+async function getSubscriptionPlans() {
+  return apiRequest('/subscriptions');
+}
+
+/**
+ * 获取API使用情况
+ */
+async function getApiUsage() {
+  return apiRequest('/usage/status');
+}
+
+// 检测是否在GitHub Pages环境，并尝试设置API地址
+(function detectEnvironment() {
+  // 检测是否在GitHub Pages环境
+  const isGitHubPages = window.location.hostname.includes('github.io');
+  
+  if (isGitHubPages) {
+    // 从本地存储中获取API地址
+    const savedApiUrl = localStorage.getItem('xpat_api_url');
+    
+    if (savedApiUrl) {
+      window.API_BASE_URL = savedApiUrl;
+      console.log('从本地存储加载API地址:', savedApiUrl);
+    } else {
+      // 第一次访问，提示用户输入API地址
+      const defaultApiUrl = 'http://localhost:3000/api';
+      const apiUrl = prompt(
+        '请输入后端API地址（例如：https://your-api-server.com/api）',
+        defaultApiUrl
+      );
+      
+      if (apiUrl && apiUrl !== defaultApiUrl) {
+        window.API_BASE_URL = apiUrl;
+        localStorage.setItem('xpat_api_url', apiUrl);
+        console.log('已设置并保存API地址:', apiUrl);
+      }
+    }
+  }
+})();
+
+// 导出API函数
+window.backendApi = {
+  login,
+  register,
+  getUserProfile,
+  getAllPrompts,
+  getPrompt,
+  createPrompt,
+  updatePrompt,
+  deletePrompt,
+  getSubscriptionPlans,
+  getApiUsage,
+  isAdmin,
+  clearAuth,
+  getUserInfo
+}; 

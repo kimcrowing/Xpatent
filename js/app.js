@@ -15,6 +15,77 @@ document.addEventListener('DOMContentLoaded', () => {
         welcomeTitle.textContent = `${getGreeting()}, ${userName}`;
     }
     
+    // 检查用户登录状态并更新UI
+    function updateUserLoginState() {
+        const userInfo = window.backendApi.getUserInfo();
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const adminEntry = document.getElementById('admin-entry');
+        
+        if (userInfo) {
+            // 用户已登录
+            if (loginBtn) loginBtn.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'list-item';
+            
+            // 更新欢迎信息
+            if (welcomeTitle && userInfo.username) {
+                welcomeTitle.textContent = `${getGreeting()}, ${userInfo.username}`;
+            }
+            
+            // 如果是管理员，显示管理入口
+            if (adminEntry && window.backendApi.isAdmin()) {
+                adminEntry.style.display = 'list-item';
+            }
+        } else {
+            // 用户未登录
+            if (loginBtn) loginBtn.style.display = 'list-item';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            if (adminEntry) adminEntry.style.display = 'none';
+        }
+    }
+    
+    // 初始检查登录状态
+    updateUserLoginState();
+    
+    // 处理登录点击事件
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            // 弹出简单的登录表单
+            const email = prompt('请输入邮箱地址:', 'admin@example.com');
+            if (!email) return;
+            
+            const password = prompt('请输入密码:', 'admin123');
+            if (!password) return;
+            
+            // 调用登录API
+            window.backendApi.login(email, password)
+                .then(response => {
+                    alert('登录成功！');
+                    updateUserLoginState();
+                    // 关闭菜单
+                    const userMenu = document.getElementById('userMenu');
+                    if (userMenu) userMenu.classList.remove('active');
+                })
+                .catch(error => {
+                    alert('登录失败: ' + error.message);
+                });
+        });
+    }
+    
+    // 处理退出点击事件
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            window.backendApi.clearAuth();
+            alert('已退出登录');
+            updateUserLoginState();
+            // 关闭菜单
+            const userMenu = document.getElementById('userMenu');
+            if (userMenu) userMenu.classList.remove('active');
+        });
+    }
+    
     // 用户菜单交互 - 完全重写
     const userMenuBtn = document.getElementById('userMenuBtn');
     const userMenu = document.getElementById('userMenu');

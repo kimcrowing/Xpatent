@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark-theme">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Xpat - 管理后台</title>
+    <link rel="stylesheet" href="css/style.css?v=1.3">
+    <link rel="stylesheet" href="css/dark-theme.css?v=1.3">
+    <link rel="stylesheet" href="css/light-theme.css?v=1.3">
+    <link rel="stylesheet" href="css/admin.css?v=1.0">
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjgiIGhlaWdodD0iMjgiIHZpZXdCb3g9IjAgMCAyOCAyOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTQgMkM3LjM3MyAyIDIgNy4zNzMgMiAxNEMyIDIwLjYyNyA3LjM3MyAyNiAxNCAyNkMyMC42MjcgMjYgMjYgMjAuNjI3IDI2IDE0QzI2IDcuMzczIDIwLjYyNyAyIDE0IDJaTTE0IDVDMTguNDE4IDUgMjIgOC41ODIgMjIgMTNDMjIgMTcuNDE4IDE4LjQxOCAyMSAxNCAyMUM5LjU4MiAyMSA2IDE3LjQxOCA2IDEzQzYgOC41ODIgOS41ODIgNSAxNCA1WiIgZmlsbD0iIzU4NjVmMiIvPjwvc3ZnPg==" type="image/svg+xml">
+</head>
+<body class="dark-theme">
+    <!-- 顶部导航栏 -->
+    <header class="navbar">
+        <div class="logo">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 2C7.373 2 2 7.373 2 14C2 20.627 7.373 26 14 26C20.627 26 26 20.627 26 14C26 7.373 20.627 2 14 2ZM14 5C18.418 5 22 8.582 22 13C22 17.418 18.418 21 14 21C9.582 21 6 17.418 6 13C6 8.582 9.582 5 14 5Z" fill="white"/>
+            </svg>
+            <span>Xpat 管理后台</span>
+        </div>
+        <div class="nav-controls">
+            <button class="icon-btn theme-toggle-btn" id="themeToggle" title="切换主题">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="theme-icon">
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18Z" fill="currentColor"/>
+                </svg>
+            </button>
+            <a href="index.html" class="nav-link" title="返回前台">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 12L5 10M5 10L12 3L19 10M5 10V20C5 20.5523 5.44772 21 6 21H9M19 10L21 12M19 10V20C19 20.5523 18.5523 21 18 21H15M9 21C9.55228 21 10 20.5523 10 20V16C10 15.4477 10.4477 15 11 15H13C13.5523 15 14 15.4477 14 16V20C14 20.5523 14.4477 21 15 21M9 21H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </a>
+            <button class="icon-btn logout-btn" id="logoutBtn" title="退出登录" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17 16L21 12M21 12L17 8M21 12H7M13 16V17C13 18.6569 11.6569 20 10 20H6C4.34315 20 3 18.6569 3 17V7C3 5.34315 4.34315 4 6 4H10C11.6569 4 13 5.34315 13 7V8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主要内容区域 -->
+    <main>
+        <!-- 登录表单 -->
+        <div id="loginContainer" class="admin-container">
+            <div class="card">
+                <h2>管理员登录</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email">邮箱</label>
+                        <input type="email" id="email" required placeholder="请输入管理员邮箱">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">密码</label>
+                        <input type="password" id="password" required placeholder="请输入密码">
+                    </div>
+                    <div class="form-error" id="loginError"></div>
+                    <button type="submit" class="btn btn-primary">登录</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 管理后台内容 -->
+        <div id="adminContent" style="display: none;">
+            <!-- 侧边栏菜单 -->
+            <aside class="sidebar">
+                <ul class="menu">
+                    <li class="menu-item active" data-section="promptsManagement">提示词管理</li>
+                    <li class="menu-item" data-section="userManagement">用户管理</li>
+                    <li class="menu-item" data-section="subscriptionManagement">订阅管理</li>
+                    <li class="menu-item" data-section="apiUsage">API使用统计</li>
+                </ul>
+            </aside>
+
+            <!-- 内容区域 -->
+            <div class="content-area">
+                <!-- 提示词管理 -->
+                <section id="promptsManagement" class="admin-section">
+                    <div class="section-header">
+                        <h2>提示词管理</h2>
+                        <button class="btn btn-primary" id="addPromptBtn">新增提示词</button>
+                    </div>
+                    
+                    <div class="filters">
+                        <div class="form-group">
+                            <label for="promptCategoryFilter">分类筛选</label>
+                            <select id="promptCategoryFilter">
+                                <option value="">所有分类</option>
+                                <option value="general">通用对话</option>
+                                <option value="patent-search">专利检索</option>
+                                <option value="patent-writing">专利撰写</option>
+                                <option value="patent-analysis">专利分析</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="data-table-container">
+                        <table class="data-table" id="promptsTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>名称</th>
+                                    <th>分类</th>
+                                    <th>公开状态</th>
+                                    <th>创建者</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 数据将通过JavaScript动态填充 -->
+                            </tbody>
+                        </table>
+                        <div class="empty-state" id="promptsEmptyState" style="display: none;">
+                            <p>暂无数据</p>
+                        </div>
+                        <div class="loading-state" id="promptsLoadingState">
+                            <p>加载中...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 用户管理 -->
+                <section id="userManagement" class="admin-section" style="display: none;">
+                    <div class="section-header">
+                        <h2>用户管理</h2>
+                    </div>
+                    <div class="data-table-container">
+                        <p>此功能将在后续版本中实现。</p>
+                    </div>
+                </section>
+
+                <!-- 订阅管理 -->
+                <section id="subscriptionManagement" class="admin-section" style="display: none;">
+                    <div class="section-header">
+                        <h2>订阅管理</h2>
+                    </div>
+                    <div class="data-table-container">
+                        <p>此功能将在后续版本中实现。</p>
+                    </div>
+                </section>
+
+                <!-- API使用统计 -->
+                <section id="apiUsage" class="admin-section" style="display: none;">
+                    <div class="section-header">
+                        <h2>API使用统计</h2>
+                    </div>
+                    <div class="data-table-container">
+                        <p>此功能将在后续版本中实现。</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- 模态框 -->
+    <div id="modalOverlay" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">提示词编辑</h3>
+                <button class="close-modal" id="closeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="promptForm">
+                    <input type="hidden" id="promptId">
+                    <div class="form-group">
+                        <label for="promptName">名称</label>
+                        <input type="text" id="promptName" required placeholder="提示词名称">
+                    </div>
+                    <div class="form-group">
+                        <label for="promptCategory">分类</label>
+                        <select id="promptCategory" required>
+                            <option value="general">通用对话</option>
+                            <option value="patent-search">专利检索</option>
+                            <option value="patent-writing">专利撰写</option>
+                            <option value="patent-analysis">专利分析</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="promptContent">内容</label>
+                        <textarea id="promptContent" rows="8" required placeholder="输入提示词内容..."></textarea>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="promptIsPublic">
+                            <span>公开提示词（所有用户可见）</span>
+                        </label>
+                    </div>
+                    <div class="form-error" id="promptFormError"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelPromptBtn">取消</button>
+                <button class="btn btn-primary" id="savePromptBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div id="deleteModalOverlay" class="modal-overlay" style="display: none;">
+        <div class="modal small-modal">
+            <div class="modal-header">
+                <h3>确认删除</h3>
+                <button class="close-modal" id="closeDeleteModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除这个提示词吗？此操作无法撤销。</p>
+                <input type="hidden" id="deletePromptId">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelDeleteBtn">取消</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入脚本 -->
+    <script src="js/theme.js?v=1.3"></script>
+    <script src="js/backend-api.js?v=1.0"></script>
+    <script src="js/admin.js?v=1.0"></script>
+</body>
+</html> 
