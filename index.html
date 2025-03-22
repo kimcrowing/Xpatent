@@ -154,21 +154,5 @@
     <script src="js/featureMenu.js?v=1.1"></script>
     <script src="js/attachment.js?v=1.1"></script>
     <script src="js/chatModeSelector.js?v=1.1"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // 点击附件按钮时触发文件上传
-        const attachButton = document.getElementById('attachButton');
-        const fileUpload = document.getElementById('fileUpload');
-        
-        if (attachButton && fileUpload) {
-            attachButton.addEventListener('click', function() {
-                fileUpload.click();
-            });
-            console.log('附件上传按钮已初始化');
-        } else {
-            console.error('找不到附件上传按钮或文件上传元素');
-        }
-    });
-    </script>
 </body>
 </html> 
