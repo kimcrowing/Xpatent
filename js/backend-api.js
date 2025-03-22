@@ -3,8 +3,8 @@
  * 这个模块负责与后端API进行通信，包括用户登录、获取和管理提示词等功能
  */
 
-// 后端API基础URL - 可以动态修改，以支持GitHub Pages环境
-window.API_BASE_URL = 'http://localhost:3000/api';
+// API基础URL
+const API_BASE_URL = 'http://localhost:3000/api';
 
 // 本地存储密钥
 const TOKEN_KEY = 'xpat_auth_token';
@@ -49,75 +49,231 @@ function clearAuth() {
   localStorage.removeItem(USER_INFO_KEY);
 }
 
+// 从本地存储加载API地址
+(function() {
+    const savedApiUrl = localStorage.getItem('xpat_api_url');
+    if (savedApiUrl) {
+        window.API_BASE_URL = savedApiUrl;
+    }
+})();
+
 /**
  * 通用API请求函数
  */
-async function apiRequest(endpoint, method = 'GET', data = null, requireAuth = true) {
-  const url = `${window.API_BASE_URL}${endpoint}`;
-  
-  const headers = {
-    'Content-Type': 'application/json'
-  };
-  
-  if (requireAuth) {
-    const token = getToken();
-    if (!token) {
-      throw new Error('未登录，请先登录');
-    }
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  
-  const options = {
-    method,
-    headers,
-    mode: 'cors'
-  };
-  
-  if (data && (method === 'POST' || method === 'PUT')) {
-    options.body = JSON.stringify(data);
-  }
-  
-  try {
-    const response = await fetch(url, options);
-    const responseData = await response.json();
+async function apiRequest(endpoint, method = 'GET', data = null, requireAuth = false) {
+    const url = `${API_BASE_URL}${endpoint}`;
     
-    if (!response.ok) {
-      throw new Error(responseData.error?.message || '请求失败');
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    
+    // 如果需要认证，添加JWT token
+    if (requireAuth) {
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+            throw new Error('需要认证，但未找到token');
+        }
+        headers['Authorization'] = `Bearer ${token}`;
     }
     
-    return responseData;
-  } catch (error) {
-    console.error('API请求错误:', error);
-    throw error;
-  }
+    const options = {
+        method,
+        headers,
+        credentials: 'include'
+    };
+    
+    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+        options.body = JSON.stringify(data);
+    }
+    
+    try {
+        const response = await fetch(url, options);
+        
+        // 处理401错误 (未授权)
+        if (response.status === 401) {
+            localStorage.removeItem('jwt_token');
+            throw new Error('认证失败或会话已过期');
+        }
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.message || '请求失败');
+        }
+        
+        return result;
+    } catch (error) {
+        console.error('API请求错误:', error);
+        throw error;
+    }
 }
 
-/**
- * 用户登录
- */
-async function login(email, password) {
-  const response = await apiRequest('/auth/login', 'POST', { email, password }, false);
-  
-  if (response.token && response.user) {
-    setAuth(response.token, response.user);
-  }
-  
-  return response;
-}
-
-/**
- * 用户注册
- */
-async function register(username, email, password) {
-  return apiRequest('/auth/register', 'POST', { username, email, password }, false);
-}
-
-/**
- * 获取用户资料
- */
-async function getUserProfile() {
-  return apiRequest('/users/profile');
-}
+// 后端API对象
+window.backendApi = {
+    // 用户认证API
+    
+    // 登录
+    async login(email, password) {
+        const response = await apiRequest('/auth/login', 'POST', { email, password });
+        
+        if (response.token && response.user) {
+            setAuth(response.token, response.user);
+        }
+        
+        return response;
+    },
+    
+    // 注册
+    async register(username, email, password) {
+        return apiRequest('/auth/register', 'POST', { username, email, password });
+    },
+    
+    // 验证token
+    async validateToken(token) {
+        try {
+            const result = await apiRequest('/auth/validate', 'POST', { token });
+            return result.valid === true;
+        } catch (error) {
+            return false;
+        }
+    },
+    
+    // 获取用户资料
+    async getUserProfile() {
+        return apiRequest('/users/profile', 'GET', null, true);
+    },
+    
+    // 更新用户资料
+    async updateUserProfile(profileData) {
+        return apiRequest('/users/profile', 'PUT', profileData, true);
+    },
+    
+    // 更改密码
+    async changePassword(oldPassword, newPassword) {
+        return apiRequest('/users/change-password', 'POST', { oldPassword, newPassword }, true);
+    },
+    
+    // API密钥管理
+    async getApiKeys() {
+        return apiRequest('/users/api-keys', 'GET', null, true);
+    },
+    
+    async createApiKey(name) {
+        return apiRequest('/users/api-keys', 'POST', { name }, true);
+    },
+    
+    async deleteApiKey(keyId) {
+        return apiRequest(`/users/api-keys/${keyId}`, 'DELETE', null, true);
+    },
+    
+    // 订阅计划API
+    
+    // 获取所有订阅计划
+    async getAllSubscriptionPlans() {
+        return apiRequest('/admin/subscription-plans', 'GET', null, true);
+    },
+    
+    // 创建订阅计划 (管理员)
+    async createSubscriptionPlan(planData) {
+        return apiRequest('/admin/subscription-plans', 'POST', planData, true);
+    },
+    
+    // 更新订阅计划 (管理员)
+    async updateSubscriptionPlan(planId, planData) {
+        return apiRequest(`/admin/subscription-plans/${planId}`, 'PUT', planData, true);
+    },
+    
+    // 删除订阅计划 (管理员)
+    async deleteSubscriptionPlan(planId) {
+        return apiRequest(`/admin/subscription-plans/${planId}`, 'DELETE', null, true);
+    },
+    
+    // 用户管理API (管理员)
+    
+    // 获取所有用户
+    async getAllUsers() {
+        return apiRequest('/admin/users', 'GET', null, true);
+    },
+    
+    // 获取单个用户详情
+    async getUserById(userId) {
+        return apiRequest(`/admin/users/${userId}`, 'GET', null, true);
+    },
+    
+    // 创建用户 (管理员)
+    async createUser(userData) {
+        return apiRequest('/admin/users', 'POST', userData, true);
+    },
+    
+    // 更新用户 (管理员)
+    async updateUser(userId, userData) {
+        return apiRequest(`/admin/users/${userId}`, 'PUT', userData, true);
+    },
+    
+    // 删除用户 (管理员)
+    async deleteUser(userId) {
+        return apiRequest(`/admin/users/${userId}`, 'DELETE', null, true);
+    },
+    
+    // 更改用户状态 (管理员)
+    async changeUserStatus(userId, status) {
+        return apiRequest(`/admin/users/${userId}/status`, 'PUT', { status }, true);
+    },
+    
+    // 重置用户密码 (管理员)
+    async resetUserPassword(userId) {
+        return apiRequest(`/admin/users/${userId}/reset-password`, 'POST', null, true);
+    },
+    
+    // API使用统计 (管理员)
+    
+    // 获取系统API使用统计
+    async getApiUsageStats() {
+        return apiRequest('/admin/api-usage', 'GET', null, true);
+    },
+    
+    // 获取特定用户API使用统计
+    async getUserApiUsage(userId) {
+        return apiRequest(`/admin/api-usage/users/${userId}`, 'GET', null, true);
+    },
+    
+    // 获取API使用时间趋势
+    async getApiUsageTrends(period = 'week') {
+        return apiRequest(`/admin/api-usage/trends?period=${period}`, 'GET', null, true);
+    },
+    
+    // 获取模型使用分布
+    async getModelUsageDistribution() {
+        return apiRequest('/admin/api-usage/models', 'GET', null, true);
+    },
+    
+    // 用户订阅管理 (管理员)
+    
+    // 获取用户订阅信息
+    async getUserSubscriptions() {
+        return apiRequest('/admin/subscriptions', 'GET', null, true);
+    },
+    
+    // 为用户分配订阅 (管理员)
+    async assignSubscription(userId, planId, duration) {
+        return apiRequest('/admin/subscriptions', 'POST', { userId, planId, duration }, true);
+    },
+    
+    // 编辑用户订阅 (管理员)
+    async updateUserSubscription(subscriptionId, subscriptionData) {
+        return apiRequest(`/admin/subscriptions/${subscriptionId}`, 'PUT', subscriptionData, true);
+    },
+    
+    // 取消用户订阅 (管理员)
+    async cancelUserSubscription(subscriptionId) {
+        return apiRequest(`/admin/subscriptions/${subscriptionId}`, 'DELETE', null, true);
+    },
+    
+    // 获取订阅统计数据 (管理员)
+    async getSubscriptionStats() {
+        return apiRequest('/admin/subscription-stats', 'GET', null, true);
+    }
+};
 
 /**
  * 获取所有提示词模板
@@ -173,91 +329,6 @@ async function getApiUsage() {
 }
 
 /**
- * 获取所有用户列表 (仅管理员)
- */
-async function getAllUsers(page = 1, limit = 10) {
-  return apiRequest(`/users?page=${page}&limit=${limit}`);
-}
-
-/**
- * 创建用户 (仅管理员)
- */
-async function createUser(username, email, password, role = 'user', apiQuota = 100) {
-  return apiRequest('/admin/users', 'POST', { 
-    username, 
-    email, 
-    password, 
-    role, 
-    api_quota: apiQuota 
-  });
-}
-
-/**
- * 删除用户 (仅管理员)
- */
-async function deleteUser(userId) {
-  return apiRequest(`/admin/users/${userId}`, 'DELETE');
-}
-
-/**
- * 更新用户角色 (仅管理员)
- */
-async function updateUserRole(userId, role) {
-  return apiRequest(`/users/${userId}/role`, 'PUT', { role });
-}
-
-/**
- * 重置用户API配额 (仅管理员)
- */
-async function resetUserApiQuota(userId, quota) {
-  return apiRequest(`/users/${userId}/quota`, 'PUT', { quota });
-}
-
-/**
- * 获取所有订阅计划 (仅管理员)
- */
-async function getAllSubscriptionPlans() {
-  return apiRequest('/subscriptions');
-}
-
-/**
- * 创建订阅计划 (仅管理员)
- */
-async function createSubscriptionPlan(name, price, duration, apiQuota, features) {
-  return apiRequest('/admin/subscriptions', 'POST', {
-    name, price, duration, apiQuota, features
-  });
-}
-
-/**
- * 更新订阅计划 (仅管理员)
- */
-async function updateSubscriptionPlan(id, data) {
-  return apiRequest(`/admin/subscriptions/${id}`, 'PUT', data);
-}
-
-/**
- * 删除订阅计划 (仅管理员)
- */
-async function deleteSubscriptionPlan(id) {
-  return apiRequest(`/admin/subscriptions/${id}`, 'DELETE');
-}
-
-/**
- * 获取所有用户的API使用统计 (仅管理员)
- */
-async function getApiUsageStats() {
-  return apiRequest('/admin/usage/stats');
-}
-
-/**
- * 获取用户订阅统计 (仅管理员)
- */
-async function getSubscriptionStats() {
-  return apiRequest('/admin/subscriptions/stats');
-}
-
-/**
  * 获取API配置 (从后端)
  */
 async function getApiConfig() {
@@ -271,33 +342,8 @@ async function saveApiConfig(config) {
   return apiRequest('/admin/config', 'POST', config);
 }
 
-// 检测是否在GitHub Pages环境，并尝试设置API地址
-(function detectEnvironment() {
-  // 检测是否在GitHub Pages环境
-  const isGitHubPages = window.location.hostname.includes('github.io');
-  
-  if (isGitHubPages) {
-    // 从本地存储中获取API地址
-    const savedApiUrl = localStorage.getItem('xpat_api_url');
-    
-    if (savedApiUrl) {
-      window.API_BASE_URL = savedApiUrl;
-      console.log('从本地存储加载API地址:', savedApiUrl);
-    } else {
-      // 默认使用本地地址，需要管理员在部署时手动修改
-      const defaultApiUrl = 'http://localhost:3000/api';
-      window.API_BASE_URL = defaultApiUrl;
-      localStorage.setItem('xpat_api_url', defaultApiUrl);
-      console.log('已设置默认API地址:', defaultApiUrl);
-    }
-  }
-})();
-
 // 导出API函数
 window.backendApi = {
-  login,
-  register,
-  getUserProfile,
   getAllPrompts,
   getPrompt,
   createPrompt,
@@ -308,17 +354,6 @@ window.backendApi = {
   isAdmin,
   clearAuth,
   getUserInfo,
-  getAllUsers,
-  createUser,
-  deleteUser,
-  updateUserRole,
-  resetUserApiQuota,
-  getAllSubscriptionPlans,
-  createSubscriptionPlan,
-  updateSubscriptionPlan,
-  deleteSubscriptionPlan,
-  getApiUsageStats,
-  getSubscriptionStats,
   getApiConfig,
   saveApiConfig,
   sendOpenRouterRequest
