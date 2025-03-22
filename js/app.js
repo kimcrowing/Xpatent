@@ -197,10 +197,9 @@ function userMenuClickHandler(e) {
         featureMenu.classList.remove('active');
     }
     
-    // 直接操作样式显示菜单
+    // 切换菜单显示状态
     if (userMenu.classList.contains('active')) {
         userMenu.classList.remove('active');
-        userMenu.style.display = 'none';
         console.log('用户菜单已隐藏');
     } else {
         userMenu.classList.add('active');
