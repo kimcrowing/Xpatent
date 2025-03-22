@@ -29,9 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (userMenuBtn && userMenu) {
         console.log('正在初始化用户菜单按钮事件处理...');
         
-        // 取消所有现有的事件处理器，防止重复绑定
-        userMenuBtn.removeEventListener('click', userMenuClickHandler);
-        
         // 注册单一点击事件处理器
         userMenuBtn.addEventListener('click', function(e) {
             e.stopPropagation();
