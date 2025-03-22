@@ -80,10 +80,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        const themeText = themeToggle.querySelector('span');
+        // 修改此处：获取menu-item-with-icon元素内部的span
+        const themeText = themeToggle.querySelector('.menu-item-with-icon span');
         if (!themeText) {
             console.log('更新主题图标失败：未找到span文本元素');
-            return;
+            // 即使找不到span文本元素，也继续更新图标
         }
         
         if (body.classList.contains(DARK_THEME)) {
@@ -101,7 +102,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <path d="M19.7778 19.7773L17.5558 17.5551" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
             `;
-            themeText.textContent = '切换到亮色模式';
+            // 只有在找到文本元素时才更新文本
+            if (themeText) {
+                themeText.textContent = '切换到亮色模式';
+            }
         } else {
             // 当前是亮色主题，显示月亮图标（表示可以切换到暗色主题）
             themeIcon.innerHTML = `
@@ -109,7 +113,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             `;
-            themeText.textContent = '切换到暗色模式';
+            // 只有在找到文本元素时才更新文本
+            if (themeText) {
+                themeText.textContent = '切换到暗色模式';
+            }
         }
     }
     

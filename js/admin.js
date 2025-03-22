@@ -1068,22 +1068,30 @@ document.addEventListener('DOMContentLoaded', function() {
         subscriptionsEmptyState.classList.add('hidden');
         subscriptionsLoadingState.classList.remove('hidden');
         
-        BackendAPI.getAllSubscriptionPlans()
-            .then(plans => {
-                subscriptionsLoadingState.classList.add('hidden');
-                
-                if (plans && plans.length > 0) {
-                    renderSubscriptionsTable(plans);
-                    subscriptionsTable.classList.remove('hidden');
-                } else {
+        // 修复：改用window.backendApi代替BackendAPI
+        if (window.backendApi && typeof window.backendApi.getAllSubscriptionPlans === 'function') {
+            window.backendApi.getAllSubscriptionPlans()
+                .then(plans => {
+                    subscriptionsLoadingState.classList.add('hidden');
+                    
+                    if (plans && plans.length > 0) {
+                        renderSubscriptionsTable(plans);
+                        subscriptionsTable.classList.remove('hidden');
+                    } else {
+                        subscriptionsEmptyState.classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('加载订阅计划失败:', error);
+                    subscriptionsLoadingState.classList.add('hidden');
                     subscriptionsEmptyState.classList.remove('hidden');
-                }
-            })
-            .catch(error => {
-                console.error('加载订阅计划失败:', error);
-                subscriptionsLoadingState.classList.add('hidden');
-                subscriptionsEmptyState.classList.remove('hidden');
-            });
+                });
+        } else {
+            console.error('backendApi未加载或不包含getAllSubscriptionPlans方法');
+            subscriptionsLoadingState.classList.add('hidden');
+            subscriptionsEmptyState.classList.remove('hidden');
+            subscriptionsEmptyState.textContent = 'API服务不可用，请检查配置';
+        }
     }
 
     /**
@@ -1135,19 +1143,30 @@ document.addEventListener('DOMContentLoaded', function() {
      * 加载订阅统计数据
      */
     function loadSubscriptionStats() {
-        BackendAPI.getSubscriptionStats()
-            .then(stats => {
-                // 更新统计卡片
-                totalSubscriptionsValue.textContent = stats.totalSubscriptions;
-                activeSubscriptionsValue.textContent = stats.activeSubscriptions;
-                monthlyRevenueValue.textContent = `¥${stats.monthlyRevenue.toFixed(2)}`;
-            })
-            .catch(error => {
-                console.error('加载订阅统计失败:', error);
-                totalSubscriptionsValue.textContent = '0';
-                activeSubscriptionsValue.textContent = '0';
-                monthlyRevenueValue.textContent = '¥0.00';
-            });
+        const statsContainer = document.getElementById('subscriptionStatsContainer');
+        const loadingIndicator = document.getElementById('subscriptionStatsLoading');
+        
+        if (statsContainer && loadingIndicator) {
+            statsContainer.style.display = 'none';
+            loadingIndicator.style.display = 'block';
+            
+            // 修复：改用window.backendApi代替BackendAPI
+            if (window.backendApi && typeof window.backendApi.getSubscriptionStats === 'function') {
+                window.backendApi.getSubscriptionStats()
+                    .then(stats => {
+                        // 渲染订阅统计数据...
+                        loadingIndicator.style.display = 'none';
+                        statsContainer.style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('加载订阅统计失败:', error);
+                        loadingIndicator.style.display = 'none';
+                    });
+            } else {
+                console.error('backendApi未加载或不包含getSubscriptionStats方法');
+                loadingIndicator.style.display = 'none';
+            }
+        }
     }
 
     /**
@@ -1234,5 +1253,180 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function closeDeleteSubscriptionModal() {
         deleteSubscriptionModalOverlay.style.display = 'none';
+    }
+
+    /**
+     * 加载API使用统计数据
+     */
+    function loadApiUsageStats() {
+        // 显示加载状态
+        apiUsageTable.style.display = 'none';
+        apiUsageEmptyState.style.display = 'none';
+        apiUsageLoadingState.style.display = 'block';
+        
+        window.backendApi.getApiUsageStats()
+            .then(stats => {
+                apiUsageLoadingState.style.display = 'none';
+                
+                // 更新统计卡片
+                todayApiCallsValue.textContent = stats.todayApiCalls || 0;
+                totalApiCallsValue.textContent = stats.totalApiCalls || 0;
+                activeUsersValue.textContent = stats.activeUsers || 0;
+                
+                // 渲染用户API使用排行
+                if (stats.userRankings && stats.userRankings.length > 0) {
+                    renderApiUsageTable(stats.userRankings);
+                    apiUsageTable.style.display = 'table';
+                } else {
+                    apiUsageEmptyState.style.display = 'block';
+                }
+                
+                // 渲染图表
+                renderApiUsageCharts(stats);
+            })
+            .catch(error => {
+                console.error('加载API使用统计失败:', error);
+                apiUsageLoadingState.style.display = 'none';
+                apiUsageEmptyState.style.display = 'block';
+                
+                // 重置统计卡片
+                todayApiCallsValue.textContent = '0';
+                totalApiCallsValue.textContent = '0';
+                activeUsersValue.textContent = '0';
+            });
+    }
+
+    /**
+     * 渲染API使用表格
+     */
+    function renderApiUsageTable(users) {
+        const tbody = apiUsageTable.querySelector('tbody');
+        tbody.innerHTML = '';
+        
+        users.forEach((user, index) => {
+            const tr = document.createElement('tr');
+            
+            // 计算配额使用率
+            const quotaUsage = user.apiQuota > 0 ? (user.apiCalls / user.apiQuota * 100).toFixed(1) : 0;
+            
+            // 进度条颜色
+            let progressClass = 'progress-normal';
+            if (quotaUsage > 90) {
+                progressClass = 'progress-danger';
+            } else if (quotaUsage > 70) {
+                progressClass = 'progress-warning';
+            }
+            
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${user.username}</td>
+                <td>${user.email}</td>
+                <td>${user.apiCalls}</td>
+                <td>${user.apiQuota}</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar ${progressClass}" style="width: ${Math.min(100, quotaUsage)}%"></div>
+                        <span>${quotaUsage}%</span>
+                    </div>
+                </td>
+                <td>${new Date(user.lastActivity).toLocaleString()}</td>
+            `;
+            
+            tbody.appendChild(tr);
+        });
+    }
+
+    /**
+     * 渲染API使用图表
+     */
+    function renderApiUsageCharts(stats) {
+        // 清除之前的图表
+        if (window.apiCallsChart) {
+            window.apiCallsChart.destroy();
+        }
+        
+        if (window.modelDistChart) {
+            window.modelDistChart.destroy();
+        }
+        
+        // 日API调用趋势图
+        if (stats.dailyStats && stats.dailyStats.length > 0 && dailyApiCallsChart) {
+            const dates = stats.dailyStats.map(item => item.date);
+            const apiCalls = stats.dailyStats.map(item => item.apiCalls);
+            
+            const ctx = dailyApiCallsChart.getContext('2d');
+            window.apiCallsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'API调用次数',
+                        data: apiCalls,
+                        backgroundColor: 'rgba(88, 101, 242, 0.2)',
+                        borderColor: 'rgba(88, 101, 242, 1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 模型使用分布图
+        if (stats.modelDistribution && Object.keys(stats.modelDistribution).length > 0 && modelDistributionChart) {
+            const models = Object.keys(stats.modelDistribution);
+            const counts = Object.values(stats.modelDistribution);
+            const colors = [
+                'rgba(88, 101, 242, 0.8)',
+                'rgba(114, 137, 218, 0.8)',
+                'rgba(66, 135, 245, 0.8)',
+                'rgba(32, 156, 238, 0.8)',
+                'rgba(52, 179, 231, 0.8)'
+            ];
+            
+            const ctx = modelDistributionChart.getContext('2d');
+            window.modelDistChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: models,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
     }
 }); 
