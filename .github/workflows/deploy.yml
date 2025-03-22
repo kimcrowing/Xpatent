@@ -1,0 +1,36 @@
+name: 部署到GitHub Pages
+
+on:
+  push:
+    branches: [ grok-ui ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: 设置Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        
+    - name: 安装依赖
+      run: |
+        if [ -f "package.json" ]; then
+          npm install
+        fi
+        
+    - name: 构建
+      run: |
+        if [ -f "package.json" ] && grep -q "build" package.json; then
+          npm run build
+        fi
+        
+    - name: 部署到GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        folder: . # 如果您有构建过程，请将其更改为构建输出目录，例如 'dist'
+        branch: gh-pages
+        token: ${{ secrets.GITHUB_TOKEN }} 

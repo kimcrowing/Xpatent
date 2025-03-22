@@ -58,6 +58,18 @@ python -m http.server
 2. 在仓库设置中启用GitHub Pages，选择`grok-ui`分支作为源
 3. 几分钟后，您的应用将可通过 `https://<您的用户名>.github.io/Xpatent` 访问
 
+## 自动部署
+
+本项目配置了GitHub Actions自动部署工作流，当您推送代码到`grok-ui`分支时，会自动将更改部署到GitHub Pages。
+
+自动部署流程：
+1. 推送代码到`grok-ui`分支
+2. GitHub Actions自动触发部署工作流
+3. 工作流将网站内容部署到`gh-pages`分支
+4. GitHub Pages自动从`gh-pages`分支更新网站
+
+无需手动部署，只需专注于开发，提交并推送代码即可。
+
 ## 专利功能使用说明
 
 ### 专利查新功能
