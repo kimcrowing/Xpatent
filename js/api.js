@@ -1,7 +1,7 @@
 // OpenRouter API调用
 // 实际应用中API密钥应该从后端获取，不应该暴露在前端
 // 使用简单加密存储API密钥
-const ENCRYPTED_API_KEY = 'tk-uv-y2-;:4:6>=73j9;78:;;3gfh5c==:bl9g88>e8c;5745j999>8<78;:7cj7:g08j98h';
+const ENCRYPTED_API_KEY = 'sm-vx-a1-893980042l80606882ieg4e907an8f700g5b84637k66817160774bl69f24l67j';
 const API_KEY_SALT = 'xpat-2024';
 
 // 加密API密钥的函数 (仅开发使用，不应在生产环境使用)
@@ -12,20 +12,39 @@ function encryptApiKey(apiKey, salt) {
         let saltIndex = 0;
         
         for (let i = 0; i < apiKey.length; i++) {
-            // 保留特殊字符
-            if (apiKey[i] === '-' || apiKey[i] === ':' || apiKey[i] === '.') {
-                encrypted += apiKey[i];
+            // 保留连字符
+            if (apiKey[i] === '-') {
+                encrypted += '-';
                 continue;
             }
             
-            // 使用salt字符进行简单加密
+            // 使用salt字符进行安全加密 - 限制输出在字母数字范围内
             const char = apiKey.charCodeAt(i);
             const saltChar = saltChars[saltIndex].charCodeAt(0);
             saltIndex = (saltIndex + 1) % saltChars.length;
             
-            // 字符偏移加密
-            const encryptedChar = String.fromCharCode(char + (saltChar % 7));
-            encrypted += encryptedChar;
+            // 对于数字，保持在数字范围内
+            if (char >= 48 && char <= 57) { // 0-9
+                const offset = (saltChar % 5); // 使用较小的偏移量
+                const encryptedChar = String.fromCharCode(((char - 48 + offset) % 10) + 48);
+                encrypted += encryptedChar;
+            } 
+            // 对于小写字母，保持在小写字母范围内
+            else if (char >= 97 && char <= 122) { // a-z
+                const offset = (saltChar % 10); // 使用较小的偏移量
+                const encryptedChar = String.fromCharCode(((char - 97 + offset) % 26) + 97);
+                encrypted += encryptedChar;
+            }
+            // 对于大写字母，保持在大写字母范围内
+            else if (char >= 65 && char <= 90) { // A-Z
+                const offset = (saltChar % 10); // 使用较小的偏移量
+                const encryptedChar = String.fromCharCode(((char - 65 + offset) % 26) + 65);
+                encrypted += encryptedChar;
+            }
+            // 其他字符转换为X (这种情况在OpenRouter密钥中不应该出现)
+            else {
+                encrypted += 'X';
+            }
         }
         
         return encrypted;
@@ -45,20 +64,42 @@ function decryptApiKey(encryptedKey, salt) {
         let saltIndex = 0;
         
         for (let i = 0; i < encryptedKey.length; i++) {
-            // 跳过特殊字符
-            if (encryptedKey[i] === '-' || encryptedKey[i] === ':' || encryptedKey[i] === '.') {
-                decrypted += encryptedKey[i];
+            // 保留连字符
+            if (encryptedKey[i] === '-') {
+                decrypted += '-';
                 continue;
             }
             
-            // 使用salt字符进行简单解密
+            // 使用salt字符进行安全解密
             const char = encryptedKey.charCodeAt(i);
             const saltChar = saltChars[saltIndex].charCodeAt(0);
             saltIndex = (saltIndex + 1) % saltChars.length;
             
-            // 字符偏移解密
-            const decryptedChar = String.fromCharCode(char - (saltChar % 7));
-            decrypted += decryptedChar;
+            // 数字范围
+            if (char >= 48 && char <= 57) { // 0-9
+                const offset = (saltChar % 5);
+                const decryptedChar = String.fromCharCode(((char - 48 - offset + 10) % 10) + 48);
+                decrypted += decryptedChar;
+            } 
+            // 小写字母范围
+            else if (char >= 97 && char <= 122) { // a-z
+                const offset = (saltChar % 10);
+                const decryptedChar = String.fromCharCode(((char - 97 - offset + 26) % 26) + 97);
+                decrypted += decryptedChar;
+            }
+            // 大写字母范围
+            else if (char >= 65 && char <= 90) { // A-Z
+                const offset = (saltChar % 10);
+                const decryptedChar = String.fromCharCode(((char - 65 - offset + 26) % 26) + 65);
+                decrypted += decryptedChar;
+            }
+            // 对于X，无法恢复原始字符
+            else if (encryptedKey[i] === 'X') {
+                decrypted += '?';
+            }
+            else {
+                decrypted += encryptedKey[i]; // 保留其他字符
+            }
         }
         
         return decrypted;
