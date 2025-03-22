@@ -327,21 +327,31 @@ body {
     gap: 10px;
 }
 
-.input-wrapper {
-    display: flex;
-    align-items: center;
+/* 统一输入容器 - 将上下两行包裹在同一个背景中 */
+.unified-input-container {
     background-color: var(--input-bg);
     border: 1px solid var(--border-color);
     border-radius: 20px;
-    padding: 5px 5px 5px 16px;
+    overflow: hidden;
     margin: 0 auto;
     width: 100%;
     max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.input-wrapper:focus-within {
+.unified-input-container:focus-within {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+}
+
+.input-wrapper {
+    display: flex;
+    align-items: center;
+    padding: 5px 5px 5px 16px;
+    width: 100%;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .input-wrapper input[type="text"] {
@@ -366,9 +376,7 @@ body {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0 10px;
+    padding: 8px 16px;
 }
 
 .left-controls {
@@ -388,7 +396,7 @@ body {
     display: flex;
     align-items: center;
     padding: 6px 12px;
-    background-color: var(--attachment-bg);
+    background-color: rgba(88, 101, 242, 0.1);
     border-radius: 16px;
     max-width: 300px;
     margin: 0;
@@ -400,6 +408,7 @@ body {
     white-space: nowrap;
     font-size: 14px;
     max-width: 250px;
+    color: var(--text-color);
 }
 
 #removeAttachment {
