@@ -60,16 +60,16 @@ python -m http.server
 
 ## 自动部署
 
-本项目配置了GitHub Actions自动部署工作流，当您推送代码到`grok-ui`分支时，会自动处理部署流程。
+本项目配置了GitHub Actions自动部署工作流，当您推送代码到`grok-ui`分支时，会自动将内容部署到`gh-pages`分支。
 
 自动部署流程：
-1. 推送代码到`grok-ui`分支
+1. 推送代码到`grok-ui`分支（开发分支）
 2. GitHub Actions自动触发部署工作流
 3. 工作流会执行必要的构建和处理
-4. 更改会被自动推送回`grok-ui`分支
-5. GitHub Pages自动从`grok-ui`分支更新网站
+4. 内容会被自动部署到`gh-pages`分支
+5. GitHub Pages从`gh-pages`分支提供网站访问
 
-由于GitHub Pages已配置使用`grok-ui`分支，无需手动部署，只需专注于开发，提交并推送代码即可。网站会自动更新。
+此配置使开发与部署分离，`grok-ui`分支保持开发代码，而`gh-pages`分支专门用于网站部署。
 
 ## 专利功能使用说明
 

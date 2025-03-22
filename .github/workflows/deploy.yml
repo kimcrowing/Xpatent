@@ -7,6 +7,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
     - uses: actions/checkout@v3
@@ -28,19 +30,9 @@ jobs:
           npm run build
         fi
         
-    - name: 部署网站
-      run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-        
-        # 如果有构建过程，复制构建产物
-        if [ -d "dist" ]; then
-          cp -r dist/* .
-        fi
-        
-        # 添加所有文件并提交
-        git add .
-        git commit -m "自动部署: $(date)"
-        
-        # 强制推送到当前分支
-        git push origin HEAD:grok-ui --force 
+    - name: 部署到GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        folder: . # 如果您有构建过程，请将其更改为构建输出目录，例如 'dist'
+        branch: gh-pages
+        token: ${{ secrets.GITHUB_TOKEN }} 
