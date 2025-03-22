@@ -21,7 +21,9 @@ document.addEventListener('DOMContentLoaded', function() {
         { id: 'anthropic/claude-3-sonnet:beta', name: 'Claude 3 Sonnet' },
         { id: 'anthropic/claude-3-haiku:beta', name: 'Claude 3 Haiku' },
         { id: 'google/gemini-1.5-pro-latest', name: 'Gemini 1.5 Pro' },
-        { id: 'meta-llama/llama-3-70b-instruct:free', name: 'Llama 3 70B' }
+        { id: 'google/gemini-2.0-flash-thinking-exp:free', name: 'Gemini 2.0 Flash' },
+        { id: 'meta-llama/llama-3-70b-instruct:free', name: 'Llama 3 70B' },
+        { id: 'meta-llama/llama-3.1-8b-instruct:free', name: 'Llama 3.1 8B' }
     ];
     
     // 存储用户选择的模型的本地存储键
