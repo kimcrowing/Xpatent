@@ -326,4 +326,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         }
     });
+    
+    // 用户菜单交互
+    const userMenuBtn = document.getElementById('userMenuBtn');
+    const userMenu = document.getElementById('userMenu');
+    
+    if (userMenuBtn && userMenu) {
+        // 点击用户头像显示/隐藏菜单
+        userMenuBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userMenu.classList.toggle('active');
+        });
+        
+        // 点击其他地方关闭菜单
+        document.addEventListener('click', function(event) {
+            if (!userMenu.contains(event.target) && !userMenuBtn.contains(event.target)) {
+                userMenu.classList.remove('active');
+            }
+        });
+        
+        // 更新用户头像显示
+        async function updateUserAvatar() {
+            try {
+                const profile = await window.UserService.getUserProfile();
+                const userAvatar = document.querySelector('.user-avatar');
+                
+                if (userAvatar) {
+                    if (profile.avatar) {
+                        userAvatar.innerHTML = '';
+                        userAvatar.style.backgroundImage = `url(${profile.avatar})`;
+                        userAvatar.style.backgroundSize = 'cover';
+                    } else {
+                        userAvatar.textContent = profile.displayName ? profile.displayName.charAt(0).toUpperCase() : 'U';
+                        userAvatar.style.backgroundImage = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('更新用户头像失败:', error);
+            }
+        }
+        
+        // 初始化时加载用户头像
+        if (window.UserService) {
+            updateUserAvatar();
+        }
+    }
 }); 
