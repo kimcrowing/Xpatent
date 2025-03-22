@@ -591,4 +591,144 @@ main {
 .role-user {
     background-color: var(--user-badge-bg, #388e3c);
     color: white;
+}
+
+/* 统计卡片 */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stats-card {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.stats-card h3 {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0 0 12px 0;
+    font-weight: 500;
+}
+
+.stats-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+/* 图表容器 */
+.chart-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.chart-card {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chart-card h3 {
+    font-size: 16px;
+    color: var(--text-color);
+    margin: 0 0 16px 0;
+    font-weight: 500;
+}
+
+.chart {
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.placeholder-chart {
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* 子区域标题 */
+.subsection-header {
+    margin-top: 32px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.subsection-header h3 {
+    font-size: 18px;
+    color: var(--text-color);
+    margin: 0;
+}
+
+/* 功能列表 */
+.feature-list {
+    margin-bottom: 12px;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.feature-item input {
+    flex: 1;
+    margin-right: 8px;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.btn-icon:hover {
+    background-color: var(--hover-bg);
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* 进度条 */
+.progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background-color: var(--secondary-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background-color: var(--primary-color);
+    border-radius: 4px;
+}
+
+.progress-bar.warning {
+    background-color: var(--warning-color, #ffa726);
+}
+
+.progress-bar.danger {
+    background-color: var(--error-color, #f44336);
 } 

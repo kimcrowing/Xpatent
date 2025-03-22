@@ -193,6 +193,50 @@ async function resetUserApiQuota(userId, quota) {
   return apiRequest(`/users/${userId}/quota`, 'PUT', { quota });
 }
 
+/**
+ * 获取所有订阅计划 (仅管理员)
+ */
+async function getAllSubscriptionPlans() {
+  return apiRequest('/subscriptions');
+}
+
+/**
+ * 创建订阅计划 (仅管理员)
+ */
+async function createSubscriptionPlan(name, price, duration, apiQuota, features) {
+  return apiRequest('/admin/subscriptions', 'POST', {
+    name, price, duration, apiQuota, features
+  });
+}
+
+/**
+ * 更新订阅计划 (仅管理员)
+ */
+async function updateSubscriptionPlan(id, data) {
+  return apiRequest(`/admin/subscriptions/${id}`, 'PUT', data);
+}
+
+/**
+ * 删除订阅计划 (仅管理员)
+ */
+async function deleteSubscriptionPlan(id) {
+  return apiRequest(`/admin/subscriptions/${id}`, 'DELETE');
+}
+
+/**
+ * 获取所有用户的API使用统计 (仅管理员)
+ */
+async function getApiUsageStats() {
+  return apiRequest('/admin/usage/stats');
+}
+
+/**
+ * 获取用户订阅统计 (仅管理员)
+ */
+async function getSubscriptionStats() {
+  return apiRequest('/admin/subscriptions/stats');
+}
+
 // 检测是否在GitHub Pages环境，并尝试设置API地址
 (function detectEnvironment() {
   // 检测是否在GitHub Pages环境
@@ -239,5 +283,11 @@ window.backendApi = {
   getUserInfo,
   getAllUsers,
   updateUserRole,
-  resetUserApiQuota
+  resetUserApiQuota,
+  getAllSubscriptionPlans,
+  createSubscriptionPlan,
+  updateSubscriptionPlan,
+  deleteSubscriptionPlan,
+  getApiUsageStats,
+  getSubscriptionStats
 }; 

@@ -30,6 +30,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentPageEl = document.getElementById('currentPage');
     const totalPagesEl = document.getElementById('totalPages');
     
+    // 订阅管理相关元素
+    const subscriptionsTable = document.getElementById('subscriptionsTable');
+    const subscriptionsEmptyState = document.getElementById('subscriptionsEmptyState');
+    const subscriptionsLoadingState = document.getElementById('subscriptionsLoadingState');
+    const addSubscriptionBtn = document.getElementById('addSubscriptionBtn');
+    const totalSubscriptionsValue = document.getElementById('totalSubscriptionsValue');
+    const activeSubscriptionsValue = document.getElementById('activeSubscriptionsValue');
+    const monthlyRevenueValue = document.getElementById('monthlyRevenueValue');
+    
+    // API使用统计相关元素
+    const apiUsageTable = document.getElementById('apiUsageTable');
+    const apiUsageEmptyState = document.getElementById('apiUsageEmptyState');
+    const apiUsageLoadingState = document.getElementById('apiUsageLoadingState');
+    const todayApiCallsValue = document.getElementById('todayApiCallsValue');
+    const totalApiCallsValue = document.getElementById('totalApiCallsValue');
+    const activeUsersValue = document.getElementById('activeUsersValue');
+    const dailyApiCallsChart = document.getElementById('dailyApiCallsChart');
+    const modelDistributionChart = document.getElementById('modelDistributionChart');
+    
     // 用户编辑模态框
     const userModalOverlay = document.getElementById('userModalOverlay');
     const closeUserModalBtn = document.getElementById('closeUserModalBtn');
@@ -43,6 +62,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const userFormError = document.getElementById('userFormError');
     const saveUserBtn = document.getElementById('saveUserBtn');
     const cancelUserBtn = document.getElementById('cancelUserBtn');
+    
+    // 订阅计划编辑模态框
+    const subscriptionModalOverlay = document.getElementById('subscriptionModalOverlay');
+    const closeSubscriptionModalBtn = document.getElementById('closeSubscriptionModalBtn');
+    const subscriptionModalTitle = document.getElementById('subscriptionModalTitle');
+    const subscriptionForm = document.getElementById('subscriptionForm');
+    const subscriptionId = document.getElementById('subscriptionId');
+    const subscriptionName = document.getElementById('subscriptionName');
+    const subscriptionPrice = document.getElementById('subscriptionPrice');
+    const subscriptionDuration = document.getElementById('subscriptionDuration');
+    const subscriptionApiQuota = document.getElementById('subscriptionApiQuota');
+    const featureList = document.getElementById('featureList');
+    const addFeatureBtn = document.getElementById('addFeatureBtn');
+    const subscriptionFormError = document.getElementById('subscriptionFormError');
+    const saveSubscriptionBtn = document.getElementById('saveSubscriptionBtn');
+    const cancelSubscriptionBtn = document.getElementById('cancelSubscriptionBtn');
+    
+    // 删除订阅确认模态框
+    const deleteSubscriptionModalOverlay = document.getElementById('deleteSubscriptionModalOverlay');
+    const closeDeleteSubscriptionModalBtn = document.getElementById('closeDeleteSubscriptionModalBtn');
+    const deleteSubscriptionId = document.getElementById('deleteSubscriptionId');
+    const confirmDeleteSubscriptionBtn = document.getElementById('confirmDeleteSubscriptionBtn');
+    const cancelDeleteSubscriptionBtn = document.getElementById('cancelDeleteSubscriptionBtn');
     
     // 角色修改确认模态框
     const roleConfirmModalOverlay = document.getElementById('roleConfirmModalOverlay');
@@ -196,6 +238,41 @@ document.addEventListener('DOMContentLoaded', function() {
         
         addPromptBtn.addEventListener('click', handleAddPrompt);
         
+        // 订阅管理相关事件
+        if (addSubscriptionBtn) {
+            addSubscriptionBtn.addEventListener('click', handleAddSubscription);
+        }
+        
+        if (addFeatureBtn) {
+            addFeatureBtn.addEventListener('click', addFeatureItem);
+        }
+        
+        // 订阅编辑模态框事件
+        if (closeSubscriptionModalBtn) {
+            closeSubscriptionModalBtn.addEventListener('click', closeSubscriptionModal);
+        }
+        
+        if (cancelSubscriptionBtn) {
+            cancelSubscriptionBtn.addEventListener('click', closeSubscriptionModal);
+        }
+        
+        if (saveSubscriptionBtn) {
+            saveSubscriptionBtn.addEventListener('click', handleSaveSubscription);
+        }
+        
+        // 删除订阅确认模态框事件
+        if (closeDeleteSubscriptionModalBtn) {
+            closeDeleteSubscriptionModalBtn.addEventListener('click', closeDeleteSubscriptionModal);
+        }
+        
+        if (cancelDeleteSubscriptionBtn) {
+            cancelDeleteSubscriptionBtn.addEventListener('click', closeDeleteSubscriptionModal);
+        }
+        
+        if (confirmDeleteSubscriptionBtn) {
+            confirmDeleteSubscriptionBtn.addEventListener('click', handleConfirmDeleteSubscription);
+        }
+        
         // 用户管理相关事件
         userRoleFilter.addEventListener('change', function() {
             currentUserRole = this.value;
@@ -323,9 +400,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // 显示选中的section
         document.getElementById(selectedSection).style.display = 'block';
         
-        // 如果选择了用户管理，加载用户列表
+        // 根据选中的区域加载数据
         if (selectedSection === 'userManagement') {
             loadUsers();
+        } else if (selectedSection === 'subscriptionManagement') {
+            loadSubscriptions();
+            loadSubscriptionStats();
+        } else if (selectedSection === 'apiUsage') {
+            loadApiUsageStats();
         }
     }
     
@@ -954,5 +1036,461 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function closeRoleConfirmModal() {
         roleConfirmModalOverlay.style.display = 'none';
+    }
+
+    /**
+     * 加载订阅计划列表
+     */
+    function loadSubscriptions() {
+        // 显示加载状态
+        subscriptionsTable.classList.add('hidden');
+        subscriptionsEmptyState.classList.add('hidden');
+        subscriptionsLoadingState.classList.remove('hidden');
+        
+        BackendAPI.getAllSubscriptionPlans()
+            .then(plans => {
+                subscriptionsLoadingState.classList.add('hidden');
+                
+                if (plans && plans.length > 0) {
+                    renderSubscriptionsTable(plans);
+                    subscriptionsTable.classList.remove('hidden');
+                } else {
+                    subscriptionsEmptyState.classList.remove('hidden');
+                }
+            })
+            .catch(error => {
+                console.error('加载订阅计划失败:', error);
+                subscriptionsLoadingState.classList.add('hidden');
+                subscriptionsEmptyState.classList.remove('hidden');
+            });
+    }
+
+    /**
+     * 渲染订阅计划表格
+     */
+    function renderSubscriptionsTable(plans) {
+        const tbody = subscriptionsTable.querySelector('tbody');
+        tbody.innerHTML = '';
+        
+        plans.forEach(plan => {
+            const tr = document.createElement('tr');
+            
+            tr.innerHTML = `
+                <td>${plan.id}</td>
+                <td>${plan.name}</td>
+                <td>¥${plan.price.toFixed(2)}</td>
+                <td>${plan.duration}天</td>
+                <td>${plan.apiQuota}</td>
+                <td>${plan.subscriberCount || 0}</td>
+                <td>
+                    <button class="btn btn-sm btn-edit" data-id="${plan.id}">编辑</button>
+                    <button class="btn btn-sm btn-delete" data-id="${plan.id}">删除</button>
+                </td>
+            `;
+            
+            tbody.appendChild(tr);
+        });
+        
+        // 添加编辑和删除按钮的事件监听
+        tbody.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const planId = this.getAttribute('data-id');
+                const plan = plans.find(p => p.id == planId);
+                if (plan) {
+                    openSubscriptionModal(plan);
+                }
+            });
+        });
+        
+        tbody.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const planId = this.getAttribute('data-id');
+                openDeleteSubscriptionModal(planId);
+            });
+        });
+    }
+
+    /**
+     * 加载订阅统计数据
+     */
+    function loadSubscriptionStats() {
+        BackendAPI.getSubscriptionStats()
+            .then(stats => {
+                // 更新统计卡片
+                totalSubscriptionsValue.textContent = stats.totalSubscriptions;
+                activeSubscriptionsValue.textContent = stats.activeSubscriptions;
+                monthlyRevenueValue.textContent = `¥${stats.monthlyRevenue.toFixed(2)}`;
+            })
+            .catch(error => {
+                console.error('加载订阅统计失败:', error);
+                totalSubscriptionsValue.textContent = '0';
+                activeSubscriptionsValue.textContent = '0';
+                monthlyRevenueValue.textContent = '¥0.00';
+            });
+    }
+
+    /**
+     * 打开订阅计划编辑模态框
+     */
+    function openSubscriptionModal(plan = null) {
+        // 清空表单
+        subscriptionForm.reset();
+        subscriptionFormError.textContent = '';
+        featureList.innerHTML = '';
+        
+        if (plan) {
+            // 编辑模式
+            subscriptionModalTitle.textContent = '编辑订阅计划';
+            subscriptionId.value = plan.id;
+            subscriptionName.value = plan.name;
+            subscriptionPrice.value = plan.price;
+            subscriptionDuration.value = plan.duration;
+            subscriptionApiQuota.value = plan.apiQuota;
+            
+            // 添加特性列表
+            if (plan.features && Array.isArray(plan.features)) {
+                plan.features.forEach(feature => {
+                    addFeatureItem(feature);
+                });
+            }
+        } else {
+            // 新增模式
+            subscriptionModalTitle.textContent = '添加订阅计划';
+            subscriptionId.value = '';
+            
+            // 添加默认特性
+            addFeatureItem('无限使用基础模型');
+            addFeatureItem('优先客服支持');
+        }
+        
+        // 显示模态框
+        subscriptionModalOverlay.classList.remove('hidden');
+    }
+
+    /**
+     * 关闭订阅计划编辑模态框
+     */
+    function closeSubscriptionModal() {
+        subscriptionModalOverlay.classList.add('hidden');
+    }
+
+    /**
+     * 添加特性项
+     */
+    function addFeatureItem(featureText = '') {
+        const featureItem = document.createElement('div');
+        featureItem.className = 'feature-item';
+        
+        featureItem.innerHTML = `
+            <input type="text" class="feature-input" value="${featureText}" placeholder="输入特性描述...">
+            <button type="button" class="btn btn-sm btn-danger btn-remove-feature">删除</button>
+        `;
+        
+        // 添加删除按钮事件
+        const removeBtn = featureItem.querySelector('.btn-remove-feature');
+        removeBtn.addEventListener('click', function() {
+            featureItem.remove();
+        });
+        
+        featureList.appendChild(featureItem);
+        
+        // 如果是通过"添加特性"按钮调用的，聚焦新添加的输入框
+        if (!featureText) {
+            featureItem.querySelector('.feature-input').focus();
+        }
+        
+        return featureItem;
+    }
+
+    /**
+     * 保存订阅计划
+     */
+    function handleSaveSubscription() {
+        const subscriptionId = document.getElementById('subscriptionId');
+        const subscriptionName = document.getElementById('subscriptionName');
+        const subscriptionPrice = document.getElementById('subscriptionPrice');
+        const subscriptionDuration = document.getElementById('subscriptionDuration');
+        const subscriptionApiQuota = document.getElementById('subscriptionApiQuota');
+        const featureList = document.getElementById('featureList');
+        const subscriptionFormError = document.getElementById('subscriptionFormError');
+        const saveSubscriptionBtn = document.getElementById('saveSubscriptionBtn');
+        
+        // 获取表单数据
+        const id = subscriptionId.value.trim();
+        const name = subscriptionName.value.trim();
+        const price = parseFloat(subscriptionPrice.value);
+        const duration = parseInt(subscriptionDuration.value);
+        const apiQuota = parseInt(subscriptionApiQuota.value);
+        
+        // 获取特性列表
+        const features = [];
+        featureList.querySelectorAll('.feature-input').forEach(input => {
+            const value = input.value.trim();
+            if (value) {
+                features.push(value);
+            }
+        });
+        
+        // 表单验证
+        if (!name) {
+            subscriptionFormError.textContent = '请输入订阅计划名称';
+            return;
+        }
+        
+        if (isNaN(price) || price <= 0) {
+            subscriptionFormError.textContent = '请输入有效的价格';
+            return;
+        }
+        
+        if (isNaN(duration) || duration <= 0) {
+            subscriptionFormError.textContent = '请输入有效的有效期天数';
+            return;
+        }
+        
+        if (isNaN(apiQuota) || apiQuota <= 0) {
+            subscriptionFormError.textContent = '请输入有效的API配额';
+            return;
+        }
+        
+        // 显示保存中状态
+        saveSubscriptionBtn.disabled = true;
+        saveSubscriptionBtn.textContent = '保存中...';
+        subscriptionFormError.textContent = '';
+        
+        // 准备数据
+        const data = {
+            name,
+            price,
+            duration,
+            apiQuota,
+            features
+        };
+        
+        // 创建或更新订阅计划
+        const promise = id 
+            ? BackendAPI.updateSubscriptionPlan(id, data)
+            : BackendAPI.createSubscriptionPlan(name, price, duration, apiQuota, features);
+        
+        promise
+            .then(() => {
+                closeSubscriptionModal();
+                loadSubscriptions();
+                loadSubscriptionStats();
+            })
+            .catch(error => {
+                subscriptionFormError.textContent = `保存失败: ${error.message || '未知错误'}`;
+            })
+            .finally(() => {
+                saveSubscriptionBtn.disabled = false;
+                saveSubscriptionBtn.textContent = '保存';
+            });
+    }
+
+    /**
+     * 处理添加订阅计划按钮点击
+     */
+    function handleAddSubscription() {
+        openSubscriptionModal();
+    }
+
+    /**
+     * 打开删除订阅计划确认模态框
+     */
+    function openDeleteSubscriptionModal(planId) {
+        deleteSubscriptionId.value = planId;
+        deleteSubscriptionModalOverlay.classList.remove('hidden');
+    }
+
+    /**
+     * 关闭删除订阅计划确认模态框
+     */
+    function closeDeleteSubscriptionModal() {
+        deleteSubscriptionModalOverlay.classList.add('hidden');
+    }
+
+    /**
+     * 处理确认删除订阅计划
+     */
+    function handleConfirmDeleteSubscription() {
+        const planId = deleteSubscriptionId.value;
+        
+        // 显示删除中状态
+        confirmDeleteSubscriptionBtn.disabled = true;
+        confirmDeleteSubscriptionBtn.textContent = '删除中...';
+        
+        BackendAPI.deleteSubscriptionPlan(planId)
+            .then(() => {
+                closeDeleteSubscriptionModal();
+                loadSubscriptions();
+                loadSubscriptionStats();
+            })
+            .catch(error => {
+                alert(`删除失败: ${error.message || '未知错误'}`);
+            })
+            .finally(() => {
+                confirmDeleteSubscriptionBtn.disabled = false;
+                confirmDeleteSubscriptionBtn.textContent = '确认删除';
+            });
+    }
+    
+    /**
+     * 加载API使用统计数据
+     */
+    function loadApiUsageStats() {
+        // 显示加载状态
+        apiUsageTable.classList.add('hidden');
+        apiUsageEmptyState.classList.add('hidden');
+        apiUsageLoadingState.classList.remove('hidden');
+        
+        BackendAPI.getApiUsageStats()
+            .then(stats => {
+                apiUsageLoadingState.classList.add('hidden');
+                
+                // 更新统计卡片
+                todayApiCallsValue.textContent = stats.todayApiCalls;
+                totalApiCallsValue.textContent = stats.totalApiCalls;
+                activeUsersValue.textContent = stats.activeUsers;
+                
+                // 渲染用户API使用排行
+                if (stats.userRankings && stats.userRankings.length > 0) {
+                    renderApiUsageTable(stats.userRankings);
+                    apiUsageTable.classList.remove('hidden');
+                } else {
+                    apiUsageEmptyState.classList.remove('hidden');
+                }
+                
+                // 渲染图表
+                renderApiUsageCharts(stats);
+            })
+            .catch(error => {
+                console.error('加载API使用统计失败:', error);
+                apiUsageLoadingState.classList.add('hidden');
+                apiUsageEmptyState.classList.remove('hidden');
+                
+                // 重置统计卡片
+                todayApiCallsValue.textContent = '0';
+                totalApiCallsValue.textContent = '0';
+                activeUsersValue.textContent = '0';
+            });
+    }
+    
+    /**
+     * 渲染API使用表格
+     */
+    function renderApiUsageTable(users) {
+        const tbody = apiUsageTable.querySelector('tbody');
+        tbody.innerHTML = '';
+        
+        users.forEach(user => {
+            const tr = document.createElement('tr');
+            
+            // 计算配额使用率
+            const quotaUsage = user.apiQuota > 0 ? (user.apiCalls / user.apiQuota * 100).toFixed(1) : 0;
+            
+            tr.innerHTML = `
+                <td>${user.id}</td>
+                <td>${user.username}</td>
+                <td>${user.apiCalls}</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: ${Math.min(quotaUsage, 100)}%"></div>
+                        <span>${quotaUsage}%</span>
+                    </div>
+                </td>
+                <td>${user.commonModels || '无数据'}</td>
+                <td>${user.lastUsage ? new Date(user.lastUsage).toLocaleString() : '从未使用'}</td>
+            `;
+            
+            tbody.appendChild(tr);
+        });
+    }
+    
+    /**
+     * 渲染API使用图表
+     */
+    function renderApiUsageCharts(stats) {
+        // 这里应该使用图表库如Chart.js来渲染图表
+        // 以下为示例，实际实现需要引入相应的图表库
+        
+        // 日调用量图表
+        if (stats.dailyApiCalls && typeof Chart !== 'undefined') {
+            // 假设已经引入了Chart.js
+            const dailyCtx = dailyApiCallsChart.getContext('2d');
+            
+            // 清除之前的图表实例
+            if (window.dailyApiChart) {
+                window.dailyApiChart.destroy();
+            }
+            
+            // 准备数据
+            const labels = Object.keys(stats.dailyApiCalls);
+            const data = Object.values(stats.dailyApiCalls);
+            
+            // 创建新图表
+            window.dailyApiChart = new Chart(dailyCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '日API调用量',
+                        data: data,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        } else {
+            // 如果没有引入Chart.js，则显示文本数据
+            dailyApiCallsChart.innerHTML = '图表库未引入，无法显示图表';
+        }
+        
+        // 模型分布图表
+        if (stats.modelDistribution && typeof Chart !== 'undefined') {
+            const modelCtx = modelDistributionChart.getContext('2d');
+            
+            // 清除之前的图表实例
+            if (window.modelDistChart) {
+                window.modelDistChart.destroy();
+            }
+            
+            // 准备数据
+            const labels = Object.keys(stats.modelDistribution);
+            const data = Object.values(stats.modelDistribution);
+            
+            // 创建新图表
+            window.modelDistChart = new Chart(modelCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.6)',
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(153, 102, 255, 0.6)',
+                            'rgba(255, 159, 64, 0.6)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        } else {
+            // 如果没有引入Chart.js，则显示文本数据
+            modelDistributionChart.innerHTML = '图表库未引入，无法显示图表';
+        }
     }
 }); 
