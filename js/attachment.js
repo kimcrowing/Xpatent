@@ -120,6 +120,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             // 设置提取的文本
                             extractedText = textContent;
                             console.log('PDF文本提取完成，共', numPages, '页，字符数:', textContent.length);
+                            
+                            // 提取完成后进行专利领域识别，但不在界面显示
+                            if (typeof identifyPatentDomain === 'function') {
+                                const domain = identifyPatentDomain(textContent);
+                                window.DETECTED_PATENT_DOMAIN = domain;
+                                console.log('PDF内容专利领域识别结果:', domain);
+                            }
                         })
                         .catch(function(error) {
                             console.error('处理PDF页面时出错:', error);
@@ -149,7 +156,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 mammoth.extractRawText({arrayBuffer: arrayBuffer})
                     .then(function(result) {
                         extractedText = result.value;
-                        console.log('Word文本提取完成');
+                        console.log('Word文本提取完成，字符数:', result.value.length);
+                        
+                        // 提取完成后进行专利领域识别，但不在界面显示
+                        if (typeof identifyPatentDomain === 'function') {
+                            const domain = identifyPatentDomain(result.value);
+                            window.DETECTED_PATENT_DOMAIN = domain;
+                            console.log('Word内容专利领域识别结果:', domain);
+                        }
                     })
                     .catch(function(error) {
                         console.error('Word解析错误:', error);
