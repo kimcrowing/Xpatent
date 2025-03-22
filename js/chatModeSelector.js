@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', function() {
     const chatModeSelector = document.getElementById('chatModeSelector');
     const currentChatModeText = document.getElementById('currentChatMode');
     
@@ -14,43 +14,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         return; // 如果必要元素不存在，退出初始化
     }
     
+    // 聊天模式列表
+    const chatModes = [
+        { id: 'general', name: '通用对话', systemPrompt: '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。' },
+        { id: 'patent-search', name: '专利查询', systemPrompt: '你是Xpat专利查询助手，专注于帮助用户检索、理解和分析专利信息。请解释专利概念、提供检索策略，并分析相关专利文献。' },
+        { id: 'patent-writing', name: '专利撰写', systemPrompt: '你是Xpat专利撰写助手，专注于帮助用户撰写高质量的专利申请文件。请根据用户的技术描述，提供专利申请书的结构、权利要求书的写法、说明书的组织等方面的建议。' },
+        { id: 'patent-response', name: '专利答审', systemPrompt: '你是Xpat专利答审助手，专注于帮助用户应对专利审查意见。请分析审查意见书内容，提供修改建议，解释如何针对审查员的不同意见进行有效答复。' }
+    ];
+    
     // 存储用户选择的聊天模式的本地存储键
     const SELECTED_CHAT_MODE_KEY = 'selected_chat_mode';
-    
-    // 确保PromptService可用
-    if (!window.PromptService) {
-        console.error('PromptService未加载，使用默认模式');
-    }
-    
-    // 从服务获取聊天模式列表
-    let chatModes = [];
-    try {
-        // 获取模式列表
-        const modeList = await window.PromptService.getModeList();
-        
-        // 遍历模式列表，获取每个模式的提示词
-        for (const mode of modeList) {
-            try {
-                const promptText = await window.PromptService.getPrompt(mode.id);
-                chatModes.push({
-                    id: mode.id,
-                    name: mode.name,
-                    systemPrompt: promptText,
-                    category: mode.category
-                });
-            } catch (error) {
-                console.error(`获取模式${mode.id}的提示词失败:`, error);
-            }
-        }
-        
-        console.log('已加载聊天模式:', chatModes.length);
-    } catch (error) {
-        console.error('获取模式列表失败:', error);
-        // 使用基础模式作为后备
-        chatModes = [
-            { id: 'general', name: '通用对话', systemPrompt: '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。' }
-        ];
-    }
     
     // 动态创建聊天模式下拉菜单
     function createChatModeDropdown() {
@@ -62,46 +35,27 @@ document.addEventListener('DOMContentLoaded', async function() {
             chatModeDropdown.id = 'chatModeDropdown';
             chatModeDropdown.className = 'chat-mode-dropdown';
             
-            // 按类别对模式进行分组
-            const categories = {};
-            chatModes.forEach(mode => {
-                const category = mode.category || '其他';
-                if (!categories[category]) {
-                    categories[category] = [];
-                }
-                categories[category].push(mode);
-            });
+            const modeList = document.createElement('ul');
             
-            // 创建分组列表
-            Object.entries(categories).forEach(([category, modes]) => {
-                // 添加类别标题
-                const categoryTitle = document.createElement('div');
-                categoryTitle.className = 'mode-category-title';
-                categoryTitle.textContent = category;
-                chatModeDropdown.appendChild(categoryTitle);
+            chatModes.forEach(mode => {
+                const modeItem = document.createElement('li');
+                modeItem.setAttribute('data-mode', mode.id);
+                modeItem.textContent = mode.name;
                 
-                // 添加该类别下的模式
-                const modeList = document.createElement('ul');
-                modes.forEach(mode => {
-                    const modeItem = document.createElement('li');
-                    modeItem.setAttribute('data-mode', mode.id);
-                    modeItem.textContent = mode.name;
-                    
-                    if (getCurrentChatModeId() === mode.id) {
-                        modeItem.classList.add('active');
-                    }
-                    
-                    modeItem.addEventListener('click', function() {
-                        selectChatMode(mode.id, mode.name, mode.systemPrompt);
-                        chatModeDropdown.classList.remove('show');
-                    });
-                    
-                    modeList.appendChild(modeItem);
+                // 如果是当前选择的模式，添加active类
+                if (getCurrentChatModeId() === mode.id) {
+                    modeItem.classList.add('active');
+                }
+                
+                modeItem.addEventListener('click', function() {
+                    selectChatMode(mode.id, mode.name, mode.systemPrompt);
+                    chatModeDropdown.classList.remove('show');
                 });
                 
-                chatModeDropdown.appendChild(modeList);
+                modeList.appendChild(modeItem);
             });
             
+            chatModeDropdown.appendChild(modeList);
             document.body.appendChild(chatModeDropdown);
         }
         
@@ -114,59 +68,33 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     // 获取当前选择的聊天模式系统提示词
-    async function getCurrentChatModeSystemPrompt() {
+    function getCurrentChatModeSystemPrompt() {
         const modeId = getCurrentChatModeId();
-        try {
-            return await window.PromptService.getPrompt(modeId);
-        } catch (error) {
-            console.error('获取当前模式提示词失败:', error);
-            const mode = chatModes.find(m => m.id === modeId);
-            return mode ? mode.systemPrompt : chatModes[0].systemPrompt;
-        }
+        const mode = chatModes.find(m => m.id === modeId);
+        return mode ? mode.systemPrompt : chatModes[0].systemPrompt;
     }
     
     // 检查本地存储中的聊天模式选择
-    async function checkSelectedChatMode() {
+    function checkSelectedChatMode() {
         const savedModeId = localStorage.getItem(SELECTED_CHAT_MODE_KEY);
         if (savedModeId) {
-            try {
-                // 查找匹配的模式
-                const mode = chatModes.find(m => m.id === savedModeId);
-                
-                if (mode) {
-                    // 更新显示的模式名称
-                    currentChatModeText.textContent = mode.name;
-                    // 确保系统提示词可用
-                    window.CHAT_MODE_SYSTEM_PROMPT = mode.systemPrompt;
-                } else {
-                    // 如果在本地列表中找不到，从服务获取
-                    const promptText = await window.PromptService.getPrompt(savedModeId);
-                    window.CHAT_MODE_SYSTEM_PROMPT = promptText;
-                    
-                    // 查找模式名称
-                    const modeList = await window.PromptService.getModeList();
-                    const modeInfo = modeList.find(m => m.id === savedModeId);
-                    if (modeInfo) {
-                        currentChatModeText.textContent = modeInfo.name;
-                    } else {
-                        currentChatModeText.textContent = savedModeId;
-                    }
-                }
-            } catch (error) {
-                console.error('获取所选模式失败:', error);
-                // 出错时回退到通用对话
-                window.CHAT_MODE_SYSTEM_PROMPT = chatModes[0].systemPrompt;
-                currentChatModeText.textContent = chatModes[0].name;
+            // 查找匹配的模式
+            const mode = chatModes.find(m => m.id === savedModeId);
+            
+            if (mode) {
+                // 更新显示的模式名称
+                currentChatModeText.textContent = mode.name;
+                // 确保系统提示词可用
+                window.CHAT_MODE_SYSTEM_PROMPT = mode.systemPrompt;
             }
         } else {
             // 默认使用通用对话
             window.CHAT_MODE_SYSTEM_PROMPT = chatModes[0].systemPrompt;
-            currentChatModeText.textContent = chatModes[0].name;
         }
     }
     
     // 选择聊天模式
-    async function selectChatMode(modeId, modeName, systemPrompt) {
+    function selectChatMode(modeId, modeName, systemPrompt) {
         // 更新显示的模式名称
         currentChatModeText.textContent = modeName;
         
@@ -196,15 +124,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 case 'patent-response':
                     userInput.placeholder = '请输入审查意见或提出答审问题...';
                     break;
-                case 'patent-analysis':
-                    userInput.placeholder = '请输入想要分析的专利数据或技术领域...';
-                    break;
-                case 'patent-strategy':
-                    userInput.placeholder = '请描述您的业务领域，寻求专利战略建议...';
-                    break; 
-                case 'patent-translation':
-                    userInput.placeholder = '请输入需要翻译的专利文本...';
-                    break;
                 default:
                     userInput.placeholder = '您想了解什么?';
             }
@@ -212,18 +131,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     // 暴露给其他模块的API
-    window.getChatModeSystemPrompt = async function() {
-        try {
-            const promptText = await getCurrentChatModeSystemPrompt();
-            return promptText || chatModes[0].systemPrompt;
-        } catch (error) {
-            console.error('获取系统提示词失败:', error);
-            return chatModes[0].systemPrompt;
-        }
+    window.getChatModeSystemPrompt = function() {
+        return window.CHAT_MODE_SYSTEM_PROMPT || chatModes[0].systemPrompt;
     };
     
     // 初始化时检查
-    await checkSelectedChatMode();
+    checkSelectedChatMode();
     
     // 根据当前模式设置占位符
     updatePlaceholderByMode(getCurrentChatModeId());

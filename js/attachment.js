@@ -80,7 +80,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 从PDF中提取文本
     function extractTextFromPDF(file) {
         // 使用pdfjsLib库提取PDF文本
-        // 注意：需要添加PDF.js库，这里展示基本逻辑
         if (typeof pdfjsLib !== 'undefined') {
             const reader = new FileReader();
             reader.onload = function(event) {
@@ -94,22 +93,37 @@ document.addEventListener('DOMContentLoaded', function() {
                     const numPages = pdf.numPages;
                     let pagesProcessed = 0;
                     
+                    // 创建一个Promise数组来跟踪所有页面处理
+                    const pagePromises = [];
+                    
                     for (let i = 1; i <= numPages; i++) {
-                        pdf.getPage(i).then(function(page) {
-                            page.getTextContent().then(function(content) {
+                        const pagePromise = pdf.getPage(i).then(function(page) {
+                            return page.getTextContent().then(function(content) {
                                 // 提取当前页面的文本
                                 const pageText = content.items.map(item => item.str).join(' ');
-                                textContent += pageText + '\n\n';
-                                
-                                pagesProcessed++;
-                                // 当所有页面都处理完后，更新提取的文本
-                                if (pagesProcessed === numPages) {
-                                    extractedText = textContent;
-                                    console.log('PDF文本提取完成');
-                                }
+                                return { pageNum: i, text: pageText };
                             });
                         });
+                        
+                        pagePromises.push(pagePromise);
                     }
+                    
+                    // 等待所有页面处理完成
+                    Promise.all(pagePromises)
+                        .then(function(pagesData) {
+                            // 按页码顺序排列
+                            pagesData.sort((a, b) => a.pageNum - b.pageNum);
+                            
+                            // 合并所有页面文本
+                            textContent = pagesData.map(page => page.text).join('\n\n');
+                            
+                            // 设置提取的文本
+                            extractedText = textContent;
+                            console.log('PDF文本提取完成，共', numPages, '页，字符数:', textContent.length);
+                        })
+                        .catch(function(error) {
+                            console.error('处理PDF页面时出错:', error);
+                        });
                 }).catch(function(error) {
                     console.error('PDF解析错误:', error);
                     alert('无法解析PDF文件，请尝试其他文件');
@@ -152,6 +166,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 修改发送消息函数，添加文档内容
     window.getAttachmentText = function() {
+        console.log('获取附件文本内容，长度：', extractedText ? extractedText.length : 0);
+        console.log('附件文本内容前50个字符：', extractedText ? extractedText.substring(0, 50) + '...' : '无内容');
         return extractedText;
     };
     

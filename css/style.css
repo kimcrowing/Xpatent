@@ -794,26 +794,28 @@ svg path {
 
 /* 附件标志样式 */
 .attachment-badge {
-    background-color: #f0f0f0;
-    color: #666;
-    padding: 2px 6px;
+    background-color: #e8f0fe;
+    color: #4285f4;
+    padding: 2px 8px;
     border-radius: 4px;
-    font-size: 12px;
-    margin-left: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-left: 8px;
     white-space: nowrap;
     display: inline-block;
     max-width: 250px;
     overflow: hidden;
     text-overflow: ellipsis;
     vertical-align: middle;
-    border: 1px solid #ddd;
+    border: 1px solid #c6dafc;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 /* 深色主题下的附件标志 */
 .dark-theme .attachment-badge {
-    background-color: #333;
-    color: #ccc;
-    border-color: #555;
+    background-color: #1a3353;
+    color: #89b4f7;
+    border-color: #3b4f69;
 }
 
 /* 调整消息内容显示区域 */
