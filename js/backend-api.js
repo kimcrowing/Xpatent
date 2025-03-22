@@ -58,7 +58,8 @@ async function apiRequest(endpoint, method = 'GET', data = null, requireAuth = t
   const url = `${window.API_BASE_URL}${endpoint}`;
   
   const headers = {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': '1'
   };
   
   if (requireAuth) {

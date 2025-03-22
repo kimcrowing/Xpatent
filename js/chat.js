@@ -289,7 +289,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'Authorization': `Bearer ${currentToken}`,
                     'Accept': 'application/json',
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': '1'
                 },
                 mode: 'cors',  // 明确使用cors模式
                 credentials: 'same-origin',
