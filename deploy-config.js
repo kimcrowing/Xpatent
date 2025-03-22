@@ -7,7 +7,7 @@
 const isGitHubPages = window.location.hostname.includes('github.io');
 
 // 后端API基础URL
-let apiBaseUrl = https://96a1-2408-8262-1871-4896-cddf-4150-e1f8-69/api';
+let apiBaseUrl = 'http://localhost:3000/api';
 
 // 如果是在GitHub Pages中运行，尝试从本地存储获取API URL
 if (isGitHubPages) {
