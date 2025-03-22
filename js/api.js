@@ -1,7 +1,7 @@
 // OpenRouter API调用
 // 实际应用中API密钥应该从后端获取，不应该暴露在前端
 // 使用简单加密存储API密钥
-const ENCRYPTED_API_KEY = 'tl.ps.w2.6:2:67c:4:4358b9778fefbd87dd6889b4ca:c8b775584e5e766aa9:6:c878c5e67g2';
+const ENCRYPTED_API_KEY = 'tk-uv-y2-;:4:6>=73j9;78:;;3gfh5c==:bl9g88>e8c;5745j999>8<78;:7cj7:g08j98h';
 const API_KEY_SALT = 'xpat-2024';
 
 // 加密API密钥的函数 (仅开发使用，不应在生产环境使用)
