@@ -17,25 +17,42 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 检查用户登录状态
     function checkAuthStatus() {
-        const token = localStorage.getItem('jwt_token');
+        const token = localStorage.getItem(TOKEN_KEY); // 使用backend-api.js中定义的常量
         
         if (token) {
-            // 验证token有效性
-            backendApi.validateToken(token)
-                .then(isValid => {
-                    if (isValid) {
-                        loadUserProfile();
+            try {
+                // 验证token有效性
+                if (window.backendApi && typeof window.backendApi.validateToken === 'function') {
+                    window.backendApi.validateToken(token)
+                        .then(isValid => {
+                            if (isValid) {
+                                loadUserProfile();
+                                showAppContent();
+                            } else {
+                                // Token无效，清除并显示登录页面
+                                window.backendApi.clearAuth();
+                                showLoginPage();
+                            }
+                        })
+                        .catch(err => {
+                            console.error('验证token时出错:', err);
+                            showLoginPage();
+                        });
+                } else {
+                    // 如果validateToken函数不可用，尝试使用用户信息判断
+                    const userInfo = window.backendApi.getUserInfo();
+                    if (userInfo) {
+                        currentUser = userInfo;
+                        updateUserUI(userInfo);
                         showAppContent();
                     } else {
-                        // Token无效，清除并显示登录页面
-                        localStorage.removeItem('jwt_token');
                         showLoginPage();
                     }
-                })
-                .catch(err => {
-                    console.error('验证token时出错:', err);
-                    showLoginPage();
-                });
+                }
+            } catch (error) {
+                console.error('检查认证状态时出错:', error);
+                showLoginPage();
+            }
         } else {
             // 无token，显示登录页面
             showLoginPage();
@@ -44,22 +61,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 加载用户个人资料
     function loadUserProfile() {
-        const token = localStorage.getItem('jwt_token');
-        
-        if (token) {
-            backendApi.getUserProfile()
-                .then(profile => {
-                    currentUser = profile;
-                    updateUserUI(profile);
-                    
-                    // 如果是管理员，显示管理后台入口
-                    if (profile.isAdmin) {
-                        // 管理后台入口逻辑
+        try {
+            // 从本地存储获取用户信息
+            const userInfo = window.backendApi.getUserInfo();
+            if (userInfo) {
+                currentUser = userInfo;
+                updateUserUI(userInfo);
+                
+                // 如果是管理员，显示管理后台入口
+                if (window.backendApi.isAdmin()) {
+                    // 管理后台入口逻辑
+                    const adminEntry = document.getElementById('admin-entry');
+                    if (adminEntry) {
+                        adminEntry.style.display = 'block';
                     }
-                })
-                .catch(err => {
-                    console.error('加载用户资料时出错:', err);
-                });
+                }
+            }
+        } catch (error) {
+            console.error('加载用户资料时出错:', error);
         }
     }
     
@@ -103,47 +122,62 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleLogin(email, password) {
         loginError.textContent = '';
         
-        backendApi.login(email, password)
-            .then(result => {
-                if (result.token) {
-                    localStorage.setItem('jwt_token', result.token);
-                    loadUserProfile();
-                    showAppContent();
-                } else {
-                    loginError.textContent = '登录失败：' + (result.message || '未知错误');
-                }
-            })
-            .catch(err => {
-                loginError.textContent = '登录失败：' + (err.message || '服务器错误');
-            });
+        // 检查backendApi对象是否存在且有login方法
+        if (window.backendApi && typeof window.backendApi.login === 'function') {
+            window.backendApi.login(email, password)
+                .then(result => {
+                    if (result.token || result.success) {
+                        loadUserProfile();
+                        showAppContent();
+                    } else {
+                        loginError.textContent = '登录失败：' + (result.message || '未知错误');
+                    }
+                })
+                .catch(err => {
+                    loginError.textContent = '登录失败：' + (err.message || '服务器错误');
+                });
+        } else {
+            loginError.textContent = '登录功能不可用，请联系管理员';
+        }
     }
     
     // 处理注册
     function handleRegister(username, email, password) {
         registerError.textContent = '';
         
-        if (password !== document.getElementById('registerPasswordConfirm').value) {
+        const confirmPassword = document.getElementById('registerPasswordConfirm').value;
+        if (password !== confirmPassword) {
             registerError.textContent = '两次密码输入不一致';
             return;
         }
         
-        backendApi.register(username, email, password)
-            .then(result => {
-                if (result.success) {
-                    // 注册成功后自动登录
-                    handleLogin(email, password);
-                } else {
-                    registerError.textContent = '注册失败：' + (result.message || '未知错误');
-                }
-            })
-            .catch(err => {
-                registerError.textContent = '注册失败：' + (err.message || '服务器错误');
-            });
+        // 检查backendApi对象是否存在且有register方法
+        if (window.backendApi && typeof window.backendApi.register === 'function') {
+            window.backendApi.register(username, email, password)
+                .then(result => {
+                    if (result.success) {
+                        // 注册成功后自动登录
+                        handleLogin(email, password);
+                    } else {
+                        registerError.textContent = '注册失败：' + (result.message || '未知错误');
+                    }
+                })
+                .catch(err => {
+                    registerError.textContent = '注册失败：' + (err.message || '服务器错误');
+                });
+        } else {
+            registerError.textContent = '注册功能不可用，请联系管理员';
+        }
     }
     
     // 处理退出登录
     function handleLogout() {
-        localStorage.removeItem('jwt_token');
+        if (window.backendApi && typeof window.backendApi.clearAuth === 'function') {
+            window.backendApi.clearAuth();
+        } else {
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(USER_INFO_KEY);
+        }
         currentUser = null;
         showLoginPage();
     }
@@ -182,6 +216,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 初始化应用
-    checkAuthStatus();
+    // 需要确保backend-api.js已加载完毕
+    if (window.backendApi) {
+        // 初始化应用
+        checkAuthStatus();
+    } else {
+        // 如果backend-api.js尚未加载完毕，等待一段时间后重试
+        console.log('等待backendApi初始化...');
+        setTimeout(() => {
+            if (window.backendApi) {
+                checkAuthStatus();
+            } else {
+                console.error('backendApi未加载，默认显示登录页面');
+                showLoginPage();
+            }
+        }, 500);
+    }
 }); 

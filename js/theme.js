@@ -12,21 +12,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // 始终应用暗色主题作为默认主题
     applyTheme(DARK_THEME);
     
-    // 初始化主题图标
-    updateThemeIcon();
-
-    // 为主题切换按钮添加点击事件
-    themeToggle.addEventListener('click', () => {
-        // 切换主题
-        if (body.classList.contains(DARK_THEME)) {
-            applyTheme(LIGHT_THEME);
-        } else {
-            applyTheme(DARK_THEME);
-        }
-
-        // 更新主题图标
+    // 只有当themeToggle元素存在时才继续初始化主题切换功能
+    if (themeToggle) {
+        console.log('找到主题切换按钮，初始化主题切换功能');
+        
+        // 初始化主题图标
         updateThemeIcon();
-    });
+
+        // 为主题切换按钮添加点击事件
+        themeToggle.addEventListener('click', () => {
+            // 切换主题
+            if (body.classList.contains(DARK_THEME)) {
+                applyTheme(LIGHT_THEME);
+            } else {
+                applyTheme(DARK_THEME);
+            }
+
+            // 更新主题图标
+            updateThemeIcon();
+        });
+    } else {
+        console.log('未找到主题切换按钮 #themeToggle，跳过主题切换功能初始化');
+    }
 
     // 应用主题
     function applyTheme(theme) {
@@ -61,8 +68,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 更新主题图标
     function updateThemeIcon() {
+        // 确保themeToggle元素存在
+        if (!themeToggle) {
+            console.log('更新主题图标失败：未找到主题切换按钮');
+            return;
+        }
+        
         const themeIcon = themeToggle.querySelector('.theme-icon');
         const themeText = themeToggle.querySelector('span');
+        
+        // 确保找到了图标和文本元素
+        if (!themeIcon) {
+            console.log('更新主题图标失败：未找到.theme-icon元素');
+            return;
+        }
+        
+        if (!themeText) {
+            console.log('更新主题图标失败：未找到span文本元素');
+            return;
+        }
         
         if (body.classList.contains(DARK_THEME)) {
             // 当前是暗色主题，显示太阳图标（表示可以切换到亮色主题）

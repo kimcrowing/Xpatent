@@ -3,12 +3,14 @@
  * 这个模块负责与后端API进行通信，包括用户登录、获取和管理提示词等功能
  */
 
-// API基础URL
-const API_BASE_URL = 'http://localhost:3000/api';
+// 常量定义
+const API_BASE_URL = localStorage.getItem('api_base_url') || 'http://localhost:3000/api';
+const TOKEN_KEY = 'jwt_token';
+const USER_INFO_KEY = 'user_info';
 
 // 本地存储密钥
-const TOKEN_KEY = 'xpat_auth_token';
-const USER_INFO_KEY = 'xpat_user_info';
+const TOKEN_KEY_OLD = 'xpat_auth_token';
+const USER_INFO_KEY_OLD = 'xpat_user_info';
 
 /**
  * 从本地存储获取令牌
@@ -30,7 +32,7 @@ function getUserInfo() {
  */
 function isAdmin() {
   const userInfo = getUserInfo();
-  return userInfo && userInfo.role === 'admin';
+  return userInfo && (userInfo.role === 'admin' || userInfo.isAdmin === true);
 }
 
 /**
@@ -356,7 +358,49 @@ window.backendApi = {
   getUserInfo,
   getApiConfig,
   saveApiConfig,
-  sendOpenRouterRequest
+  sendOpenRouterRequest,
+  
+  // 添加验证token的函数
+  async validateToken(token) {
+    try {
+      // 如果没有提供token，尝试从本地存储获取
+      const tokenToValidate = token || getToken();
+      if (!tokenToValidate) return false;
+      
+      const result = await apiRequest('/auth/validate', 'POST', { token: tokenToValidate }, false);
+      return result.valid === true;
+    } catch (error) {
+      console.error('验证token时出错:', error);
+      return false;
+    }
+  },
+  
+  // 添加用户登录函数
+  async login(email, password) {
+    try {
+      const response = await apiRequest('/auth/login', 'POST', { email, password }, false);
+      
+      if (response.token && response.user) {
+        // 保存认证信息
+        setAuth(response.token, response.user);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('登录失败:', error);
+      throw error;
+    }
+  },
+  
+  // 添加用户注册函数
+  async register(username, email, password) {
+    return apiRequest('/auth/register', 'POST', { username, email, password }, false);
+  },
+  
+  // 添加获取用户资料函数
+  async getUserProfile() {
+    return apiRequest('/users/profile', 'GET', null, true);
+  }
 };
 
 /**
