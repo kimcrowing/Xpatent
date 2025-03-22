@@ -264,18 +264,11 @@ async function saveApiConfig(config) {
       window.API_BASE_URL = savedApiUrl;
       console.log('从本地存储加载API地址:', savedApiUrl);
     } else {
-      // 第一次访问，提示用户输入API地址
+      // 默认使用本地地址，需要管理员在部署时手动修改
       const defaultApiUrl = 'http://localhost:3000/api';
-      const apiUrl = prompt(
-        '请输入后端API地址（例如：https://your-api-server.com/api）',
-        defaultApiUrl
-      );
-      
-      if (apiUrl && apiUrl !== defaultApiUrl) {
-        window.API_BASE_URL = apiUrl;
-        localStorage.setItem('xpat_api_url', apiUrl);
-        console.log('已设置并保存API地址:', apiUrl);
-      }
+      window.API_BASE_URL = defaultApiUrl;
+      localStorage.setItem('xpat_api_url', defaultApiUrl);
+      console.log('已设置默认API地址:', defaultApiUrl);
     }
   }
 })();

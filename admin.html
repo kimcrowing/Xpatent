@@ -134,6 +134,26 @@
                     <div class="card api-config-card">
                         <form id="apiConfigForm">
                             <div class="form-group">
+                                <h3>系统配置</h3>
+                                <label for="backendApiUrl">后端API地址</label>
+                                <input type="text" id="backendApiUrl" placeholder="http://localhost:3000/api">
+                                
+                                <label for="defaultProvider">默认AI提供商</label>
+                                <select id="defaultProvider">
+                                    <option value="openai">OpenAI</option>
+                                    <option value="anthropic">Anthropic</option>
+                                    <option value="openrouter">OpenRouter</option>
+                                </select>
+                                
+                                <div class="form-check">
+                                    <input type="checkbox" id="allowUserModelSelection">
+                                    <label for="allowUserModelSelection">允许用户选择模型</label>
+                                </div>
+                            </div>
+                            
+                            <hr class="divider">
+                            
+                            <div class="form-group">
                                 <h3>OpenAI API配置</h3>
                                 <label for="openaiApiKey">API密钥</label>
                                 <input type="password" id="openaiApiKey" placeholder="sk-...">
@@ -195,23 +215,6 @@
                             </div>
                             
                             <hr class="divider">
-                            
-                            <div class="form-group">
-                                <h3>通用设置</h3>
-                                <label for="defaultProvider">默认AI提供商</label>
-                                <select id="defaultProvider">
-                                    <option value="openai">OpenAI</option>
-                                    <option value="anthropic">Anthropic</option>
-                                    <option value="openrouter">OpenRouter</option>
-                                </select>
-                                
-                                <div class="checkbox-group">
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="allowUserModelSelection">
-                                        <span>允许用户选择模型</span>
-                                    </label>
-                                </div>
-                            </div>
                             
                             <div class="form-note">
                                 <p>注意: API密钥将以加密方式存储在服务器端，并用于向AI提供商发送请求。</p>

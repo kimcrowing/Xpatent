@@ -159,16 +159,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const isGitHubPages = window.location.hostname.includes('github.io');
         
         if (isGitHubPages) {
-            // 修改backendApi中的API_BASE_URL
-            // 注意：需要部署后端到支持CORS的服务器上
-            const apiBaseUrl = prompt(
-                '您正在GitHub Pages环境运行，请输入后端API地址（例如：https://your-api-server.com/api）',
-                'http://localhost:3000/api'
-            );
+            // 从本地存储加载API地址，如果没有则使用默认地址
+            const savedApiUrl = localStorage.getItem('xpat_api_url');
             
-            if (apiBaseUrl) {
-                window.API_BASE_URL = apiBaseUrl;
-                console.log('已设置API地址为:', apiBaseUrl);
+            if (savedApiUrl) {
+                window.API_BASE_URL = savedApiUrl;
+                console.log('从本地存储加载API地址:', savedApiUrl);
+            } else {
+                // 默认使用本地地址，需要管理员在部署时手动修改
+                const defaultApiUrl = 'http://localhost:3000/api';
+                window.API_BASE_URL = defaultApiUrl;
+                localStorage.setItem('xpat_api_url', defaultApiUrl);
+                console.log('已设置默认API地址:', defaultApiUrl);
             }
         }
     }
@@ -663,6 +665,10 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function loadApiConfig() {
         try {
+            // 加载后端API地址
+            const backendApiUrl = localStorage.getItem('xpat_api_url') || window.API_BASE_URL || 'http://localhost:3000/api';
+            document.getElementById('backendApiUrl').value = backendApiUrl;
+            
             // 从后端获取API配置
             const config = await window.backendApi.getApiConfig();
             
@@ -750,6 +756,14 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function handleSaveApiConfig() {
         try {
+            // 保存后端API地址
+            const backendApiUrl = document.getElementById('backendApiUrl').value.trim();
+            if (backendApiUrl) {
+                localStorage.setItem('xpat_api_url', backendApiUrl);
+                window.API_BASE_URL = backendApiUrl;
+                console.log('已更新后端API地址:', backendApiUrl);
+            }
+            
             // 获取表单值
             const openaiApiKey = document.getElementById('openaiApiKey').value.trim();
             const openaiModel = document.getElementById('openaiModel').value;
