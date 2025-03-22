@@ -11,8 +11,7 @@ body {
     flex-direction: column;
     height: 100vh;
     overflow: hidden;
-    transition: none;
-    background-color: var(--bg-color); /* 使用变量而非透明背景 */
+    transition: background-color 0.3s ease, color 0.3s ease; /* 添加过渡效果 */
 }
 
 /* 导航栏样式 */
@@ -548,8 +547,7 @@ body {
 
 /* 主题切换过渡效果 */
 body {
-    transition: none;
-    background-color: var(--bg-color); /* 使用变量而非透明背景 */
+    transition: background-color 0.3s ease, color 0.3s ease; /* 添加过渡效果 */
 }
 
 .navbar, .logo, .user-menu, .input-wrapper, .search-options, .think-btn, .model-selector, 

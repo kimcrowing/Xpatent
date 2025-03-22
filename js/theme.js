@@ -53,11 +53,15 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('应用主题后的html根元素类名:', document.documentElement.className);
         console.log('当前应用的背景色:', getComputedStyle(body).backgroundColor);
         
-        // 强制重新应用样式
-        document.documentElement.style.display = 'none';
-        setTimeout(() => {
-            document.documentElement.style.display = '';
-        }, 0);
+        // 强制重新应用样式 - 使用RAF确保DOM更新
+        requestAnimationFrame(() => {
+            // 强制浏览器重排和重绘
+            document.body.offsetHeight;
+            document.documentElement.style.display = 'none';
+            setTimeout(() => {
+                document.documentElement.style.display = '';
+            }, 5);
+        });
     }
 
     // 更新主题图标

@@ -1,4 +1,5 @@
-:root {
+/* 暗色主题下的CSS变量 */
+.dark-theme {
     --bg-color: #121212;
     --secondary-bg: #1e1e20;
     --input-bg: #242428;
@@ -25,19 +26,17 @@
     --scrollbar-thumb-hover: #4d4d52;
     --selected-bg: rgba(88, 101, 242, 0.25);
     --attachment-bg: rgba(88, 101, 242, 0.1);
-}
-
-/* 确保暗色主题使用正确的背景色 */
-body.dark-theme {
+    
+    /* 直接设置主题颜色 */
     color: var(--text-color);
     background-color: var(--bg-color) !important;
 }
 
 /* 确保所有需要改变背景色的主要容器都使用正确的主题色 */
-body.dark-theme .navbar,
-body.dark-theme .chat-container,
-body.dark-theme .messages,
-body.dark-theme .input-area {
+.dark-theme .navbar,
+.dark-theme .chat-container,
+.dark-theme .messages,
+.dark-theme .input-area {
     background-color: var(--bg-color) !important;
 }
 
