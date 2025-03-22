@@ -31,16 +31,28 @@ async function callOpenRouterAPI(message, systemPrompt = '') {
         // 如果提供了系统提示，添加系统消息
         if (systemPrompt) {
             // 添加Markdown格式指令到系统提示
-            systemPrompt = systemPrompt + "\n请使用Markdown格式回复，支持标题、列表、表格、代码块等Markdown语法。";
+            if (window.PROMPT_TEMPLATES && window.PROMPT_TEMPLATES.formatInstruction) {
+                if (!systemPrompt.includes('Markdown')) {
+                    systemPrompt = systemPrompt + " " + window.PROMPT_TEMPLATES.formatInstruction;
+                }
+            } else {
+                // 使用默认格式指令
+                systemPrompt = systemPrompt + "\n请使用Markdown格式回复，支持标题、列表、表格、代码块等Markdown语法。";
+            }
+            
             messages.push({
                 role: 'system',
                 content: systemPrompt
             });
         } else {
             // 如果没有提供系统提示，添加默认的Markdown格式指令
+            const formatInstruction = window.PROMPT_TEMPLATES ? 
+                window.PROMPT_TEMPLATES.formatInstruction : 
+                "请使用Markdown格式回复，支持标题、列表、表格、代码块等Markdown语法。";
+                
             messages.push({
                 role: 'system',
-                content: "请使用Markdown格式回复，支持标题、列表、表格、代码块等Markdown语法。"
+                content: formatInstruction
             });
         }
         
@@ -353,37 +365,137 @@ function buildAPIRequest(message) {
     // 检查消息中是否包含附件内容
     const hasAttachment = message.includes('===== 附件内容 =====');
     
-    // 根据不同功能设置不同的系统提示
-    switch(activeFeature) {
-        case '通用对话':
-            systemPrompt = '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。';
+    // 如果已加载提示词模板，则使用模板中的提示词
+    if (window.PROMPT_TEMPLATES) {
+        // 根据当前聊天模式获取提示词
+        const currentModeId = localStorage.getItem('selected_chat_mode') || 'general';
+        const chatMode = window.PROMPT_TEMPLATES.chatModes.find(mode => mode.id === currentModeId);
+        
+        if (chatMode) {
+            systemPrompt = chatMode.systemPrompt;
+            
+            // 如果有附件，添加附件相关提示
             if (hasAttachment) {
-                systemPrompt += '用户提供了附件内容，请认真阅读并基于附件内容回答问题。';
+                if (currentModeId === 'general') {
+                    systemPrompt += ' ' + window.PROMPT_TEMPLATES.attachmentPrompts.general;
+                } else if (currentModeId === 'patent-writing') {
+                    systemPrompt += ' ' + window.PROMPT_TEMPLATES.attachmentPrompts.content;
+                } else {
+                    systemPrompt += ' ' + window.PROMPT_TEMPLATES.attachmentPrompts.document;
+                }
             }
-            break;
-        case '内容创作':
-            systemPrompt = '你是Xpat创作助手，擅长帮助用户创作各类内容。根据用户的描述，提供创意建议、内容结构和详细内容。';
-            if (hasAttachment) {
-                systemPrompt += '用户提供了附件内容，请将附件内容作为参考或素材进行创作。';
-            }
-            break;
-        case '文档分析':
-            systemPrompt = '你是Xpat分析助手，擅长分析文档并提取重要信息。';
-            if (hasAttachment) {
-                systemPrompt += '请重点分析用户提供的附件内容，提取关键信息，归纳要点，并提供深入见解。用户问题可能是针对附件内容提出的，请优先考虑附件内容进行回答。';
-            } else {
-                systemPrompt += '请分析用户提供的文本，归纳要点，并提供见解。';
-            }
-            break;
-        default:
-            systemPrompt = '你是Xpat助手，为用户提供智能对话服务。';
-            if (hasAttachment) {
-                systemPrompt += '用户提供了附件内容，请认真阅读并基于附件内容回答问题。';
-            }
+        } else {
+            // 后备到默认提示词
+            systemPrompt = window.PROMPT_TEMPLATES.chatModes[0].systemPrompt;
+        }
+    } else {
+        // 如果模板未加载，使用原有的提示词逻辑（作为后备）
+        switch(activeFeature) {
+            case '通用对话':
+                systemPrompt = '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。';
+                if (hasAttachment) {
+                    systemPrompt += '用户提供了附件内容，请认真阅读并基于附件内容回答问题。';
+                }
+                break;
+            case '内容创作':
+                systemPrompt = '你是Xpat创作助手，擅长帮助用户创作各类内容。根据用户的描述，提供创意建议、内容结构和详细内容。';
+                if (hasAttachment) {
+                    systemPrompt += '用户提供了附件内容，请将附件内容作为参考或素材进行创作。';
+                }
+                break;
+            case '文档分析':
+                systemPrompt = '你是Xpat分析助手，擅长分析文档并提取重要信息。';
+                if (hasAttachment) {
+                    systemPrompt += '请重点分析用户提供的附件内容，提取关键信息，归纳要点，并提供深入见解。用户问题可能是针对附件内容提出的，请优先考虑附件内容进行回答。';
+                } else {
+                    systemPrompt += '请分析用户提供的文本，归纳要点，并提供见解。';
+                }
+                break;
+            default:
+                systemPrompt = '你是Xpat助手，为用户提供智能对话服务。';
+                if (hasAttachment) {
+                    systemPrompt += '用户提供了附件内容，请认真阅读并基于附件内容回答问题。';
+                }
+        }
     }
+    
+    console.log('使用系统提示词:', systemPrompt);
     
     return {
         message: message,
         systemPrompt: systemPrompt
     };
-} 
+}
+
+// 模拟从后端获取提示词的函数
+async function fetchPromptTemplates() {
+    try {
+        // 模拟API延迟
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // 返回模拟的提示词数据
+        return {
+            success: true,
+            data: {
+                chatModes: [
+                    { 
+                        id: 'general', 
+                        name: '通用对话', 
+                        systemPrompt: '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。'
+                    },
+                    { 
+                        id: 'patent-search', 
+                        name: '专利查询', 
+                        systemPrompt: '你是Xpat专利查询助手，专注于帮助用户检索、理解和分析专利信息。请解释专利概念、提供检索策略，并分析相关专利文献。'
+                    },
+                    { 
+                        id: 'patent-writing', 
+                        name: '专利撰写', 
+                        systemPrompt: '你是Xpat专利撰写助手，专注于帮助用户撰写高质量的专利申请文件。请根据用户的技术描述，提供专利申请书的结构、权利要求书的写法、说明书的组织等方面的建议。'
+                    },
+                    { 
+                        id: 'patent-response', 
+                        name: '专利答审', 
+                        systemPrompt: '你是Xpat专利答审助手，专注于帮助用户应对专利审查意见。请分析审查意见书内容，提供修改建议，解释如何针对审查员的不同意见进行有效答复。'
+                    }
+                ],
+                attachmentPrompts: {
+                    general: '用户提供了附件内容，请认真阅读并基于附件内容回答问题。',
+                    content: '用户提供了附件内容，请将附件内容作为参考或素材进行创作。',
+                    document: '请重点分析用户提供的附件内容，提取关键信息，归纳要点，并提供深入见解。用户问题可能是针对附件内容提出的，请优先考虑附件内容进行回答。'
+                },
+                formatInstruction: '请使用Markdown格式回复，支持标题、列表、表格、代码块等Markdown语法。'
+            }
+        };
+    } catch (error) {
+        console.error('获取提示词模板失败:', error);
+        // 失败时返回默认值
+        return {
+            success: false,
+            error: '获取提示词失败',
+            data: null
+        };
+    }
+}
+
+// 全局缓存提示词数据
+window.PROMPT_TEMPLATES = null;
+
+// 初始化提示词数据
+async function initPromptTemplates() {
+    if (!window.PROMPT_TEMPLATES) {
+        const result = await fetchPromptTemplates();
+        if (result.success) {
+            window.PROMPT_TEMPLATES = result.data;
+            console.log('提示词模板加载成功');
+        } else {
+            console.error('提示词模板加载失败，将使用默认值');
+        }
+    }
+    return window.PROMPT_TEMPLATES;
+}
+
+// 页面加载时初始化提示词
+document.addEventListener('DOMContentLoaded', function() {
+    initPromptTemplates();
+}); 

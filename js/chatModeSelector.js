@@ -14,13 +14,20 @@ document.addEventListener('DOMContentLoaded', function() {
         return; // 如果必要元素不存在，退出初始化
     }
     
-    // 聊天模式列表
-    const chatModes = [
+    // 本地备用的聊天模式列表（如果无法从模拟后端获取）
+    const localChatModes = [
         { id: 'general', name: '通用对话', systemPrompt: '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。' },
         { id: 'patent-search', name: '专利查询', systemPrompt: '你是Xpat专利查询助手，专注于帮助用户检索、理解和分析专利信息。请解释专利概念、提供检索策略，并分析相关专利文献。' },
         { id: 'patent-writing', name: '专利撰写', systemPrompt: '你是Xpat专利撰写助手，专注于帮助用户撰写高质量的专利申请文件。请根据用户的技术描述，提供专利申请书的结构、权利要求书的写法、说明书的组织等方面的建议。' },
         { id: 'patent-response', name: '专利答审', systemPrompt: '你是Xpat专利答审助手，专注于帮助用户应对专利审查意见。请分析审查意见书内容，提供修改建议，解释如何针对审查员的不同意见进行有效答复。' }
     ];
+    
+    // 获取聊天模式列表，优先使用模拟后端数据
+    function getChatModes() {
+        return window.PROMPT_TEMPLATES && window.PROMPT_TEMPLATES.chatModes 
+            ? window.PROMPT_TEMPLATES.chatModes 
+            : localChatModes;
+    }
     
     // 存储用户选择的聊天模式的本地存储键
     const SELECTED_CHAT_MODE_KEY = 'selected_chat_mode';
@@ -36,6 +43,9 @@ document.addEventListener('DOMContentLoaded', function() {
             chatModeDropdown.className = 'chat-mode-dropdown';
             
             const modeList = document.createElement('ul');
+            
+            // 获取最新的聊天模式列表
+            const chatModes = getChatModes();
             
             chatModes.forEach(mode => {
                 const modeItem = document.createElement('li');
@@ -70,8 +80,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // 获取当前选择的聊天模式系统提示词
     function getCurrentChatModeSystemPrompt() {
         const modeId = getCurrentChatModeId();
-        const mode = chatModes.find(m => m.id === modeId);
-        return mode ? mode.systemPrompt : chatModes[0].systemPrompt;
+        const mode = getChatModes().find(m => m.id === modeId);
+        return mode ? mode.systemPrompt : getChatModes()[0].systemPrompt;
     }
     
     // 检查本地存储中的聊天模式选择
@@ -79,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const savedModeId = localStorage.getItem(SELECTED_CHAT_MODE_KEY);
         if (savedModeId) {
             // 查找匹配的模式
-            const mode = chatModes.find(m => m.id === savedModeId);
+            const mode = getChatModes().find(m => m.id === savedModeId);
             
             if (mode) {
                 // 更新显示的模式名称
@@ -89,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } else {
             // 默认使用通用对话
-            window.CHAT_MODE_SYSTEM_PROMPT = chatModes[0].systemPrompt;
+            window.CHAT_MODE_SYSTEM_PROMPT = getChatModes()[0].systemPrompt;
         }
     }
     
@@ -132,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 暴露给其他模块的API
     window.getChatModeSystemPrompt = function() {
-        return window.CHAT_MODE_SYSTEM_PROMPT || chatModes[0].systemPrompt;
+        return window.CHAT_MODE_SYSTEM_PROMPT || getChatModes()[0].systemPrompt;
     };
     
     // 初始化时检查
