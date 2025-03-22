@@ -1,6 +1,8 @@
 /**
  * 后端API通信模块
  * 这个模块负责与后端API进行通信，包括用户登录、获取和管理提示词等功能
+ * 默认管理员账号: admin@example.com
+ * 默认管理员密码: www
  */
 
 // 后端API基础URL - 可以动态修改，以支持GitHub Pages环境
@@ -342,12 +344,9 @@ async function sendOpenRouterRequest(input, options = {}) {
       title = config.openrouter?.title || 'AI Chat Test';
     } catch (error) {
       console.warn('无法从后端获取API配置，尝试使用本地配置:', error);
-      // 如果后端不可用，尝试使用本地配置作为备份
-      apiKey = localStorage.getItem('xpat_openrouter_api_key');
-      model = options.model || localStorage.getItem('xpat_openrouter_model') || 'deepseek/deepseek-r1:free';
-      apiUrl = localStorage.getItem('xpat_openrouter_endpoint') || 'https://openrouter.ai/api/v1/chat/completions';
-      referer = localStorage.getItem('xpat_openrouter_referer') || 'http://localhost';
-      title = localStorage.getItem('xpat_openrouter_title') || 'AI Chat Test';
+      // 不从本地存储读取API密钥，避免密钥泄露
+      // 告知用户需要联系管理员或重新配置
+      throw new Error('无法获取API配置，请联系管理员');
     }
     
     if (!apiKey) {
