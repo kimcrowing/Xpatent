@@ -514,4 +514,81 @@ main {
 .light-theme .api-config-card .form-note {
     background-color: #e8f0f7;
     color: #506478;
+}
+
+/* 搜索框 */
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.search-box input {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+/* 分页控件 */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 20px;
+    padding: 12px 0;
+}
+
+.pagination-btn {
+    padding: 6px 12px;
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: var(--secondary-dark);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* 警告文本 */
+.warning-text {
+    color: var(--warning-color, #ffa726);
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+/* 用户管理特定样式 */
+.role-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.role-admin {
+    background-color: var(--admin-badge-bg, #7b1fa2);
+    color: white;
+}
+
+.role-user {
+    background-color: var(--user-badge-bg, #388e3c);
+    color: white;
 } 

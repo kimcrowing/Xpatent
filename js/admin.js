@@ -18,6 +18,43 @@ document.addEventListener('DOMContentLoaded', function() {
     const promptCategoryFilter = document.getElementById('promptCategoryFilter');
     const addPromptBtn = document.getElementById('addPromptBtn');
     
+    // 用户管理相关元素
+    const usersTable = document.getElementById('usersTable');
+    const usersEmptyState = document.getElementById('usersEmptyState');
+    const usersLoadingState = document.getElementById('usersLoadingState');
+    const userRoleFilter = document.getElementById('userRoleFilter');
+    const userSearchInput = document.getElementById('userSearchInput');
+    const userSearchBtn = document.getElementById('userSearchBtn');
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
+    const currentPageEl = document.getElementById('currentPage');
+    const totalPagesEl = document.getElementById('totalPages');
+    
+    // 用户编辑模态框
+    const userModalOverlay = document.getElementById('userModalOverlay');
+    const closeUserModalBtn = document.getElementById('closeUserModalBtn');
+    const userModalTitle = document.getElementById('userModalTitle');
+    const userForm = document.getElementById('userForm');
+    const userId = document.getElementById('userId');
+    const userUsername = document.getElementById('userUsername');
+    const userEmail = document.getElementById('userEmail');
+    const userRole = document.getElementById('userRole');
+    const userApiQuota = document.getElementById('userApiQuota');
+    const userFormError = document.getElementById('userFormError');
+    const saveUserBtn = document.getElementById('saveUserBtn');
+    const cancelUserBtn = document.getElementById('cancelUserBtn');
+    
+    // 角色修改确认模态框
+    const roleConfirmModalOverlay = document.getElementById('roleConfirmModalOverlay');
+    const closeRoleConfirmModalBtn = document.getElementById('closeRoleConfirmModalBtn');
+    const roleChangeUsername = document.getElementById('roleChangeUsername');
+    const roleChangeOld = document.getElementById('roleChangeOld');
+    const roleChangeNew = document.getElementById('roleChangeNew');
+    const roleChangeUserId = document.getElementById('roleChangeUserId');
+    const roleChangeValue = document.getElementById('roleChangeValue');
+    const cancelRoleChangeBtn = document.getElementById('cancelRoleChangeBtn');
+    const confirmRoleChangeBtn = document.getElementById('confirmRoleChangeBtn');
+    
     // API配置相关元素
     const apiConfigForm = document.getElementById('apiConfigForm');
     const saveApiConfigBtn = document.getElementById('saveApiConfigBtn');
@@ -43,6 +80,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const deletePromptId = document.getElementById('deletePromptId');
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    
+    // 用户列表状态
+    let currentUserPage = 1;
+    let totalUserPages = 1;
+    let currentUserRole = '';
+    let currentUserSearch = '';
     
     // 页面初始化
     initPage();
@@ -146,24 +189,67 @@ document.addEventListener('DOMContentLoaded', function() {
             item.addEventListener('click', handleMenuItemClick);
         });
         
-        // 分类筛选
+        // 提示词管理相关事件
         promptCategoryFilter.addEventListener('change', function() {
             loadPrompts(this.value);
         });
         
-        // 添加提示词按钮
         addPromptBtn.addEventListener('click', handleAddPrompt);
         
-        // 保存API配置按钮
+        // 用户管理相关事件
+        userRoleFilter.addEventListener('change', function() {
+            currentUserRole = this.value;
+            currentUserPage = 1;
+            loadUsers();
+        });
+        
+        userSearchBtn.addEventListener('click', function() {
+            currentUserSearch = userSearchInput.value.trim();
+            currentUserPage = 1;
+            loadUsers();
+        });
+        
+        userSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                currentUserSearch = userSearchInput.value.trim();
+                currentUserPage = 1;
+                loadUsers();
+            }
+        });
+        
+        // 分页按钮
+        prevPageBtn.addEventListener('click', function() {
+            if (currentUserPage > 1) {
+                currentUserPage--;
+                loadUsers();
+            }
+        });
+        
+        nextPageBtn.addEventListener('click', function() {
+            if (currentUserPage < totalUserPages) {
+                currentUserPage++;
+                loadUsers();
+            }
+        });
+        
+        // 用户编辑模态框事件
+        closeUserModalBtn.addEventListener('click', closeUserModal);
+        cancelUserBtn.addEventListener('click', closeUserModal);
+        saveUserBtn.addEventListener('click', handleSaveUser);
+        
+        // 角色修改确认模态框事件
+        closeRoleConfirmModalBtn.addEventListener('click', closeRoleConfirmModal);
+        cancelRoleChangeBtn.addEventListener('click', closeRoleConfirmModal);
+        confirmRoleChangeBtn.addEventListener('click', handleConfirmRoleChange);
+        
+        // API配置相关事件
         if (saveApiConfigBtn) {
             saveApiConfigBtn.addEventListener('click', handleSaveApiConfig);
         }
         
-        // 模态框关闭按钮
+        // 提示词管理模态框事件
         closeModalBtn.addEventListener('click', closeModal);
         cancelPromptBtn.addEventListener('click', closeModal);
-        
-        // 保存提示词按钮
         savePromptBtn.addEventListener('click', handleSavePrompt);
         
         // 删除模态框操作
@@ -236,6 +322,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 显示选中的section
         document.getElementById(selectedSection).style.display = 'block';
+        
+        // 如果选择了用户管理，加载用户列表
+        if (selectedSection === 'userManagement') {
+            loadUsers();
+        }
     }
     
     /**
@@ -580,5 +671,288 @@ document.addEventListener('DOMContentLoaded', function() {
             apiConfigError.style.color = '#f44336';
             apiConfigError.textContent = '保存配置失败: ' + (error.message || '未知错误');
         }
+    }
+    
+    /**
+     * 加载用户列表
+     */
+    async function loadUsers() {
+        // 显示加载状态
+        usersLoadingState.style.display = 'block';
+        usersEmptyState.style.display = 'none';
+        usersTable.querySelector('tbody').innerHTML = '';
+        
+        // 禁用分页按钮
+        prevPageBtn.disabled = true;
+        nextPageBtn.disabled = true;
+        
+        try {
+            // 调用API获取用户列表
+            const response = await window.backendApi.getAllUsers(currentUserPage, 10);
+            const users = response.users || [];
+            const pagination = response.pagination || { total: 0, page: 1, pages: 1 };
+            
+            // 更新分页信息
+            currentUserPage = pagination.page;
+            totalUserPages = pagination.pages;
+            currentPageEl.textContent = currentUserPage;
+            totalPagesEl.textContent = totalUserPages;
+            
+            // 启用/禁用分页按钮
+            prevPageBtn.disabled = currentUserPage <= 1;
+            nextPageBtn.disabled = currentUserPage >= totalUserPages;
+            
+            // 渲染表格
+            renderUsersTable(users);
+            
+            // 根据数据量显示空状态或表格
+            if (users.length === 0) {
+                usersEmptyState.style.display = 'block';
+                usersTable.style.display = 'none';
+            } else {
+                usersEmptyState.style.display = 'none';
+                usersTable.style.display = 'table';
+            }
+        } catch (error) {
+            console.error('加载用户列表失败:', error);
+            usersEmptyState.textContent = '加载用户列表失败: ' + (error.message || '未知错误');
+            usersEmptyState.style.display = 'block';
+            usersTable.style.display = 'none';
+        } finally {
+            // 隐藏加载状态
+            usersLoadingState.style.display = 'none';
+        }
+    }
+    
+    /**
+     * 渲染用户表格
+     */
+    function renderUsersTable(users) {
+        const tbody = usersTable.querySelector('tbody');
+        tbody.innerHTML = '';
+        
+        users.forEach(user => {
+            const tr = document.createElement('tr');
+            
+            // 格式化创建时间
+            const createdAt = new Date(user.created_at);
+            const formattedDate = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}-${String(createdAt.getDate()).padStart(2, '0')}`;
+            
+            // 角色显示
+            const roleDisplay = user.role === 'admin' 
+                ? '<span class="role-badge role-admin">管理员</span>' 
+                : '<span class="role-badge role-user">普通用户</span>';
+            
+            tr.innerHTML = `
+                <td>${user.id}</td>
+                <td>${user.username}</td>
+                <td>${user.email}</td>
+                <td>${roleDisplay}</td>
+                <td>${user.api_quota}</td>
+                <td>${user.api_usage}</td>
+                <td>${formattedDate}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-button edit-user-button" data-id="${user.id}" title="编辑">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11 4H4C3.44772 4 3 4.44772 3 5V19C3 19.5523 3.44772 20 4 20H18C18.5523 20 19 19.5523 19 19V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M18.5 2.5C18.7626 2.23735 19.1189 2.07855 19.5 2.07855C19.8811 2.07855 20.2374 2.23735 20.5 2.5C20.7626 2.76265 20.9214 3.11895 20.9214 3.5C20.9214 3.88105 20.7626 4.23735 20.5 4.5L12 13L9 14L10 11L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <button class="action-button reset-quota-button" data-id="${user.id}" title="重置配额">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M23 4V10H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M1 20V14H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M20.49 9C19.2462 6.28075 16.7512 4.39139 13.8163 3.87541C10.8813 3.35943 7.882 4.25908 5.61723 6.32332C3.35247 8.38756 2.10566 11.3987 2.22597 14.4876C2.34628 17.5765 3.82394 20.4853 6.26 22.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M3.51 15C4.75379 17.7193 7.24876 19.6086 10.1837 20.1246C13.1187 20.6406 16.118 19.7409 18.3828 17.6767C20.6475 15.6124 21.8943 12.6013 21.774 9.51237C21.6537 6.42346 20.1761 3.51465 17.74 1.64001" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            `;
+            
+            tbody.appendChild(tr);
+        });
+        
+        // 绑定编辑和重置配额按钮事件
+        document.querySelectorAll('.edit-user-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                handleEditUser(id, users);
+            });
+        });
+        
+        document.querySelectorAll('.reset-quota-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                handleResetQuota(id, users);
+            });
+        });
+    }
+    
+    /**
+     * 处理编辑用户
+     */
+    function handleEditUser(id, users) {
+        // 查找用户数据
+        const user = users.find(u => u.id.toString() === id.toString());
+        
+        if (!user) {
+            console.error('找不到用户数据:', id);
+            return;
+        }
+        
+        // 填充表单
+        userId.value = user.id;
+        userUsername.value = user.username;
+        userEmail.value = user.email;
+        userRole.value = user.role;
+        userApiQuota.value = user.api_quota;
+        
+        // 清除错误信息
+        userFormError.textContent = '';
+        
+        // 设置模态框标题
+        userModalTitle.textContent = '编辑用户';
+        
+        // 显示模态框
+        userModalOverlay.style.display = 'flex';
+        
+        // 监听角色变更
+        const originalRole = user.role;
+        userRole.addEventListener('change', function() {
+            if (this.value !== originalRole) {
+                showRoleConfirmModal(user, this.value);
+                // 重置选择
+                this.value = originalRole;
+            }
+        });
+    }
+    
+    /**
+     * 显示角色修改确认模态框
+     */
+    function showRoleConfirmModal(user, newRole) {
+        // 转换角色显示
+        const oldRoleDisplay = user.role === 'admin' ? '管理员' : '普通用户';
+        const newRoleDisplay = newRole === 'admin' ? '管理员' : '普通用户';
+        
+        // 填充模态框内容
+        roleChangeUsername.textContent = user.username;
+        roleChangeOld.textContent = oldRoleDisplay;
+        roleChangeNew.textContent = newRoleDisplay;
+        roleChangeUserId.value = user.id;
+        roleChangeValue.value = newRole;
+        
+        // 显示确认模态框
+        roleConfirmModalOverlay.style.display = 'flex';
+    }
+    
+    /**
+     * 处理角色修改确认
+     */
+    async function handleConfirmRoleChange() {
+        const id = roleChangeUserId.value;
+        const role = roleChangeValue.value;
+        
+        if (!id || !role) return;
+        
+        try {
+            // 调用API更新用户角色
+            await window.backendApi.updateUserRole(id, role);
+            
+            // 关闭确认模态框
+            closeRoleConfirmModal();
+            
+            // 关闭用户编辑模态框
+            closeUserModal();
+            
+            // 重新加载用户列表
+            loadUsers();
+        } catch (error) {
+            console.error('更新用户角色失败:', error);
+            userFormError.textContent = '更新角色失败: ' + (error.message || '未知错误');
+        }
+    }
+    
+    /**
+     * 处理重置配额
+     */
+    async function handleResetQuota(id, users) {
+        // 查找用户数据
+        const user = users.find(u => u.id.toString() === id.toString());
+        
+        if (!user) {
+            console.error('找不到用户数据:', id);
+            return;
+        }
+        
+        // 询问新的配额值
+        const newQuota = prompt(`请输入用户"${user.username}"的新API配额值:`, user.api_quota);
+        
+        // 验证输入
+        if (newQuota === null) return; // 取消操作
+        
+        const quotaValue = parseInt(newQuota);
+        if (isNaN(quotaValue) || quotaValue < 0) {
+            alert('请输入有效的配额值（大于等于0的整数）');
+            return;
+        }
+        
+        try {
+            // 调用API重置用户配额
+            await window.backendApi.resetUserApiQuota(id, quotaValue);
+            
+            // 重新加载用户列表
+            loadUsers();
+        } catch (error) {
+            console.error('重置用户配额失败:', error);
+            alert('重置配额失败: ' + (error.message || '未知错误'));
+        }
+    }
+    
+    /**
+     * 处理保存用户
+     */
+    async function handleSaveUser() {
+        // 获取表单数据
+        const id = userId.value;
+        const quota = parseInt(userApiQuota.value);
+        
+        // 表单验证
+        if (isNaN(quota) || quota < 0) {
+            userFormError.textContent = '请输入有效的配额值（大于等于0的整数）';
+            return;
+        }
+        
+        try {
+            // 更新用户API配额
+            await window.backendApi.resetUserApiQuota(id, quota);
+            
+            // 关闭模态框
+            closeUserModal();
+            
+            // 重新加载用户列表
+            loadUsers();
+        } catch (error) {
+            console.error('保存用户信息失败:', error);
+            userFormError.textContent = '保存失败: ' + (error.message || '未知错误');
+        }
+    }
+    
+    /**
+     * 关闭用户编辑模态框
+     */
+    function closeUserModal() {
+        userModalOverlay.style.display = 'none';
+        userForm.reset();
+        userFormError.textContent = '';
+    }
+    
+    /**
+     * 关闭角色修改确认模态框
+     */
+    function closeRoleConfirmModal() {
+        roleConfirmModalOverlay.style.display = 'none';
     }
 }); 

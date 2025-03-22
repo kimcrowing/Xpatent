@@ -172,6 +172,27 @@ async function getApiUsage() {
   return apiRequest('/usage/status');
 }
 
+/**
+ * 获取所有用户列表 (仅管理员)
+ */
+async function getAllUsers(page = 1, limit = 10) {
+  return apiRequest(`/users?page=${page}&limit=${limit}`);
+}
+
+/**
+ * 更新用户角色 (仅管理员)
+ */
+async function updateUserRole(userId, role) {
+  return apiRequest(`/users/${userId}/role`, 'PUT', { role });
+}
+
+/**
+ * 重置用户API配额 (仅管理员)
+ */
+async function resetUserApiQuota(userId, quota) {
+  return apiRequest(`/users/${userId}/quota`, 'PUT', { quota });
+}
+
 // 检测是否在GitHub Pages环境，并尝试设置API地址
 (function detectEnvironment() {
   // 检测是否在GitHub Pages环境
@@ -215,5 +236,8 @@ window.backendApi = {
   getApiUsage,
   isAdmin,
   clearAuth,
-  getUserInfo
+  getUserInfo,
+  getAllUsers,
+  updateUserRole,
+  resetUserApiQuota
 }; 

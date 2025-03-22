@@ -199,8 +199,52 @@
                     <div class="section-header">
                         <h2>用户管理</h2>
                     </div>
+                    
+                    <div class="filters">
+                        <div class="form-group">
+                            <label for="userRoleFilter">角色筛选</label>
+                            <select id="userRoleFilter">
+                                <option value="">所有角色</option>
+                                <option value="admin">管理员</option>
+                                <option value="user">普通用户</option>
+                            </select>
+                        </div>
+                        <div class="search-box">
+                            <input type="text" id="userSearchInput" placeholder="搜索用户名或邮箱...">
+                            <button id="userSearchBtn" class="btn btn-secondary">搜索</button>
+                        </div>
+                    </div>
+                    
                     <div class="data-table-container">
-                        <p>此功能将在后续版本中实现。</p>
+                        <table class="data-table" id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用户名</th>
+                                    <th>邮箱</th>
+                                    <th>角色</th>
+                                    <th>API配额</th>
+                                    <th>API使用量</th>
+                                    <th>注册时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 数据将通过JavaScript动态填充 -->
+                            </tbody>
+                        </table>
+                        <div class="empty-state" id="usersEmptyState" style="display: none;">
+                            <p>暂无数据</p>
+                        </div>
+                        <div class="loading-state" id="usersLoadingState">
+                            <p>加载中...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="pagination" id="usersPagination">
+                        <button class="pagination-btn" id="prevPageBtn" disabled>&laquo; 上一页</button>
+                        <span class="pagination-info">第 <span id="currentPage">1</span> 页，共 <span id="totalPages">1</span> 页</span>
+                        <button class="pagination-btn" id="nextPageBtn" disabled>下一页 &raquo;</button>
                     </div>
                 </section>
 
@@ -284,6 +328,65 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelDeleteBtn">取消</button>
                 <button class="btn btn-danger" id="confirmDeleteBtn">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用户编辑模态框 -->
+    <div id="userModalOverlay" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="userModalTitle">用户编辑</h3>
+                <button class="close-modal" id="closeUserModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="userId">
+                    <div class="form-group">
+                        <label for="userUsername">用户名</label>
+                        <input type="text" id="userUsername" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="userEmail">邮箱</label>
+                        <input type="email" id="userEmail" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="userRole">角色</label>
+                        <select id="userRole">
+                            <option value="user">普通用户</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="userApiQuota">API配额</label>
+                        <input type="number" id="userApiQuota" min="0" step="10">
+                    </div>
+                    <div class="form-error" id="userFormError"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelUserBtn">取消</button>
+                <button class="btn btn-primary" id="saveUserBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 角色修改确认模态框 -->
+    <div id="roleConfirmModalOverlay" class="modal-overlay" style="display: none;">
+        <div class="modal small-modal">
+            <div class="modal-header">
+                <h3>确认角色修改</h3>
+                <button class="close-modal" id="closeRoleConfirmModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>您确定要将用户 <span id="roleChangeUsername"></span> 的角色从 <span id="roleChangeOld"></span> 修改为 <span id="roleChangeNew"></span> 吗？</p>
+                <p class="warning-text">此操作会影响用户的权限，请谨慎操作。</p>
+                <input type="hidden" id="roleChangeUserId">
+                <input type="hidden" id="roleChangeValue">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelRoleChangeBtn">取消</button>
+                <button class="btn btn-primary" id="confirmRoleChangeBtn">确认修改</button>
             </div>
         </div>
     </div>
