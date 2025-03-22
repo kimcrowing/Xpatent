@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const body = document.body;
     const DARK_THEME = 'dark-theme';
     const LIGHT_THEME = 'light-theme';
-    const THEME_KEY = 'xpatent-preferred-theme';
+    const THEME_KEY = 'xpat-preferred-theme';
 
     // 清除之前的主题设置，强制使用暗色主题作为默认值
     localStorage.setItem(THEME_KEY, DARK_THEME);

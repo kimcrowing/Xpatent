@@ -1,6 +1,6 @@
-# Xpatent - 专利智能助手
+# Xpat - 专利智能助手
 
-Xpatent是一个基于AI的专利智能助手，旨在提供专业的专利相关服务，包括专利查询、专利撰写和专利答审等功能。本项目使用纯前端技术开发，可通过GitHub Pages直接部署使用。
+Xpat是一个基于AI的专利智能助手，旨在提供专业的专利相关服务，包括专利查询、专利撰写和专利答审等功能。本项目使用纯前端技术开发，可通过GitHub Pages直接部署使用。
 
 ## 🌟 核心功能
 
@@ -28,17 +28,17 @@ Xpatent是一个基于AI的专利智能助手，旨在提供专业的专利相�
 ## 🚀 快速开始
 
 ### 在线使用
-访问[Xpatent在线版](https://kimcrowing.github.io/Xpatent/)即可开始使用。
+访问[Xpat在线版](https://kimcrowing.github.io/Xpat/)即可开始使用。
 
 ### 本地部署
 1. 克隆仓库
 ```bash
-git clone https://github.com/kimcrowing/Xpatent.git
+git clone https://github.com/kimcrowing/Xpat.git
 ```
 
 2. 进入项目目录
 ```bash
-cd Xpatent
+cd Xpat
 ```
 
 3. 使用本地服务器启动项目（例如使用Python的http.server）
@@ -122,4 +122,4 @@ async function fetchPromptTemplates() {
 
 ---
 
-**Xpatent** - 让专利工作更智能 © 2024
+**Xpat** - 让专利工作更智能 © 2024
