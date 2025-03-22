@@ -8,8 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 检查本地存储中是否有保存的主题偏好
     const savedTheme = localStorage.getItem(THEME_KEY);
+    
+    // 如果有保存的主题，则应用它；否则默认使用暗色主题
     if (savedTheme) {
         applyTheme(savedTheme);
+    } else {
+        // 确保默认应用暗色主题
+        applyTheme(DARK_THEME);
     }
 
     // 初始化主题图标
@@ -30,13 +35,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 应用主题
     function applyTheme(theme) {
-        if (theme === DARK_THEME) {
-            body.classList.remove(LIGHT_THEME);
-            body.classList.add(DARK_THEME);
-        } else {
-            body.classList.remove(DARK_THEME);
-            body.classList.add(LIGHT_THEME);
-        }
+        console.log('应用主题:', theme); // 添加日志以便调试
+        
+        // 移除所有主题类
+        body.classList.remove(DARK_THEME, LIGHT_THEME);
+        
+        // 添加指定的主题类
+        body.classList.add(theme);
+        
         // 保存主题偏好到本地存储
         localStorage.setItem(THEME_KEY, theme);
     }
@@ -72,4 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
             themeText.textContent = '切换到暗色模式';
         }
     }
+    
+    // 添加主题变化检测
+    console.log('当前主题:', body.classList.contains(DARK_THEME) ? '暗色' : '亮色');
 }); 
