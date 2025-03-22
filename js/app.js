@@ -203,7 +203,10 @@ function userMenuClickHandler(e) {
         console.log('用户菜单已隐藏');
     } else {
         userMenu.classList.add('active');
-        userMenu.style.display = 'block';
+        // 强制设置display属性确保显示，但不在隐藏时设置display:none，让CSS控制
+        if (!userMenu.style.display || userMenu.style.display === 'none') {
+            userMenu.style.display = 'block';
+        }
         console.log('用户菜单已显示');
     }
     
