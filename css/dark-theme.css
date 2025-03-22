@@ -1,19 +1,33 @@
 :root {
-    --bg-color: #111111;
-    --text-color: #ffffff;
-    --secondary-text: #a0a0a0;
-    --menu-bg: #1a1a1a;
-    --hover-bg: #333333;
-    --input-bg: #2a2a2a;
-    --welcome-bg: rgba(40, 40, 40, 0.7);
-    --primary-color: #2b88fc;
-    --border-color: #333333;
-    --code-bg: #2a2a2a;
+    --bg-color: #1e1e1e;
+    --secondary-bg: #2d2d30;
+    --input-bg: #3c3c3c;
+    --model-selector-bg: #383838;
+    --text-color: rgb(255, 255, 255);
+    --text-color-secondary: rgba(255, 255, 255, 0.7);
+    --text-placeholder: rgba(255, 255, 255, 0.5);
+    --border-color: #444;
+    --hover-color: rgba(255, 255, 255, 0.1);
+    --primary-color: #5865f2;
+    --menu-bg: #2c2c2c;
+    --code-bg: #2d2d2d;
+    --table-header-bg: #3c3c3c;
+    --table-alt-row-bg: #2a2a2a;
+    --link-color: #89cff0;
+    --hover-bg: #383838;
+    --user-avatar-bg: #5865f2;
+    --ai-avatar-bg: #333;
+    --disabled-color: #555;
+    --user-msg-bg: #4a4b4c;
+    --ai-msg-bg: #3d4682;
+    --ai-msg-color: rgba(255, 255, 255, 0.95);
+    --scrollbar-thumb: #3d4052;
+    --scrollbar-thumb-hover: #4d5169;
 }
 
 .dark-theme {
-    background-color: var(--bg-color);
     color: var(--text-color);
+    background-color: var(--bg-color);
 }
 
 .dark-theme .navbar {
@@ -41,7 +55,7 @@
 }
 
 .dark-theme input::placeholder {
-    color: var(--secondary-text);
+    color: var(--text-color-secondary);
 }
 
 .dark-theme .input-container {
