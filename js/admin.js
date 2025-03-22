@@ -335,6 +335,20 @@ document.addEventListener('DOMContentLoaded', function() {
         closeDeleteModalBtn.addEventListener('click', closeDeleteModal);
         cancelDeleteBtn.addEventListener('click', closeDeleteModal);
         confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
+
+        // 从这里开始添加创建用户按钮事件监听
+        if (document.getElementById('createUserBtn')) {
+            document.getElementById('createUserBtn').addEventListener('click', handleAddUser);
+        }
+        
+        // 添加确认删除用户和提交创建用户的事件监听
+        if (document.getElementById('submitCreateUser')) {
+            document.getElementById('submitCreateUser').addEventListener('click', handleCreateUser);
+        }
+        
+        if (document.getElementById('confirmDeleteUser')) {
+            document.getElementById('confirmDeleteUser').addEventListener('click', handleConfirmDeleteUser);
+        }
     }
     
     /**
@@ -933,105 +947,75 @@ document.addEventListener('DOMContentLoaded', function() {
      * 渲染用户表格
      */
     function renderUsersTable(users) {
+        if (!usersTable) return;
+        
+        // 清空表格
         const tbody = usersTable.querySelector('tbody');
+        if (!tbody) return;
+        
         tbody.innerHTML = '';
         
-        users.forEach(user => {
-            const tr = document.createElement('tr');
-            
-            // 格式化创建时间
-            const createdAt = new Date(user.created_at);
-            const formattedDate = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}-${String(createdAt.getDate()).padStart(2, '0')}`;
-            
-            // 角色显示
-            const roleDisplay = user.role === 'admin' 
-                ? '<span class="role-badge role-admin">管理员</span>' 
-                : '<span class="role-badge role-user">普通用户</span>';
-            
-            tr.innerHTML = `
-                <td>${user.id}</td>
-                <td>${user.username}</td>
-                <td>${user.email}</td>
-                <td>${roleDisplay}</td>
-                <td>${user.api_quota}</td>
-                <td>${user.api_usage}</td>
-                <td>${formattedDate}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="action-button edit-user-button" data-id="${user.id}" title="编辑">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M11 4H4C3.44772 4 3 4.44772 3 5V19C3 19.5523 3.44772 20 4 20H18C18.5523 20 19 19.5523 19 19V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M18.5 2.5C18.7626 2.23735 19.1189 2.07855 19.5 2.07855C19.8811 2.07855 20.2374 2.23735 20.5 2.5C20.7626 2.76265 20.9214 3.11895 20.9214 3.5C20.9214 3.88105 20.7626 4.23735 20.5 4.5L12 13L9 14L10 11L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                        <button class="action-button reset-quota-button" data-id="${user.id}" title="重置配额">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M23 4V10H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M1 20V14H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M20.49 9C19.2462 6.28075 16.7512 4.39139 13.8163 3.87541C10.8813 3.35943 7.882 4.25908 5.61723 6.32332C3.35247 8.38756 2.10566 11.3987 2.22597 14.4876C2.34628 17.5765 3.82394 20.4853 6.26 22.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M3.51 15C4.75379 17.7193 7.24876 19.6086 10.1837 20.1246C13.1187 20.6406 16.118 19.7409 18.3828 17.6767C20.6475 15.6124 21.8943 12.6013 21.774 9.51237C21.6537 6.42346 20.1761 3.51465 17.74 1.64001" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                    </div>
-                </td>
-            `;
-            
-            tbody.appendChild(tr);
-        });
-        
-        // 绑定编辑和重置配额按钮事件
-        document.querySelectorAll('.edit-user-button').forEach(button => {
-            button.addEventListener('click', function() {
-                const id = this.getAttribute('data-id');
-                handleEditUser(id, users);
+        // 显示用户数据
+        if (users && users.length > 0) {
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                
+                tr.innerHTML = `
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>${user.role === 'admin' ? '管理员' : '普通用户'}</td>
+                    <td>${user.api_quota || '无限制'}</td>
+                    <td>${new Date(user.created_at).toLocaleString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary edit-role-btn" data-id="${user.id}" data-role="${user.role}">修改角色</button>
+                        <button class="btn btn-sm btn-warning reset-quota-btn" data-id="${user.id}">重置配额</button>
+                        <button class="btn btn-sm btn-danger delete-user-btn" data-id="${user.id}" data-username="${user.username}">删除</button>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
             });
-        });
-        
-        document.querySelectorAll('.reset-quota-button').forEach(button => {
-            button.addEventListener('click', function() {
-                const id = this.getAttribute('data-id');
-                handleResetQuota(id, users);
+            
+            // 绑定按钮事件
+            tbody.querySelectorAll('.edit-role-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const currentRole = this.getAttribute('data-role');
+                    const newRole = currentRole === 'admin' ? 'user' : 'admin';
+                    const user = users.find(u => u.id == id);
+                    
+                    if (user) {
+                        showRoleConfirmModal(user, newRole);
+                    }
+                });
             });
-        });
-    }
-    
-    /**
-     * 处理编辑用户
-     */
-    function handleEditUser(id, users) {
-        // 查找用户数据
-        const user = users.find(u => u.id.toString() === id.toString());
-        
-        if (!user) {
-            console.error('找不到用户数据:', id);
-            return;
+            
+            tbody.querySelectorAll('.reset-quota-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    handleResetQuota(id, users);
+                });
+            });
+            
+            // 添加删除用户按钮事件
+            tbody.querySelectorAll('.delete-user-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const username = this.getAttribute('data-username');
+                    handleDeleteUser(id, username);
+                });
+            });
+            
+            // 显示表格，隐藏空状态和加载状态
+            usersTable.style.display = 'table';
+            if (usersEmptyState) usersEmptyState.style.display = 'none';
+            if (usersLoadingState) usersLoadingState.style.display = 'none';
+        } else {
+            // 显示空状态，隐藏表格和加载状态
+            usersTable.style.display = 'none';
+            if (usersEmptyState) usersEmptyState.style.display = 'block';
+            if (usersLoadingState) usersLoadingState.style.display = 'none';
         }
-        
-        // 填充表单
-        userId.value = user.id;
-        userUsername.value = user.username;
-        userEmail.value = user.email;
-        userRole.value = user.role;
-        userApiQuota.value = user.api_quota;
-        
-        // 清除错误信息
-        userFormError.textContent = '';
-        
-        // 设置模态框标题
-        userModalTitle.textContent = '编辑用户';
-        
-        // 显示模态框
-        userModalOverlay.style.display = 'flex';
-        
-        // 监听角色变更
-        const originalRole = user.role;
-        userRole.addEventListener('change', function() {
-            if (this.value !== originalRole) {
-                showRoleConfirmModal(user, this.value);
-                // 重置选择
-                this.value = originalRole;
-            }
-        });
     }
     
     /**
@@ -1614,6 +1598,90 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // 如果没有引入Chart.js，则显示文本数据
             modelDistributionChart.innerHTML = '图表库未引入，无法显示图表';
+        }
+    }
+
+    /**
+     * 显示添加用户模态框
+     */
+    function handleAddUser() {
+        // 清空表单
+        document.getElementById('newUsername').value = '';
+        document.getElementById('newEmail').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('newRole').value = 'user';
+        document.getElementById('newApiQuota').value = '100';
+        
+        // 显示模态框
+        const modal = new bootstrap.Modal(document.getElementById('createUserModal'));
+        modal.show();
+    }
+    
+    /**
+     * 处理创建用户
+     */
+    async function handleCreateUser() {
+        const username = document.getElementById('newUsername').value;
+        const email = document.getElementById('newEmail').value;
+        const password = document.getElementById('newPassword').value;
+        const role = document.getElementById('newRole').value;
+        const apiQuota = parseInt(document.getElementById('newApiQuota').value);
+        
+        if (!username || !email || !password) {
+            alert('请填写完整的用户信息');
+            return;
+        }
+        
+        try {
+            await backendApi.createUser(username, email, password, role, apiQuota);
+            alert('用户创建成功');
+            
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createUserModal'));
+            modal.hide();
+            
+            // 重新加载用户列表
+            loadUsers();
+        } catch (error) {
+            alert('创建用户失败: ' + (error.message || '未知错误'));
+            console.error('创建用户错误:', error);
+        }
+    }
+
+    /**
+     * 删除用户变量
+     */
+    let deleteUserId = null;
+    
+    /**
+     * 打开删除用户确认模态框
+     */
+    function handleDeleteUser(id, username) {
+        deleteUserId = id;
+        document.getElementById('deleteUserName').textContent = username;
+        const modal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+        modal.show();
+    }
+    
+    /**
+     * 确认删除用户
+     */
+    async function handleConfirmDeleteUser() {
+        if (!deleteUserId) return;
+        
+        try {
+            await backendApi.deleteUser(deleteUserId);
+            alert('用户删除成功');
+            
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteUserModal'));
+            modal.hide();
+            
+            // 重新加载用户列表
+            loadUsers();
+        } catch (error) {
+            alert('删除用户失败: ' + (error.message || '未知错误'));
+            console.error('删除用户错误:', error);
         }
     }
 }); 

@@ -180,6 +180,26 @@ async function getAllUsers(page = 1, limit = 10) {
 }
 
 /**
+ * 创建用户 (仅管理员)
+ */
+async function createUser(username, email, password, role = 'user', apiQuota = 100) {
+  return apiRequest('/admin/users', 'POST', { 
+    username, 
+    email, 
+    password, 
+    role, 
+    api_quota: apiQuota 
+  });
+}
+
+/**
+ * 删除用户 (仅管理员)
+ */
+async function deleteUser(userId) {
+  return apiRequest(`/admin/users/${userId}`, 'DELETE');
+}
+
+/**
  * 更新用户角色 (仅管理员)
  */
 async function updateUserRole(userId, role) {
@@ -289,6 +309,8 @@ window.backendApi = {
   clearAuth,
   getUserInfo,
   getAllUsers,
+  createUser,
+  deleteUser,
   updateUserRole,
   resetUserApiQuota,
   getAllSubscriptionPlans,

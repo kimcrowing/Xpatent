@@ -231,18 +231,32 @@
                         <h2>用户管理</h2>
                     </div>
                     
-                    <div class="filters">
-                        <div class="form-group">
-                            <label for="userRoleFilter">角色筛选</label>
-                            <select id="userRoleFilter">
-                                <option value="">所有角色</option>
-                                <option value="admin">管理员</option>
-                                <option value="user">普通用户</option>
-                            </select>
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2>用户管理</h2>
+                            <button id="createUserBtn" class="btn btn-primary">创建用户</button>
                         </div>
-                        <div class="search-box">
-                            <input type="text" id="userSearchInput" placeholder="搜索用户名或邮箱...">
-                            <button id="userSearchBtn" class="btn btn-secondary">搜索</button>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <div class="btn-group" role="group">
+                                    <div class="form-group">
+                                        <label for="userRoleFilter">角色筛选</label>
+                                        <select id="userRoleFilter">
+                                            <option value="">所有角色</option>
+                                            <option value="admin">管理员</option>
+                                            <option value="user">普通用户</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex align-items-center">
+                                <div class="search-box">
+                                    <input type="text" id="userSearchInput" placeholder="搜索用户名或邮箱...">
+                                    <button id="userSearchBtn" class="btn btn-secondary">搜索</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -578,6 +592,68 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelDeleteSubscriptionBtn">取消</button>
                 <button class="btn btn-danger" id="confirmDeleteSubscriptionBtn">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 创建用户模态框 -->
+    <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createUserModalLabel">创建新用户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createUserForm">
+                        <div class="mb-3">
+                            <label for="newUsername" class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="newUsername" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newEmail" class="form-label">邮箱</label>
+                            <input type="email" class="form-control" id="newEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="newPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newRole" class="form-label">角色</label>
+                            <select class="form-select" id="newRole">
+                                <option value="user">普通用户</option>
+                                <option value="admin">管理员</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newApiQuota" class="form-label">API配额</label>
+                            <input type="number" class="form-control" id="newApiQuota" value="100">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="submitCreateUser">创建</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除用户确认模态框 -->
+    <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteUserModalLabel">确认删除</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>您确定要删除用户 <span id="deleteUserName"></span> 吗？此操作不可逆。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteUser">删除</button>
+                </div>
             </div>
         </div>
     </div>
