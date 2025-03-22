@@ -184,6 +184,8 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* 移除可能与暗色主题冲突的根变量 */
+/* 
 :root.light-theme {
     --bg-color-light: #ffffff;
     --text-color-light: #333333;
@@ -196,3 +198,4 @@
     --border-color-light: #e0e0e0;
     --code-bg-light: #f0f0f0;
 } 
+*/ 
