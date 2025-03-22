@@ -27,6 +27,20 @@
     --attachment-bg: rgba(88, 101, 242, 0.05);
 }
 
+/* 确保亮色主题使用正确的背景色 */
+body.light-theme {
+    color: var(--text-color);
+    background-color: var(--bg-color) !important;
+}
+
+/* 确保所有需要改变背景色的主要容器都使用正确的主题色 */
+body.light-theme .navbar,
+body.light-theme .chat-container,
+body.light-theme .messages,
+body.light-theme .input-area {
+    background-color: var(--bg-color) !important;
+}
+
 .light-theme {
     color: var(--text-color);
     background-color: var(--bg-color);

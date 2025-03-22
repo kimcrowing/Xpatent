@@ -27,8 +27,17 @@
     --attachment-bg: rgba(88, 101, 242, 0.1);
 }
 
-.dark-theme {
+/* 确保暗色主题使用正确的背景色 */
+body.dark-theme {
     color: var(--text-color);
+    background-color: var(--bg-color) !important;
+}
+
+/* 确保所有需要改变背景色的主要容器都使用正确的主题色 */
+body.dark-theme .navbar,
+body.dark-theme .chat-container,
+body.dark-theme .messages,
+body.dark-theme .input-area {
     background-color: var(--bg-color) !important;
 }
 
@@ -61,10 +70,6 @@
 }
 
 .dark-theme .input-container {
-    background-color: var(--bg-color);
-}
-
-.dark-theme .chat-container {
     background-color: var(--bg-color);
 }
 

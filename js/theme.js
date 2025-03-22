@@ -39,12 +39,25 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 移除所有主题类
         body.classList.remove(DARK_THEME, LIGHT_THEME);
+        document.documentElement.classList.remove(DARK_THEME, LIGHT_THEME);
         
-        // 添加指定的主题类
+        // 添加指定的主题类到body和html根元素
         body.classList.add(theme);
+        document.documentElement.classList.add(theme);
         
         // 保存主题偏好到本地存储
         localStorage.setItem(THEME_KEY, theme);
+        
+        // 添加调试信息
+        console.log('应用主题后的body类名:', body.className);
+        console.log('应用主题后的html根元素类名:', document.documentElement.className);
+        console.log('当前应用的背景色:', getComputedStyle(body).backgroundColor);
+        
+        // 强制重新应用样式
+        document.documentElement.style.display = 'none';
+        setTimeout(() => {
+            document.documentElement.style.display = '';
+        }, 0);
     }
 
     // 更新主题图标
