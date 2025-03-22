@@ -2,7 +2,7 @@
 // 实际应用中API密钥应该从后端获取，不应该暴露在前端
 // 使用简单加密存储API密钥
 const ENCRYPTED_API_KEY = 'tl.ps.w2.6:2:67c:4:4358b9778fefbd87dd6889b4ca:c8b775584e5e766aa9:6:c878c5e67g2';
-const API_KEY_SALT = 'xpatent-2024';
+const API_KEY_SALT = 'xpat-2024';
 
 // 加密API密钥的函数 (仅开发使用，不应在生产环境使用)
 function encryptApiKey(apiKey, salt) {
