@@ -152,6 +152,33 @@
                             <hr class="divider">
                             
                             <div class="form-group">
+                                <h3>OpenRouter API配置</h3>
+                                <label for="openrouterApiKey">API密钥</label>
+                                <input type="password" id="openrouterApiKey" placeholder="sk-or-v1-..." value="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">
+                                
+                                <label for="openrouterModel">默认模型</label>
+                                <select id="openrouterModel">
+                                    <option value="deepseek/deepseek-r1:free">DeepSeek R1 (免费)</option>
+                                    <option value="anthropic/claude-3-opus:beta">Claude 3 Opus</option>
+                                    <option value="anthropic/claude-3-sonnet:beta">Claude 3 Sonnet</option>
+                                    <option value="anthropic/claude-3-haiku:beta">Claude 3 Haiku</option>
+                                    <option value="mistralai/mistral-large:latest">Mistral Large</option>
+                                    <option value="google/gemini-pro:latest">Google Gemini Pro</option>
+                                </select>
+                                
+                                <label for="openrouterEndpoint">API端点</label>
+                                <input type="text" id="openrouterEndpoint" placeholder="https://openrouter.ai/api/v1/chat/completions" value="https://openrouter.ai/api/v1/chat/completions">
+                                
+                                <label for="openrouterReferer">HTTP-Referer</label>
+                                <input type="text" id="openrouterReferer" placeholder="http://localhost" value="http://localhost">
+                                
+                                <label for="openrouterTitle">X-Title</label>
+                                <input type="text" id="openrouterTitle" placeholder="AI Chat Application" value="AI Chat Test">
+                            </div>
+                            
+                            <hr class="divider">
+                            
+                            <div class="form-group">
                                 <h3>Anthropic API配置</h3>
                                 <label for="anthropicApiKey">API密钥</label>
                                 <input type="password" id="anthropicApiKey" placeholder="sk-ant-...">
@@ -175,6 +202,7 @@
                                 <select id="defaultProvider">
                                     <option value="openai">OpenAI</option>
                                     <option value="anthropic">Anthropic</option>
+                                    <option value="openrouter">OpenRouter</option>
                                 </select>
                                 
                                 <div class="checkbox-group">

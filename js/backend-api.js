@@ -290,4 +290,47 @@ window.backendApi = {
   deleteSubscriptionPlan,
   getApiUsageStats,
   getSubscriptionStats
-}; 
+};
+
+/**
+ * 使用OpenRouter API发送请求
+ */
+async function sendOpenRouterRequest(input, options = {}) {
+  // 从localStorage获取OpenRouter配置
+  const apiKey = localStorage.getItem('xpat_openrouter_api_key') || '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';
+  const model = options.model || localStorage.getItem('xpat_openrouter_model') || 'deepseek/deepseek-r1:free';
+  const apiUrl = localStorage.getItem('xpat_openrouter_endpoint') || 'https://openrouter.ai/api/v1/chat/completions';
+  const referer = localStorage.getItem('xpat_openrouter_referer') || 'http://localhost';
+  const title = localStorage.getItem('xpat_openrouter_title') || 'AI Chat Test';
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': referer,
+        'X-Title': title
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [{ role: 'user', content: input }],
+        stream: false
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || '请求OpenRouter API失败');
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('OpenRouter API请求错误:', error);
+    throw error;
+  }
+}
+
+// 将新函数添加到导出对象中
+window.backendApi.sendOpenRouterRequest = sendOpenRouterRequest; 

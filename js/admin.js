@@ -662,96 +662,103 @@ document.addEventListener('DOMContentLoaded', function() {
      * 加载API配置
      */
     async function loadApiConfig() {
+        // 从localStorage获取保存的配置
         try {
-            // 假设我们有一个API端点来获取配置
-            // 如果后端API尚未实现，可以先从localStorage加载
-            const savedConfig = localStorage.getItem('xpat_api_config');
+            // OpenAI配置
+            const openaiApiKey = localStorage.getItem('xpat_openai_api_key') || '';
+            const openaiModel = localStorage.getItem('xpat_openai_model') || 'gpt-4-turbo';
+            const openaiEndpoint = localStorage.getItem('xpat_openai_endpoint') || '';
             
-            if (savedConfig) {
-                const config = JSON.parse(savedConfig);
-                
-                // 填充表单
-                document.getElementById('openaiApiKey').value = config.openai?.apiKey || '';
-                document.getElementById('openaiModel').value = config.openai?.model || 'gpt-4';
-                document.getElementById('openaiEndpoint').value = config.openai?.endpoint || 'https://api.openai.com/v1';
-                
-                document.getElementById('anthropicApiKey').value = config.anthropic?.apiKey || '';
-                document.getElementById('anthropicModel').value = config.anthropic?.model || 'claude-3-opus-20240229';
-                document.getElementById('anthropicEndpoint').value = config.anthropic?.endpoint || 'https://api.anthropic.com';
-                
-                document.getElementById('defaultProvider').value = config.defaultProvider || 'openai';
-                document.getElementById('allowUserModelSelection').checked = config.allowUserModelSelection || false;
-            }
+            // Anthropic配置
+            const anthropicApiKey = localStorage.getItem('xpat_anthropic_api_key') || '';
+            const anthropicModel = localStorage.getItem('xpat_anthropic_model') || 'claude-3-opus-20240229';
+            const anthropicEndpoint = localStorage.getItem('xpat_anthropic_endpoint') || '';
             
-            // 当实现后端API后，这里可以替换为真实的API调用
-            // const response = await fetch('/api/admin/config', {
-            //     headers: {
-            //         'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
-            //     }
-            // });
-            // const config = await response.json();
-            // 然后填充表单...
+            // OpenRouter配置
+            const openrouterApiKey = localStorage.getItem('xpat_openrouter_api_key') || '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';
+            const openrouterModel = localStorage.getItem('xpat_openrouter_model') || 'deepseek/deepseek-r1:free';
+            const openrouterEndpoint = localStorage.getItem('xpat_openrouter_endpoint') || 'https://openrouter.ai/api/v1/chat/completions';
+            const openrouterReferer = localStorage.getItem('xpat_openrouter_referer') || 'http://localhost';
+            const openrouterTitle = localStorage.getItem('xpat_openrouter_title') || 'AI Chat Test';
+            
+            // 通用设置
+            const defaultProvider = localStorage.getItem('xpat_default_provider') || 'openrouter';
+            const allowUserModelSelection = localStorage.getItem('xpat_allow_user_model_selection') === 'true';
+            
+            // 填充表单
+            document.getElementById('openaiApiKey').value = openaiApiKey;
+            document.getElementById('openaiModel').value = openaiModel;
+            document.getElementById('openaiEndpoint').value = openaiEndpoint;
+            
+            document.getElementById('anthropicApiKey').value = anthropicApiKey;
+            document.getElementById('anthropicModel').value = anthropicModel;
+            document.getElementById('anthropicEndpoint').value = anthropicEndpoint;
+            
+            document.getElementById('openrouterApiKey').value = openrouterApiKey;
+            document.getElementById('openrouterModel').value = openrouterModel;
+            document.getElementById('openrouterEndpoint').value = openrouterEndpoint;
+            document.getElementById('openrouterReferer').value = openrouterReferer;
+            document.getElementById('openrouterTitle').value = openrouterTitle;
+            
+            document.getElementById('defaultProvider').value = defaultProvider;
+            document.getElementById('allowUserModelSelection').checked = allowUserModelSelection;
             
         } catch (error) {
             console.error('加载API配置失败:', error);
-            apiConfigError.textContent = '加载配置失败: ' + (error.message || '未知错误');
+            apiConfigError.textContent = '加载配置失败';
         }
     }
     
     /**
-     * 处理保存API配置
+     * 保存API配置
      */
     async function handleSaveApiConfig() {
         try {
-            // 收集表单数据
-            const config = {
-                openai: {
-                    apiKey: document.getElementById('openaiApiKey').value,
-                    model: document.getElementById('openaiModel').value,
-                    endpoint: document.getElementById('openaiEndpoint').value
-                },
-                anthropic: {
-                    apiKey: document.getElementById('anthropicApiKey').value,
-                    model: document.getElementById('anthropicModel').value,
-                    endpoint: document.getElementById('anthropicEndpoint').value
-                },
-                defaultProvider: document.getElementById('defaultProvider').value,
-                allowUserModelSelection: document.getElementById('allowUserModelSelection').checked
-            };
+            // 获取表单值
+            const openaiApiKey = document.getElementById('openaiApiKey').value.trim();
+            const openaiModel = document.getElementById('openaiModel').value;
+            const openaiEndpoint = document.getElementById('openaiEndpoint').value.trim();
             
-            // 保存到localStorage（临时方案，直到后端API实现）
-            localStorage.setItem('xpat_api_config', JSON.stringify(config));
+            const anthropicApiKey = document.getElementById('anthropicApiKey').value.trim();
+            const anthropicModel = document.getElementById('anthropicModel').value;
+            const anthropicEndpoint = document.getElementById('anthropicEndpoint').value.trim();
             
-            // 提示保存成功
+            const openrouterApiKey = document.getElementById('openrouterApiKey').value.trim();
+            const openrouterModel = document.getElementById('openrouterModel').value;
+            const openrouterEndpoint = document.getElementById('openrouterEndpoint').value.trim();
+            const openrouterReferer = document.getElementById('openrouterReferer').value.trim();
+            const openrouterTitle = document.getElementById('openrouterTitle').value.trim();
+            
+            const defaultProvider = document.getElementById('defaultProvider').value;
+            const allowUserModelSelection = document.getElementById('allowUserModelSelection').checked;
+            
+            // 保存到localStorage
+            localStorage.setItem('xpat_openai_api_key', openaiApiKey);
+            localStorage.setItem('xpat_openai_model', openaiModel);
+            localStorage.setItem('xpat_openai_endpoint', openaiEndpoint);
+            
+            localStorage.setItem('xpat_anthropic_api_key', anthropicApiKey);
+            localStorage.setItem('xpat_anthropic_model', anthropicModel);
+            localStorage.setItem('xpat_anthropic_endpoint', anthropicEndpoint);
+            
+            localStorage.setItem('xpat_openrouter_api_key', openrouterApiKey);
+            localStorage.setItem('xpat_openrouter_model', openrouterModel);
+            localStorage.setItem('xpat_openrouter_endpoint', openrouterEndpoint);
+            localStorage.setItem('xpat_openrouter_referer', openrouterReferer);
+            localStorage.setItem('xpat_openrouter_title', openrouterTitle);
+            
+            localStorage.setItem('xpat_default_provider', defaultProvider);
+            localStorage.setItem('xpat_allow_user_model_selection', allowUserModelSelection);
+            
+            // 向后端保存配置
+            // 这里可以添加与后端API的通信代码
+            
             apiConfigError.textContent = '';
-            apiConfigError.style.color = '#4caf50';
-            apiConfigError.textContent = '配置保存成功';
-            
-            // 当后端API实现后，这里应该发送至服务器
-            // const response = await fetch('/api/admin/config', {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //         'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
-            //     },
-            //     body: JSON.stringify(config)
-            // });
-            
-            // if (!response.ok) {
-            //     throw new Error('保存配置失败');
-            // }
-            
-            // 三秒后清除成功消息
-            setTimeout(() => {
-                if (apiConfigError.style.color === '#4caf50') {
-                    apiConfigError.textContent = '';
-                }
-            }, 3000);
+            alert('API配置已保存');
             
         } catch (error) {
             console.error('保存API配置失败:', error);
-            apiConfigError.style.color = '#f44336';
-            apiConfigError.textContent = '保存配置失败: ' + (error.message || '未知错误');
+            apiConfigError.textContent = '保存配置失败: ' + error.message;
         }
     }
     
