@@ -212,8 +212,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 在用户消息后添加文档内容
                     fullMessage += "\n\n===== 附件内容 =====\n" + attachmentText;
                     
-                    // 在UI中只显示用户输入的消息
-                    addUserMessage(message + ' <span class="attachment-badge">[已上传附件]</span>');
+                    // 获取当前附件文件名
+                    const attachmentFileName = document.getElementById('fileName').textContent;
+                    
+                    // 在UI中只显示用户输入的消息，同时显示附件文件名
+                    addUserMessage(message + ` <span class="attachment-badge">[已上传附件: ${attachmentFileName}]</span>`);
                 } else {
                     // 没有附件，正常显示消息
                     addUserMessage(message);

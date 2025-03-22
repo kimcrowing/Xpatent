@@ -721,16 +721,28 @@ svg path {
     }
 }
 
-/* 附件标记样式 */
+/* 附件标志样式 */
 .attachment-badge {
-    background-color: var(--secondary-bg-color);
-    color: var(--text-color-secondary);
-    font-size: 0.8rem;
+    background-color: #f0f0f0;
+    color: #666;
     padding: 2px 6px;
     border-radius: 4px;
-    margin-left: 5px;
+    font-size: 12px;
+    margin-left: 6px;
+    white-space: nowrap;
     display: inline-block;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     vertical-align: middle;
+    border: 1px solid #ddd;
+}
+
+/* 深色主题下的附件标志 */
+.dark-theme .attachment-badge {
+    background-color: #333;
+    color: #ccc;
+    border-color: #555;
 }
 
 /* 调整消息内容显示区域 */
