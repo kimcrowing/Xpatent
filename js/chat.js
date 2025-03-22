@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     model: "deepseek/deepseek-r1:free",
                     endpoint: "https://openrouter.ai/api/v1/chat/completions",
                     referer: "http://localhost",
-                    title: "Xpat专利助手",
+                    title: "Xpat",
                     localMode: true  // 标记为本地模式
                 };
             }
@@ -374,14 +374,21 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (configError) {
                 console.error('从后端获取API配置失败，使用本地配置:', configError);
                 
-                // 使用本地API配置
+                // 使用本地API配置 - 不包含API密钥
                 config = {
-                    apiKey: "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", // 用户提供的真实密钥
+                    apiKey: "",  // 空字符串，不泄露任何密钥
                     model: "deepseek/deepseek-r1:free",
                     endpoint: "https://openrouter.ai/api/v1/chat/completions",
                     referer: "http://localhost",
-                    title: "Xpat"
+                    title: "Xpat",
+                    localMode: true  // 标记为本地模式
                 };
+            }
+            
+            if (!config || !config.apiKey) {
+                console.log('无API密钥，将使用本地模式');
+                config = config || {};
+                config.localMode = true;
             }
             
             if (!config || !config.apiKey) {
