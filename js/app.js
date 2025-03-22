@@ -61,11 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 userMenu.classList.add('active');
                 console.log('用户菜单状态: 显示');
-                // 强制触发重绘
-                userMenu.style.display = 'block';
-                setTimeout(() => {
-                    userMenu.style.removeProperty('display');
-                }, 10);
             }
         });
         
@@ -203,10 +198,6 @@ function userMenuClickHandler(e) {
         console.log('用户菜单已隐藏');
     } else {
         userMenu.classList.add('active');
-        // 强制设置display属性确保显示，但不在隐藏时设置display:none，让CSS控制
-        if (!userMenu.style.display || userMenu.style.display === 'none') {
-            userMenu.style.display = 'block';
-        }
         console.log('用户菜单已显示');
     }
 } 
