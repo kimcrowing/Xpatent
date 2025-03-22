@@ -9,6 +9,11 @@ window.CURRENT_MODEL = 'deepseek/deepseek-r1:free';
 let usingMockResponse = false;
 
 async function callOpenRouterAPI(message, systemPrompt = '') {
+    // 在控制台输出完整的消息内容，方便调试
+    console.log('========= 发送给API的消息内容 =========');
+    console.log(message);
+    console.log('=======================================');
+    
     // 如果未设置API密钥，则使用模拟响应
     if (OPENROUTER_API_KEY === 'YOUR_OPENROUTER_API_KEY') {
         console.log('使用模拟响应，API密钥未设置或无效');
@@ -345,19 +350,36 @@ function buildAPIRequest(message) {
     const activeFeature = localStorage.getItem('activeFeature') || '通用对话';
     let systemPrompt = '';
     
+    // 检查消息中是否包含附件内容
+    const hasAttachment = message.includes('===== 附件内容 =====');
+    
     // 根据不同功能设置不同的系统提示
     switch(activeFeature) {
         case '通用对话':
             systemPrompt = '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。';
+            if (hasAttachment) {
+                systemPrompt += '用户提供了附件内容，请认真阅读并基于附件内容回答问题。';
+            }
             break;
         case '内容创作':
             systemPrompt = '你是Xpat创作助手，擅长帮助用户创作各类内容。根据用户的描述，提供创意建议、内容结构和详细内容。';
+            if (hasAttachment) {
+                systemPrompt += '用户提供了附件内容，请将附件内容作为参考或素材进行创作。';
+            }
             break;
         case '文档分析':
-            systemPrompt = '你是Xpat分析助手，擅长分析文档并提取重要信息。请分析用户提供的文本，归纳要点，并提供见解。';
+            systemPrompt = '你是Xpat分析助手，擅长分析文档并提取重要信息。';
+            if (hasAttachment) {
+                systemPrompt += '请重点分析用户提供的附件内容，提取关键信息，归纳要点，并提供深入见解。用户问题可能是针对附件内容提出的，请优先考虑附件内容进行回答。';
+            } else {
+                systemPrompt += '请分析用户提供的文本，归纳要点，并提供见解。';
+            }
             break;
         default:
             systemPrompt = '你是Xpat助手，为用户提供智能对话服务。';
+            if (hasAttachment) {
+                systemPrompt += '用户提供了附件内容，请认真阅读并基于附件内容回答问题。';
+            }
     }
     
     return {

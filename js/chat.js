@@ -45,6 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         chatMessages.appendChild(messageDiv);
         scrollToBottom();
+        
+        // 调试信息
+        console.log('用户消息已添加到UI，内容：', content);
+        // 检查是否包含附件徽章
+        if(content.includes('attachment-badge')) {
+            console.log('消息中包含附件徽章');
+        }
     }
     
     // 添加AI回复到聊天界面
@@ -157,34 +164,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // 根据当前活动功能模式构建API请求
-    async function buildAPIRequest(message) {
+    function buildAPIRequest(message) {
         // 使用聊天模式选择器提供的系统提示词
         let systemPrompt = '';
         
         // 如果聊天模式选择器功能可用
         if (window.getChatModeSystemPrompt && typeof window.getChatModeSystemPrompt === 'function') {
-            try {
-                systemPrompt = await window.getChatModeSystemPrompt();
-            } catch (error) {
-                console.error('获取模式提示词失败:', error);
-                // fallback到原来的功能
-                const activeFeature = localStorage.getItem('activeFeature') || '通用对话';
-                
-                // 根据不同功能设置不同的系统提示
-                switch(activeFeature) {
-                    case '通用对话':
-                        systemPrompt = '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。';
-                        break;
-                    case '内容创作':
-                        systemPrompt = '你是Xpat创作助手，擅长帮助用户创作各类内容。根据用户的描述，提供创意建议、内容结构和详细内容。';
-                        break;
-                    case '文档分析':
-                        systemPrompt = '你是Xpat分析助手，擅长分析文档并提取重要信息。请分析用户提供的文本，归纳要点，并提供见解。';
-                        break;
-                    default:
-                        systemPrompt = '你是Xpat助手，为用户提供智能对话服务。';
-                }
-            }
+            systemPrompt = window.getChatModeSystemPrompt();
         } else {
             // fallback到原来的功能
             const activeFeature = localStorage.getItem('activeFeature') || '通用对话';
@@ -216,32 +202,83 @@ document.addEventListener('DOMContentLoaded', () => {
     // 发送消息
     async function sendMessage() {
         console.log('准备发送消息');
-        
-        // 获取用户输入
-        const userInput = document.getElementById('userInput');
-        const userMessage = userInput.value.trim();
-        
-        // 检查用户输入是否为空
-        if (userMessage === '') {
+        if (!userInput) {
+            console.error('找不到用户输入元素');
             return;
         }
         
-        // 获取附件信息
-        let attachment = '';
-        let fullMessage = userMessage;
+        const message = userInput.value.trim();
+        console.log('用户输入:', message);
         
-        // 如果有附件信息，添加到消息中
-        if (window.currentAttachment) {
-            attachment = window.currentAttachment;
-            const attachmentName = document.getElementById('fileName').textContent;
-            fullMessage = `${userMessage}\n\n附件：${attachmentName}\n${attachment}`;
+        if (!message) {
+            console.log('消息为空，不发送');
+            return;
         }
         
         // 清空输入框
         userInput.value = '';
         
-        // 添加用户消息到聊天界面
-        addUserMessage(userMessage);
+        // 获取附件内容（如果有）
+        let fullMessage = message;
+        if (window.getAttachmentText && typeof window.getAttachmentText === 'function') {
+            try {
+                const attachmentText = window.getAttachmentText();
+                console.log('附件内容长度:', attachmentText ? attachmentText.length : 0);
+                
+                if (attachmentText) {
+                    // 在用户消息后添加文档内容
+                    fullMessage += "\n\n===== 附件内容 =====\n" + attachmentText;
+                    
+                    // 获取当前附件文件名
+                    const attachmentFileName = document.getElementById('fileName').textContent;
+                    
+                    // 创建HTML元素直接添加到DOM，而非使用字符串连接
+                    const userMessageText = document.createTextNode(message);
+                    const userMessageDiv = document.createElement('div');
+                    userMessageDiv.className = 'message user-message';
+                    
+                    // 创建头像
+                    const avatarDiv = document.createElement('div');
+                    avatarDiv.className = 'message-avatar user';
+                    const userAvatar = document.createElement('div');
+                    userAvatar.className = 'user-avatar';
+                    userAvatar.textContent = 'KQ';
+                    avatarDiv.appendChild(userAvatar);
+                    
+                    // 创建消息内容
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'message-content';
+                    contentDiv.appendChild(userMessageText);
+                    
+                    // 创建附件徽章
+                    const badgeSpan = document.createElement('span');
+                    badgeSpan.className = 'attachment-badge';
+                    badgeSpan.textContent = `[已上传附件: ${attachmentFileName}]`;
+                    contentDiv.appendChild(document.createTextNode(' '));
+                    contentDiv.appendChild(badgeSpan);
+                    
+                    // 组装消息
+                    userMessageDiv.appendChild(avatarDiv);
+                    userMessageDiv.appendChild(contentDiv);
+                    
+                    // 添加到聊天区域
+                    chatMessages.appendChild(userMessageDiv);
+                    scrollToBottom();
+                    
+                    console.log('附件消息已添加，附件名称:', attachmentFileName);
+                } else {
+                    // 没有附件，正常显示消息
+                    addUserMessage(message);
+                }
+            } catch (e) {
+                console.error('获取附件内容时出错:', e);
+                addUserMessage(message);
+            }
+        } else {
+            // 如果附件功能不可用，正常显示消息
+            console.log('附件功能不可用');
+            addUserMessage(message);
+        }
         
         // 显示加载指示器
         const loadingIndicator = addLoadingIndicator();
@@ -249,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             console.log('准备调用API');
             // 构建API请求 
-            const request = await buildAPIRequest(fullMessage);
+            const request = buildAPIRequest(fullMessage);
             
             // 调用API获取回复
             const response = await callOpenRouterAPI(request.message, request.systemPrompt);
@@ -326,49 +363,4 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         }
     });
-    
-    // 用户菜单交互
-    const userMenuBtn = document.getElementById('userMenuBtn');
-    const userMenu = document.getElementById('userMenu');
-    
-    if (userMenuBtn && userMenu) {
-        // 点击用户头像显示/隐藏菜单
-        userMenuBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            userMenu.classList.toggle('active');
-        });
-        
-        // 点击其他地方关闭菜单
-        document.addEventListener('click', function(event) {
-            if (!userMenu.contains(event.target) && !userMenuBtn.contains(event.target)) {
-                userMenu.classList.remove('active');
-            }
-        });
-        
-        // 更新用户头像显示
-        async function updateUserAvatar() {
-            try {
-                const profile = await window.UserService.getUserProfile();
-                const userAvatar = document.querySelector('.user-avatar');
-                
-                if (userAvatar) {
-                    if (profile.avatar) {
-                        userAvatar.innerHTML = '';
-                        userAvatar.style.backgroundImage = `url(${profile.avatar})`;
-                        userAvatar.style.backgroundSize = 'cover';
-                    } else {
-                        userAvatar.textContent = profile.displayName ? profile.displayName.charAt(0).toUpperCase() : 'U';
-                        userAvatar.style.backgroundImage = 'none';
-                    }
-                }
-            } catch (error) {
-                console.error('更新用户头像失败:', error);
-            }
-        }
-        
-        // 初始化时加载用户头像
-        if (window.UserService) {
-            updateUserAvatar();
-        }
-    }
 }); 
