@@ -240,6 +240,100 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
     
+    // 全局变量，存储API配置
+    let apiConfig = null;
+    
+    // 获取API配置
+    async function getApiConfig() {
+        // 如果配置已存在且未过期，直接返回
+        if (apiConfig) {
+            return apiConfig;
+        }
+        
+        // 从后端获取配置
+        const token = localStorage.getItem('xpat_auth_token');
+        if (!token) {
+            throw new Error('未登录，请先登录');
+        }
+        
+        const response = await fetch(`${window.API_BASE_URL}/chat/config`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.error?.message || `${response.status}: ${response.statusText}`;
+            throw new Error(errorMessage);
+        }
+        
+        apiConfig = await response.json();
+        return apiConfig;
+    }
+    
+    // 记录API使用情况
+    async function logApiUsage(model, tokens) {
+        const token = localStorage.getItem('xpat_auth_token');
+        if (!token) {
+            return; // 如果未登录，不记录
+        }
+        
+        try {
+            await fetch(`${window.API_BASE_URL}/chat/log`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    model,
+                    tokens
+                })
+            });
+        } catch (error) {
+            console.error('记录API使用情况失败:', error);
+        }
+    }
+    
+    // 直接调用OpenRouter API
+    async function callOpenRouterAPI(messages, model) {
+        // 获取API配置
+        const config = await getApiConfig();
+        
+        const response = await fetch(config.endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.apiKey}`,
+                'HTTP-Referer': config.referer,
+                'X-Title': config.title
+            },
+            body: JSON.stringify({
+                model: model || config.model,
+                messages: messages,
+                max_tokens: 2000,
+                stream: false
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.error?.message || `状态码: ${response.status} - ${response.statusText}`;
+            throw new Error(`OpenRouter API请求失败: ${errorMessage}`);
+        }
+        
+        const data = await response.json();
+        
+        // 记录API使用情况
+        if (data.usage && data.usage.total_tokens) {
+            logApiUsage(data.model, data.usage.total_tokens);
+        }
+        
+        return data.choices[0].message.content;
+    }
+    
     // 发送消息
     async function sendMessage() {
         console.log('准备发送消息');
@@ -339,57 +433,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            // 调用后端API获取回复
-            const response = await fetch(`${window.API_BASE_URL}/chat/completions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    message: request.message,
-                    systemPrompt: request.systemPrompt,
-                    model: window.CURRENT_MODEL // 使用当前选择的模型
-                })
-            });
+            // 构建消息数组
+            const messages = [];
             
-            // 检查响应
-            if (!response.ok) {
-                // 解析错误信息
-                const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.error?.message || `${response.status}: ${response.statusText}`;
-                
-                // 如果是401错误，说明用户未登录或会话已过期
-                if (response.status === 401) {
-                    localStorage.removeItem('xpat_auth_token');
-                    localStorage.removeItem('xpat_user_info');
-                    // 提示用户登录
-                    throw new Error('登录会话已过期，请重新登录');
-                }
-                
-                // 如果是403错误，说明API配额已用尽
-                if (response.status === 403 && errorData.error?.message?.includes('配额已用尽')) {
-                    throw new Error('您的API使用配额已用尽，请联系管理员或升级订阅计划');
-                }
-                
-                throw new Error(errorMessage);
+            // 添加系统提示
+            if (request.systemPrompt) {
+                messages.push({
+                    role: 'system',
+                    content: request.systemPrompt
+                });
             }
             
-            // 解析成功响应
-            const data = await response.json();
-            console.log('API响应成功', data.content ? data.content.substring(0, 50) + '...' : '无响应');
+            // 添加用户消息
+            messages.push({
+                role: 'user',
+                content: request.message
+            });
+            
+            // 直接调用OpenRouter API
+            const content = await callOpenRouterAPI(messages, window.CURRENT_MODEL);
             
             // 移除加载指示器
             loadingIndicator.remove();
             
             // 添加AI回复
-            addAIMessage(data.content);
+            addAIMessage(content);
         } catch (error) {
             console.error('API调用出错:', error);
             // 移除加载指示器
             loadingIndicator.remove();
             
-            // 显示错误信息
+            // 如果是401错误，说明用户未登录或会话已过期
+            if (error.message.includes('401')) {
+                localStorage.removeItem('xpat_auth_token');
+                localStorage.removeItem('xpat_user_info');
+                addAIMessage("登录会话已过期，请重新登录。");
+                return;
+            }
+            
+            // 如果是403错误，说明API配额已用尽
+            if (error.message.includes('403') && error.message.includes('配额已用尽')) {
+                addAIMessage("您的API使用配额已用尽，请联系管理员或升级订阅计划。");
+                return;
+            }
+            
+            // 其他错误
             addAIMessage(`抱歉，发生了错误：${error.message}`);
         }
     }
