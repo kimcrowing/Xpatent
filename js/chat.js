@@ -33,6 +33,47 @@ document.addEventListener('DOMContentLoaded', () => {
     // 执行版本检查
     checkAppVersion();
     
+    // 检查用户是否已登录
+    function checkLoginStatus() {
+        const token = localStorage.getItem('xpat_auth_token');
+        if (!token) {
+            // 用户未登录，显示登录提示
+            showLoginPrompt();
+        }
+    }
+    
+    // 显示登录提示
+    function showLoginPrompt() {
+        // 清空欢迎消息
+        chatMessages.innerHTML = '';
+        
+        // 创建登录提示
+        const loginPrompt = document.createElement('div');
+        loginPrompt.className = 'login-prompt';
+        loginPrompt.innerHTML = `
+            <h3>请先登录</h3>
+            <p>您需要登录后才能使用AI聊天功能。登录后您将获得API配额并能够跟踪使用情况。</p>
+            <a href="./login.html" class="login-button">登录</a>
+            <a href="./register.html" class="login-button" style="margin-left: 10px;">注册</a>
+        `;
+        
+        // 添加到聊天区域
+        chatMessages.appendChild(loginPrompt);
+        
+        // 禁用输入框和发送按钮
+        if (userInput) {
+            userInput.disabled = true;
+            userInput.placeholder = '请先登录后使用';
+        }
+        
+        if (sendBtn) {
+            sendBtn.disabled = true;
+        }
+    }
+    
+    // 页面加载后检查登录状态
+    checkLoginStatus();
+    
     // 添加用户消息到聊天界面
     function addUserMessage(content) {
         const messageDiv = document.createElement('div');
@@ -288,15 +329,61 @@ document.addEventListener('DOMContentLoaded', () => {
             // 构建API请求 
             const request = buildAPIRequest(fullMessage);
             
-            // 调用API获取回复
-            const response = await callOpenRouterAPI(request.message, request.systemPrompt);
-            console.log('API响应成功', response ? response.substring(0, 50) + '...' : '无响应');
+            // 检查用户是否已登录
+            const token = localStorage.getItem('xpat_auth_token');
+            
+            if (!token) {
+                // 用户未登录，显示错误信息
+                loadingIndicator.remove();
+                addAIMessage("请先登录后再使用聊天功能。登录后您将获得API配额并能够跟踪使用情况。");
+                return;
+            }
+            
+            // 调用后端API获取回复
+            const response = await fetch(`${window.API_BASE_URL}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    message: request.message,
+                    systemPrompt: request.systemPrompt,
+                    model: window.CURRENT_MODEL // 使用当前选择的模型
+                })
+            });
+            
+            // 检查响应
+            if (!response.ok) {
+                // 解析错误信息
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.error?.message || `${response.status}: ${response.statusText}`;
+                
+                // 如果是401错误，说明用户未登录或会话已过期
+                if (response.status === 401) {
+                    localStorage.removeItem('xpat_auth_token');
+                    localStorage.removeItem('xpat_user_info');
+                    // 提示用户登录
+                    throw new Error('登录会话已过期，请重新登录');
+                }
+                
+                // 如果是403错误，说明API配额已用尽
+                if (response.status === 403 && errorData.error?.message?.includes('配额已用尽')) {
+                    throw new Error('您的API使用配额已用尽，请联系管理员或升级订阅计划');
+                }
+                
+                throw new Error(errorMessage);
+            }
+            
+            // 解析成功响应
+            const data = await response.json();
+            console.log('API响应成功', data.content ? data.content.substring(0, 50) + '...' : '无响应');
             
             // 移除加载指示器
             loadingIndicator.remove();
             
             // 添加AI回复
-            addAIMessage(response);
+            addAIMessage(data.content);
         } catch (error) {
             console.error('API调用出错:', error);
             // 移除加载指示器
