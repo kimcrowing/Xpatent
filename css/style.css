@@ -173,14 +173,12 @@ body {
 /* 用户消息靠左显示 */
 .user-message {
     justify-content: flex-start;
-    margin-right: 15%;
 }
 
 /* AI消息靠右显示 */
 .ai-message {
     justify-content: flex-end;
     flex-direction: row-reverse;
-    margin-left: 15%;
 }
 
 .ai-message .message-avatar {
@@ -206,13 +204,10 @@ body {
 }
 
 .message-content {
-    position: relative;
-    padding: 16px;
-    border-radius: 8px;
     flex: 1;
     line-height: 1.5;
     transition: all 0.3s ease;
-    max-width: 100%;
+    max-width: 70%;
 }
 
 .user-message .message-content {
@@ -518,12 +513,9 @@ body {
 .message-actions {
     display: flex;
     gap: 8px;
-    position: absolute;
-    top: -28px;  /* 移到内容框上方 */
-    right: 0;
-    opacity: 0;
+    margin-top: 8px;
+    opacity: 0.7;
     transition: opacity 0.3s ease;
-    z-index: 10;
 }
 
 .message:hover .message-actions {
@@ -531,7 +523,7 @@ body {
 }
 
 .action-btn {
-    background: rgba(0, 0, 0, 0.3);
+    background: none;
     border: none;
     cursor: pointer;
     width: 32px;
@@ -544,17 +536,17 @@ body {
 }
 
 .action-btn:hover {
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* 消息操作按钮位置调整 */
 .ai-message .message-actions {
     justify-content: flex-end;
-    padding-right: 0;
+    padding-right: 16px;
 }
 
 .user-message .message-actions {
-    padding-left: 0;
+    padding-left: 16px;
 }
 
 /* 主题切换过渡效果 */

@@ -33,47 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 执行版本检查
     checkAppVersion();
     
-    // 检查用户是否已登录
-    function checkLoginStatus() {
-        const token = localStorage.getItem('xpat_auth_token');
-        if (!token) {
-            // 用户未登录，显示登录提示
-            showLoginPrompt();
-        }
-    }
-    
-    // 显示登录提示
-    function showLoginPrompt() {
-        // 清空欢迎消息
-        chatMessages.innerHTML = '';
-        
-        // 创建登录提示
-        const loginPrompt = document.createElement('div');
-        loginPrompt.className = 'login-prompt';
-        loginPrompt.innerHTML = `
-            <h3>请先登录</h3>
-            <p>您需要登录后才能使用AI聊天功能。登录后您将获得API配额并能够跟踪使用情况。</p>
-            <a href="./login.html" class="login-button">登录</a>
-            <a href="./register.html" class="login-button" style="margin-left: 10px;">注册</a>
-        `;
-        
-        // 添加到聊天区域
-        chatMessages.appendChild(loginPrompt);
-        
-        // 禁用输入框和发送按钮
-        if (userInput) {
-            userInput.disabled = true;
-            userInput.placeholder = '请先登录后使用';
-        }
-        
-        if (sendBtn) {
-            sendBtn.disabled = true;
-        }
-    }
-    
-    // 页面加载后检查登录状态
-    checkLoginStatus();
-    
     // 添加用户消息到聊天界面
     function addUserMessage(content) {
         const messageDiv = document.createElement('div');
@@ -101,19 +60,32 @@ document.addEventListener('DOMContentLoaded', () => {
         messageDiv.className = 'message ai-message';
         messageDiv.innerHTML = `
             <div class="message-avatar ai">
-                <svg width="20" height="20" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M14 2C7.373 2 2 7.373 2 14C2 20.627 7.373 26 14 26C20.627 26 26 20.627 26 14C26 7.373 20.627 2 14 2ZM14 5C18.418 5 22 8.582 22 13C22 17.418 18.418 21 14 21C9.582 21 6 17.418 6 13C6 8.582 9.582 5 14 5Z" fill="#5865f2"/>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 2C14.4183 2 18 5.58172 18 10C18 14.4183 14.4183 18 10 18C5.58172 18 2 14.4183 2 10C2 5.58172 5.58172 2 10 2ZM10 4C6.68629 4 4 6.68629 4 10C4 13.3137 6.68629 16 10 16C13.3137 16 16 13.3137 16 10C16 6.68629 13.3137 4 10 4Z" fill="white"/>
                 </svg>
             </div>
-            <div class="message-content">
-                <div class="message-actions">
-                    <button class="action-btn" title="复制">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M2 2V11H5V14H14V5H11V2H2ZM3 3H10V10H3V3ZM11 6H13V13H6V11H11V6Z" fill="white"/>
-                        </svg>
-                    </button>
-                </div>
-                ${formatMessage(content)}
+            <div class="message-content">${formatMessage(content)}</div>
+            <div class="message-actions">
+                <button class="action-btn" title="重新生成">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 3V1L4 5L8 9V7C10.7614 7 13 9.23858 13 12C13 14.7614 10.7614 17 8 17C5.23858 17 3 14.7614 3 12H1C1 15.866 4.13401 19 8 19C11.866 19 15 15.866 15 12C15 8.13401 11.866 5 8 5V3Z" fill="white"/>
+                    </svg>
+                </button>
+                <button class="action-btn" title="复制">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2 2V11H5V14H14V5H11V2H2ZM3 3H10V10H3V3ZM11 6H13V13H6V11H11V6Z" fill="white"/>
+                    </svg>
+                </button>
+                <button class="action-btn" title="点赞">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 14L2 8C0.9 6.9 0.9 5.1 2 4C3.1 2.9 4.9 2.9 6 4L8 6L10 4C11.1 2.9 12.9 2.9 14 4C15.1 5.1 15.1 6.9 14 8L8 14Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button class="action-btn" title="踩">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 14L2 8C0.9 6.9 0.9 5.1 2 4C3.1 2.9 4.9 2.9 6 4L8 6L10 4C11.1 2.9 12.9 2.9 14 4C15.1 5.1 15.1 6.9 14 8L8 14Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" transform="rotate(180 8 9)"/>
+                    </svg>
+                </button>
             </div>
         `;
         chatMessages.appendChild(messageDiv);
@@ -126,8 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingDiv.className = 'message ai-message loading';
         loadingDiv.innerHTML = `
             <div class="message-avatar ai">
-                <svg width="20" height="20" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M14 2C7.373 2 2 7.373 2 14C2 20.627 7.373 26 14 26C20.627 26 26 20.627 26 14C26 7.373 20.627 2 14 2ZM14 5C18.418 5 22 8.582 22 13C22 17.418 18.418 21 14 21C9.582 21 6 17.418 6 13C6 8.582 9.582 5 14 5Z" fill="#5865f2"/>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 2C14.4183 2 18 5.58172 18 10C18 14.4183 14.4183 18 10 18C5.58172 18 2 14.4183 2 10C2 5.58172 5.58172 2 10 2ZM10 4C6.68629 4 4 6.68629 4 10C4 13.3137 6.68629 16 10 16C13.3137 16 16 13.3137 16 10C16 6.68629 13.3137 4 10 4Z" fill="white"/>
                 </svg>
             </div>
             <div class="message-content">
@@ -227,126 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
     
-    // 全局变量，存储API配置
-    let apiConfig = null;
-    
-    // 获取API配置
-    async function getApiConfig() {
-        // 如果配置已存在且未过期，直接返回
-        if (apiConfig) {
-            return apiConfig;
-        }
-        
-        // 从后端获取配置
-        const token = localStorage.getItem('xpat_auth_token');
-        if (!token) {
-            throw new Error('未登录，请先登录');
-        }
-        
-        const response = await fetch(`${window.API_BASE_URL}/chat/config`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            const errorMessage = errorData.error?.message || `${response.status}: ${response.statusText}`;
-            throw new Error(errorMessage);
-        }
-        
-        apiConfig = await response.json();
-        return apiConfig;
-    }
-    
-    // 记录API使用情况
-    async function logApiUsage(model, tokens) {
-        const token = localStorage.getItem('xpat_auth_token');
-        if (!token) {
-            return; // 如果未登录，不记录
-        }
-        
-        try {
-            await fetch(`${window.API_BASE_URL}/chat/log`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    model,
-                    tokens
-                })
-            });
-        } catch (error) {
-            console.error('记录API使用情况失败:', error);
-        }
-    }
-    
-    // 直接调用OpenRouter API
-    async function callOpenRouterAPI(messages, model) {
-        try {
-            // 清除先前缓存的API配置，确保获取最新配置
-            apiConfig = null;
-            
-            // 获取API配置
-            const config = await getApiConfig();
-            
-            if (!config || !config.apiKey) {
-                throw new Error('无法获取有效的API配置或API密钥');
-            }
-            
-            // 安全地显示API密钥（只显示前6位和后4位）
-            const apiKeyStart = config.apiKey.substring(0, 6);
-            const apiKeyEnd = config.apiKey.substring(config.apiKey.length - 4);
-            const maskedApiKey = `${apiKeyStart}...${apiKeyEnd}`;
-            
-            console.log('正在使用API配置:', {
-                endpoint: config.endpoint,
-                model: model || config.model,
-                apiKey: maskedApiKey  // 显示部分masked的API密钥
-            });
-            
-            // 处理标题中可能包含的非ISO-8859-1字符
-            const safeTitle = encodeURIComponent(config.title);
-            
-            const response = await fetch(config.endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${config.apiKey}`,
-                    'HTTP-Referer': config.referer,
-                    'X-Title': safeTitle
-                },
-                body: JSON.stringify({
-                    model: model || config.model,
-                    messages: messages,
-                    max_tokens: 2000,
-                    stream: false
-                })
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.error?.message || `状态码: ${response.status} - ${response.statusText}`;
-                throw new Error(`OpenRouter API请求失败: ${errorMessage}`);
-            }
-            
-            const data = await response.json();
-            
-            // 记录API使用情况
-            if (data.usage && data.usage.total_tokens) {
-                logApiUsage(data.model, data.usage.total_tokens);
-            }
-            
-            return data.choices[0].message.content;
-        } catch (error) {
-            console.error('调用API时出错:', error);
-            throw error;
-        }
-    }
-    
     // 发送消息
     async function sendMessage() {
         console.log('准备发送消息');
@@ -436,61 +288,21 @@ document.addEventListener('DOMContentLoaded', () => {
             // 构建API请求 
             const request = buildAPIRequest(fullMessage);
             
-            // 检查用户是否已登录
-            const token = localStorage.getItem('xpat_auth_token');
-            
-            if (!token) {
-                // 用户未登录，显示错误信息
-                loadingIndicator.remove();
-                addAIMessage("请先登录后再使用聊天功能。登录后您将获得API配额并能够跟踪使用情况。");
-                return;
-            }
-            
-            // 构建消息数组
-            const messages = [];
-            
-            // 添加系统提示
-            if (request.systemPrompt) {
-                messages.push({
-                    role: 'system',
-                    content: request.systemPrompt
-                });
-            }
-            
-            // 添加用户消息
-            messages.push({
-                role: 'user',
-                content: request.message
-            });
-            
-            // 直接调用OpenRouter API
-            const content = await callOpenRouterAPI(messages, window.CURRENT_MODEL);
+            // 调用API获取回复
+            const response = await callOpenRouterAPI(request.message, request.systemPrompt);
+            console.log('API响应成功', response ? response.substring(0, 50) + '...' : '无响应');
             
             // 移除加载指示器
             loadingIndicator.remove();
             
             // 添加AI回复
-            addAIMessage(content);
+            addAIMessage(response);
         } catch (error) {
             console.error('API调用出错:', error);
             // 移除加载指示器
             loadingIndicator.remove();
             
-            // 如果是401错误，说明用户未登录或会话已过期
-            if (error.message.includes('401')) {
-                localStorage.removeItem('xpat_auth_token');
-                localStorage.removeItem('xpat_user_info');
-                addAIMessage("登录会话已过期，请重新登录。");
-                return;
-            }
-            
-            // 如果是403错误，说明API配额已用尽
-            if (error.message.includes('403') && error.message.includes('配额已用尽')) {
-                addAIMessage("您的API使用配额已用尽，请联系管理员或升级订阅计划。");
-                return;
-            }
-            
-            // 其他错误
+            // 显示错误信息
             addAIMessage(`抱歉，发生了错误：${error.message}`);
         }
     }
