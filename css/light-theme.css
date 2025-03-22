@@ -1,24 +1,38 @@
 :root {
-    --bg-color-light: #ffffff;
-    --text-color-light: #333333;
-    --secondary-text-light: #666666;
-    --menu-bg-light: #f5f5f5;
-    --hover-bg-light: #eeeeee;
-    --input-bg-light: #f5f5f5;
-    --welcome-bg-light: rgba(240, 240, 240, 0.7);
-    --primary-color-light: #0066cc;
-    --border-color-light: #e0e0e0;
-    --code-bg-light: #f0f0f0;
+    --bg-color: #ffffff;
+    --secondary-bg: #f5f5f5;
+    --input-bg: #f5f5f5;
+    --model-selector-bg: #f0f0f0;
+    --text-color: rgb(0, 0, 0);
+    --text-color-secondary: rgba(0, 0, 0, 0.7);
+    --text-placeholder: rgba(0, 0, 0, 0.5);
+    --border-color: #e0e0e0;
+    --hover-color: rgba(0, 0, 0, 0.05);
+    --primary-color: #5865f2;
+    --menu-bg: #ffffff;
+    --code-bg: #f5f5f5;
+    --table-header-bg: #f0f0f0;
+    --table-alt-row-bg: #fafafa;
+    --link-color: #0066cc;
+    --hover-bg: #f5f5f5;
+    --user-avatar-bg: #5865f2;
+    --ai-avatar-bg: #f0f0f0;
+    --disabled-color: #d0d0d0;
+    --user-msg-bg: #f0f0f0;
+    --ai-msg-bg: #e6e9ff;
+    --ai-msg-color: rgba(0, 0, 0, 0.8);
+    --scrollbar-thumb: #d0d0d0;
+    --scrollbar-thumb-hover: #b0b0b0;
 }
 
 .light-theme {
-    background-color: var(--bg-color-light);
-    color: var(--text-color-light);
+    color: var(--text-color);
+    background-color: var(--bg-color);
 }
 
 .light-theme .navbar {
-    background-color: var(--bg-color-light);
-    border-bottom: 1px solid var(--border-color-light);
+    background-color: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .light-theme .logo {
@@ -26,23 +40,23 @@
 }
 
 .light-theme .logo svg path {
-    fill: var(--text-color-light);
+    fill: var(--text-color);
 }
 
 .light-theme .user-avatar {
-    background-color: var(--primary-color-light);
+    background-color: var(--primary-color);
     color: white;
 }
 
 .light-theme .icon-btn svg path {
-    fill: var(--text-color-light);
-    stroke: var(--text-color-light);
+    fill: var(--text-color);
+    stroke: var(--text-color);
 }
 
 .light-theme .user-menu {
-    background-color: var(--menu-bg-light);
-    border: 1px solid var(--border-color-light);
-    color: var(--text-color-light);
+    background-color: var(--menu-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -51,28 +65,28 @@
 }
 
 .light-theme .input-container {
-    background-color: var(--bg-color-light);
+    background-color: var(--bg-color);
 }
 
 .light-theme .input-wrapper {
-    background-color: var(--input-bg-light);
-    border: 1px solid var(--border-color-light);
-    color: var(--text-color-light);
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
 }
 
 .light-theme input {
-    color: var(--text-color-light);
+    color: var(--text-color);
 }
 
 .light-theme input::placeholder {
-    color: var(--secondary-text-light);
+    color: var(--text-color-secondary);
 }
 
 .light-theme .search-options, 
 .light-theme .think-btn, 
 .light-theme .model-selector {
-    background-color: var(--hover-bg-light);
-    color: var(--text-color-light);
+    background-color: var(--hover-bg);
+    color: var(--text-color);
 }
 
 .light-theme .search-options:hover, 
@@ -86,8 +100,8 @@
 .light-theme .model-selector svg path,
 .light-theme .dropdown-indicator svg path,
 .light-theme .send-btn svg path {
-    fill: var(--text-color-light);
-    stroke: var(--text-color-light);
+    fill: var(--text-color);
+    stroke: var(--text-color);
 }
 
 .light-theme .icon-btn:hover {
@@ -111,12 +125,12 @@
 }
 
 .light-theme .action-btn svg path {
-    fill: var(--text-color-light);
+    fill: var(--text-color);
 }
 
 /* 消息内容高亮 */
 .light-theme code {
-    background-color: var(--code-bg-light);
+    background-color: var(--code-bg);
     padding: 2px 4px;
     border-radius: 4px;
     font-family: 'Courier New', Courier, monospace;
@@ -124,16 +138,16 @@
 }
 
 .light-theme pre {
-    background-color: var(--code-bg-light);
+    background-color: var(--code-bg);
     padding: 12px;
     border-radius: 8px;
     overflow-x: auto;
-    border: 1px solid var(--border-color-light);
+    border: 1px solid var(--border-color);
     margin: 12px 0;
 }
 
 .light-theme a {
-    color: #0066cc;
+    color: var(--link-color);
     text-decoration: none;
 }
 
@@ -146,13 +160,13 @@
 }
 
 .light-theme .message-avatar.user {
-    background-color: var(--primary-color-light);
+    background-color: var(--primary-color);
     color: white;
 }
 
 .light-theme .message-avatar.ai {
     background-color: #ddd;
-    color: var(--text-color-light);
+    color: var(--text-color);
 }
 
 /* 确保亮色主题下菜单图标正确显示 */
@@ -165,25 +179,14 @@
 }
 
 :root.light-theme {
-    --bg-color: #f7f7f7;
-    --text-color: #333333;
-    --text-secondary: #666666;
-    --border-color: #dedede;
-    --input-bg: #ffffff;
-    --menu-bg: #ffffff;
-    --hover-color: rgba(0, 0, 0, 0.05);
-    --selected-bg: rgba(88, 101, 242, 0.1);
-    --placeholder-color: #aaaaaa;
-    --primary-color: #5865f2;
-    --primary-hover: #4752c4;
-    --disabled-color: #dddddd;
-    --model-selector-bg: rgba(0, 0, 0, 0.05);
-    --attachment-bg: rgba(88, 101, 242, 0.1);
-    --hover-bg: rgba(0, 0, 0, 0.05);
-    
-    /* Markdown样式变量 */
-    --code-bg: #f0f0f0;
-    --table-header-bg: #f5f5f5;
-    --table-alt-row-bg: #f9f9f9;
-    --link-color: #0366d6;
+    --bg-color-light: #ffffff;
+    --text-color-light: #333333;
+    --secondary-text-light: #666666;
+    --menu-bg-light: #f5f5f5;
+    --hover-bg-light: #eeeeee;
+    --input-bg-light: #f5f5f5;
+    --welcome-bg-light: rgba(240, 240, 240, 0.7);
+    --primary-color-light: #0066cc;
+    --border-color-light: #e0e0e0;
+    --code-bg-light: #f0f0f0;
 } 

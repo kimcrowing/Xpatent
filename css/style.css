@@ -214,7 +214,7 @@ body {
 }
 
 .ai-message .message-content {
-    background-color: var(--ai-msg-bg, #4a5ac0);
+    background-color: var(--ai-msg-bg, #3d4682);
     color: var(--ai-msg-color, rgba(255, 255, 255, 0.95));
     border-radius: 18px;
     padding: 12px 16px;
@@ -225,7 +225,7 @@ body {
 }
 
 .dark-theme .ai-message .message-content {
-    background-color: #4a5ac0;
+    background-color: #3d4682;
 }
 
 .message-content h1,
@@ -841,4 +841,40 @@ svg path {
 .send-btn:disabled {
     background-color: var(--disabled-color);
     cursor: not-allowed;
+}
+
+/* 自定义滚动条样式 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-color, #1e1e1e);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb, #3d4052);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover, #4d5169);
+}
+
+/* 兼容Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb, #3d4052) var(--bg-color, #1e1e1e);
+}
+
+/* 消息内容的代码块滚动条 */
+.message-content pre::-webkit-scrollbar {
+    height: 6px;
+}
+
+.message-content pre::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb, #3d4052);
+    border-radius: 3px;
 } 
