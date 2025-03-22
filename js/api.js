@@ -51,7 +51,7 @@ async function callOpenRouterAPI(message, systemPrompt = '') {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
                 'HTTP-Referer': window.location.origin,
-                'X-Title': 'XAI Chat'
+                'X-Title': 'Xpat'
             },
             body: JSON.stringify({
                 model: window.CURRENT_MODEL, // 使用当前选择的模型
@@ -160,7 +160,7 @@ function mockResponse(message, systemPrompt = '') {
                 resolve(generateDocumentAnalysisResponse(message));
             }
             else if (message.toLowerCase().includes('你好') || message.toLowerCase().includes('嗨')) {
-                resolve('# 你好！👋\n\n我是XAI助手，很高兴为您服务。我可以：\n\n- 回答您的各种问题\n- 提供信息检索\n- 协助内容创作\n- 分析文档内容\n\n您今天需要什么帮助？');
+                resolve('# 你好！👋\n\n我是Xpat助手，很高兴为您服务。我可以：\n\n- 回答您的各种问题\n- 提供信息检索\n- 协助内容创作\n- 分析文档内容\n\n您今天需要什么帮助？');
             } else {
                 resolve('# 感谢您的提问\n\n我会尽力提供最准确的信息。您可以尝试使用界面顶部的菜单选择不同功能以获得针对性的帮助。\n\n需要了解更多信息吗？');
             }
@@ -338,4 +338,30 @@ function generateRandomTitle(keywords) {
 // 辅助函数：获取随机年份
 function getRandomYear() {
     return (new Date().getFullYear() - Math.floor(Math.random() * 5)).toString();
+}
+
+// 修改系统提示词
+function buildAPIRequest(message) {
+    const activeFeature = localStorage.getItem('activeFeature') || '通用对话';
+    let systemPrompt = '';
+    
+    // 根据不同功能设置不同的系统提示
+    switch(activeFeature) {
+        case '通用对话':
+            systemPrompt = '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。';
+            break;
+        case '内容创作':
+            systemPrompt = '你是Xpat创作助手，擅长帮助用户创作各类内容。根据用户的描述，提供创意建议、内容结构和详细内容。';
+            break;
+        case '文档分析':
+            systemPrompt = '你是Xpat分析助手，擅长分析文档并提取重要信息。请分析用户提供的文本，归纳要点，并提供见解。';
+            break;
+        default:
+            systemPrompt = '你是Xpat助手，为用户提供智能对话服务。';
+    }
+    
+    return {
+        message: message,
+        systemPrompt: systemPrompt
+    };
 } 

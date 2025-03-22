@@ -164,16 +164,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // 根据不同功能设置不同的系统提示
         switch(activeFeature) {
             case '通用对话':
-                systemPrompt = '你是XAI助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。';
+                systemPrompt = '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。';
                 break;
             case '内容创作':
-                systemPrompt = '你是XAI创作助手，擅长帮助用户创作各类内容。根据用户的描述，提供创意建议、内容结构和详细内容。';
+                systemPrompt = '你是Xpat创作助手，擅长帮助用户创作各类内容。根据用户的描述，提供创意建议、内容结构和详细内容。';
                 break;
             case '文档分析':
-                systemPrompt = '你是XAI分析助手，擅长分析文档并提取重要信息。请分析用户提供的文本，归纳要点，并提供见解。';
+                systemPrompt = '你是Xpat分析助手，擅长分析文档并提取重要信息。请分析用户提供的文本，归纳要点，并提供见解。';
                 break;
             default:
-                systemPrompt = '你是XAI助手，为用户提供智能对话服务。';
+                systemPrompt = '你是Xpat助手，为用户提供智能对话服务。';
         }
         
         return {
