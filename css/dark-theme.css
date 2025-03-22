@@ -29,7 +29,7 @@
 
 .dark-theme {
     color: var(--text-color);
-    background-color: var(--bg-color);
+    background-color: var(--bg-color) !important;
 }
 
 .dark-theme .navbar {
@@ -61,6 +61,10 @@
 }
 
 .dark-theme .input-container {
+    background-color: var(--bg-color);
+}
+
+.dark-theme .chat-container {
     background-color: var(--bg-color);
 }
 
@@ -114,4 +118,14 @@
 
 .dark-theme .feature-menu {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 确保所有元素都应用正确的背景色 */
+.dark-theme html,
+.dark-theme body,
+.dark-theme .chat-container,
+.dark-theme .messages,
+.dark-theme .input-area,
+.dark-theme .welcome-message {
+    background-color: var(--bg-color) !important;
 } 

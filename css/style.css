@@ -11,7 +11,8 @@ body {
     flex-direction: column;
     height: 100vh;
     overflow: hidden;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: none;
+    background-color: transparent !important; /* 确保不被覆盖 */
 }
 
 /* 导航栏样式 */
@@ -547,7 +548,8 @@ body {
 
 /* 主题切换过渡效果 */
 body {
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: none;
+    background-color: transparent !important; /* 确保不被覆盖 */
 }
 
 .navbar, .logo, .user-menu, .input-wrapper, .search-options, .think-btn, .model-selector, 
@@ -850,23 +852,23 @@ svg path {
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--bg-color, #1e1e1e);
+    background: var(--bg-color);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb, #3d4052);
+    background: var(--scrollbar-thumb);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--scrollbar-thumb-hover, #4d5169);
+    background: var(--scrollbar-thumb-hover);
 }
 
 /* 兼容Firefox */
 * {
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb, #3d4052) var(--bg-color, #1e1e1e);
+    scrollbar-color: var(--scrollbar-thumb) var(--bg-color);
 }
 
 /* 消息内容的代码块滚动条 */
@@ -875,6 +877,6 @@ svg path {
 }
 
 .message-content pre::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb, #3d4052);
+    background: var(--scrollbar-thumb);
     border-radius: 3px;
 } 
