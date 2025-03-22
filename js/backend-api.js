@@ -237,6 +237,20 @@ async function getSubscriptionStats() {
   return apiRequest('/admin/subscriptions/stats');
 }
 
+/**
+ * 获取API配置 (从后端)
+ */
+async function getApiConfig() {
+  return apiRequest('/admin/config');
+}
+
+/**
+ * 保存API配置 (到后端)
+ */
+async function saveApiConfig(config) {
+  return apiRequest('/admin/config', 'POST', config);
+}
+
 // 检测是否在GitHub Pages环境，并尝试设置API地址
 (function detectEnvironment() {
   // 检测是否在GitHub Pages环境
@@ -289,21 +303,42 @@ window.backendApi = {
   updateSubscriptionPlan,
   deleteSubscriptionPlan,
   getApiUsageStats,
-  getSubscriptionStats
+  getSubscriptionStats,
+  getApiConfig,
+  saveApiConfig,
+  sendOpenRouterRequest
 };
 
 /**
  * 使用OpenRouter API发送请求
  */
 async function sendOpenRouterRequest(input, options = {}) {
-  // 从localStorage获取OpenRouter配置
-  const apiKey = localStorage.getItem('xpat_openrouter_api_key') || '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';
-  const model = options.model || localStorage.getItem('xpat_openrouter_model') || 'deepseek/deepseek-r1:free';
-  const apiUrl = localStorage.getItem('xpat_openrouter_endpoint') || 'https://openrouter.ai/api/v1/chat/completions';
-  const referer = localStorage.getItem('xpat_openrouter_referer') || 'http://localhost';
-  const title = localStorage.getItem('xpat_openrouter_title') || 'AI Chat Test';
-
   try {
+    // 尝试从后端获取API配置
+    let apiKey, model, apiUrl, referer, title;
+    
+    try {
+      // 获取后端下发的API配置
+      const config = await getApiConfig();
+      apiKey = config.openrouter?.apiKey;
+      model = options.model || config.openrouter?.model || 'deepseek/deepseek-r1:free';
+      apiUrl = config.openrouter?.endpoint || 'https://openrouter.ai/api/v1/chat/completions';
+      referer = config.openrouter?.referer || 'http://localhost';
+      title = config.openrouter?.title || 'AI Chat Test';
+    } catch (error) {
+      console.warn('无法从后端获取API配置，尝试使用本地配置:', error);
+      // 如果后端不可用，尝试使用本地配置作为备份
+      apiKey = localStorage.getItem('xpat_openrouter_api_key');
+      model = options.model || localStorage.getItem('xpat_openrouter_model') || 'deepseek/deepseek-r1:free';
+      apiUrl = localStorage.getItem('xpat_openrouter_endpoint') || 'https://openrouter.ai/api/v1/chat/completions';
+      referer = localStorage.getItem('xpat_openrouter_referer') || 'http://localhost';
+      title = localStorage.getItem('xpat_openrouter_title') || 'AI Chat Test';
+    }
+    
+    if (!apiKey) {
+      throw new Error('未配置API密钥，请联系管理员');
+    }
+
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {

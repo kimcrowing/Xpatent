@@ -662,51 +662,87 @@ document.addEventListener('DOMContentLoaded', function() {
      * 加载API配置
      */
     async function loadApiConfig() {
-        // 从localStorage获取保存的配置
         try {
-            // OpenAI配置
-            const openaiApiKey = localStorage.getItem('xpat_openai_api_key') || '';
-            const openaiModel = localStorage.getItem('xpat_openai_model') || 'gpt-4-turbo';
-            const openaiEndpoint = localStorage.getItem('xpat_openai_endpoint') || '';
+            // 从后端获取API配置
+            const config = await window.backendApi.getApiConfig();
             
-            // Anthropic配置
-            const anthropicApiKey = localStorage.getItem('xpat_anthropic_api_key') || '';
-            const anthropicModel = localStorage.getItem('xpat_anthropic_model') || 'claude-3-opus-20240229';
-            const anthropicEndpoint = localStorage.getItem('xpat_anthropic_endpoint') || '';
-            
-            // OpenRouter配置
-            const openrouterApiKey = localStorage.getItem('xpat_openrouter_api_key') || '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';
-            const openrouterModel = localStorage.getItem('xpat_openrouter_model') || 'deepseek/deepseek-r1:free';
-            const openrouterEndpoint = localStorage.getItem('xpat_openrouter_endpoint') || 'https://openrouter.ai/api/v1/chat/completions';
-            const openrouterReferer = localStorage.getItem('xpat_openrouter_referer') || 'http://localhost';
-            const openrouterTitle = localStorage.getItem('xpat_openrouter_title') || 'AI Chat Test';
-            
-            // 通用设置
-            const defaultProvider = localStorage.getItem('xpat_default_provider') || 'openrouter';
-            const allowUserModelSelection = localStorage.getItem('xpat_allow_user_model_selection') === 'true';
-            
-            // 填充表单
-            document.getElementById('openaiApiKey').value = openaiApiKey;
-            document.getElementById('openaiModel').value = openaiModel;
-            document.getElementById('openaiEndpoint').value = openaiEndpoint;
-            
-            document.getElementById('anthropicApiKey').value = anthropicApiKey;
-            document.getElementById('anthropicModel').value = anthropicModel;
-            document.getElementById('anthropicEndpoint').value = anthropicEndpoint;
-            
-            document.getElementById('openrouterApiKey').value = openrouterApiKey;
-            document.getElementById('openrouterModel').value = openrouterModel;
-            document.getElementById('openrouterEndpoint').value = openrouterEndpoint;
-            document.getElementById('openrouterReferer').value = openrouterReferer;
-            document.getElementById('openrouterTitle').value = openrouterTitle;
-            
-            document.getElementById('defaultProvider').value = defaultProvider;
-            document.getElementById('allowUserModelSelection').checked = allowUserModelSelection;
-            
+            // 如果获取成功，填充表单
+            if (config) {
+                // OpenAI配置
+                document.getElementById('openaiApiKey').value = config.openai?.apiKey || '';
+                document.getElementById('openaiModel').value = config.openai?.model || 'gpt-4-turbo';
+                document.getElementById('openaiEndpoint').value = config.openai?.endpoint || '';
+                
+                // Anthropic配置
+                document.getElementById('anthropicApiKey').value = config.anthropic?.apiKey || '';
+                document.getElementById('anthropicModel').value = config.anthropic?.model || 'claude-3-opus-20240229';
+                document.getElementById('anthropicEndpoint').value = config.anthropic?.endpoint || '';
+                
+                // OpenRouter配置
+                document.getElementById('openrouterApiKey').value = config.openrouter?.apiKey || '';
+                document.getElementById('openrouterModel').value = config.openrouter?.model || 'deepseek/deepseek-r1:free';
+                document.getElementById('openrouterEndpoint').value = config.openrouter?.endpoint || 'https://openrouter.ai/api/v1/chat/completions';
+                document.getElementById('openrouterReferer').value = config.openrouter?.referer || 'http://localhost';
+                document.getElementById('openrouterTitle').value = config.openrouter?.title || 'AI Chat Test';
+                
+                // 通用设置
+                document.getElementById('defaultProvider').value = config.defaultProvider || 'openai';
+                document.getElementById('allowUserModelSelection').checked = config.allowUserModelSelection || false;
+            } else {
+                // 如果后端未返回配置，从localStorage加载作为备份
+                loadLocalApiConfig();
+            }
         } catch (error) {
             console.error('加载API配置失败:', error);
-            apiConfigError.textContent = '加载配置失败';
+            apiConfigError.textContent = '从服务器加载配置失败，尝试加载本地配置';
+            
+            // 尝试从localStorage加载配置
+            loadLocalApiConfig();
         }
+    }
+    
+    /**
+     * 从localStorage加载API配置（作为备份）
+     */
+    function loadLocalApiConfig() {
+        // OpenAI配置
+        const openaiApiKey = localStorage.getItem('xpat_openai_api_key') || '';
+        const openaiModel = localStorage.getItem('xpat_openai_model') || 'gpt-4-turbo';
+        const openaiEndpoint = localStorage.getItem('xpat_openai_endpoint') || '';
+        
+        // Anthropic配置
+        const anthropicApiKey = localStorage.getItem('xpat_anthropic_api_key') || '';
+        const anthropicModel = localStorage.getItem('xpat_anthropic_model') || 'claude-3-opus-20240229';
+        const anthropicEndpoint = localStorage.getItem('xpat_anthropic_endpoint') || '';
+        
+        // OpenRouter配置
+        const openrouterApiKey = localStorage.getItem('xpat_openrouter_api_key') || '';
+        const openrouterModel = localStorage.getItem('xpat_openrouter_model') || 'deepseek/deepseek-r1:free';
+        const openrouterEndpoint = localStorage.getItem('xpat_openrouter_endpoint') || 'https://openrouter.ai/api/v1/chat/completions';
+        const openrouterReferer = localStorage.getItem('xpat_openrouter_referer') || 'http://localhost';
+        const openrouterTitle = localStorage.getItem('xpat_openrouter_title') || 'AI Chat Test';
+        
+        // 通用设置
+        const defaultProvider = localStorage.getItem('xpat_default_provider') || 'openai';
+        const allowUserModelSelection = localStorage.getItem('xpat_allow_user_model_selection') === 'true';
+        
+        // 填充表单
+        document.getElementById('openaiApiKey').value = openaiApiKey;
+        document.getElementById('openaiModel').value = openaiModel;
+        document.getElementById('openaiEndpoint').value = openaiEndpoint;
+        
+        document.getElementById('anthropicApiKey').value = anthropicApiKey;
+        document.getElementById('anthropicModel').value = anthropicModel;
+        document.getElementById('anthropicEndpoint').value = anthropicEndpoint;
+        
+        document.getElementById('openrouterApiKey').value = openrouterApiKey;
+        document.getElementById('openrouterModel').value = openrouterModel;
+        document.getElementById('openrouterEndpoint').value = openrouterEndpoint;
+        document.getElementById('openrouterReferer').value = openrouterReferer;
+        document.getElementById('openrouterTitle').value = openrouterTitle;
+        
+        document.getElementById('defaultProvider').value = defaultProvider;
+        document.getElementById('allowUserModelSelection').checked = allowUserModelSelection;
     }
     
     /**
@@ -732,34 +768,100 @@ document.addEventListener('DOMContentLoaded', function() {
             const defaultProvider = document.getElementById('defaultProvider').value;
             const allowUserModelSelection = document.getElementById('allowUserModelSelection').checked;
             
-            // 保存到localStorage
-            localStorage.setItem('xpat_openai_api_key', openaiApiKey);
-            localStorage.setItem('xpat_openai_model', openaiModel);
-            localStorage.setItem('xpat_openai_endpoint', openaiEndpoint);
+            // 构建配置对象
+            const config = {
+                openai: {
+                    apiKey: openaiApiKey,
+                    model: openaiModel,
+                    endpoint: openaiEndpoint
+                },
+                anthropic: {
+                    apiKey: anthropicApiKey,
+                    model: anthropicModel,
+                    endpoint: anthropicEndpoint
+                },
+                openrouter: {
+                    apiKey: openrouterApiKey,
+                    model: openrouterModel,
+                    endpoint: openrouterEndpoint,
+                    referer: openrouterReferer,
+                    title: openrouterTitle
+                },
+                defaultProvider,
+                allowUserModelSelection
+            };
             
-            localStorage.setItem('xpat_anthropic_api_key', anthropicApiKey);
-            localStorage.setItem('xpat_anthropic_model', anthropicModel);
-            localStorage.setItem('xpat_anthropic_endpoint', anthropicEndpoint);
+            // 保存到后端
+            await window.backendApi.saveApiConfig(config);
             
-            localStorage.setItem('xpat_openrouter_api_key', openrouterApiKey);
-            localStorage.setItem('xpat_openrouter_model', openrouterModel);
-            localStorage.setItem('xpat_openrouter_endpoint', openrouterEndpoint);
-            localStorage.setItem('xpat_openrouter_referer', openrouterReferer);
-            localStorage.setItem('xpat_openrouter_title', openrouterTitle);
-            
-            localStorage.setItem('xpat_default_provider', defaultProvider);
-            localStorage.setItem('xpat_allow_user_model_selection', allowUserModelSelection);
-            
-            // 向后端保存配置
-            // 这里可以添加与后端API的通信代码
+            // 同时保存到localStorage作为备份
+            saveLocalApiConfig(config);
             
             apiConfigError.textContent = '';
-            alert('API配置已保存');
+            alert('API配置已保存到服务器');
             
         } catch (error) {
             console.error('保存API配置失败:', error);
-            apiConfigError.textContent = '保存配置失败: ' + error.message;
+            apiConfigError.textContent = '保存到服务器失败: ' + error.message;
+            
+            // 尝试只保存到本地
+            try {
+                const config = collectFormConfig();
+                saveLocalApiConfig(config);
+                alert('无法保存到服务器，但已保存到本地');
+            } catch (localError) {
+                console.error('本地保存也失败:', localError);
+            }
         }
+    }
+    
+    /**
+     * 收集表单中的配置数据
+     */
+    function collectFormConfig() {
+        return {
+            openai: {
+                apiKey: document.getElementById('openaiApiKey').value.trim(),
+                model: document.getElementById('openaiModel').value,
+                endpoint: document.getElementById('openaiEndpoint').value.trim()
+            },
+            anthropic: {
+                apiKey: document.getElementById('anthropicApiKey').value.trim(),
+                model: document.getElementById('anthropicModel').value,
+                endpoint: document.getElementById('anthropicEndpoint').value.trim()
+            },
+            openrouter: {
+                apiKey: document.getElementById('openrouterApiKey').value.trim(),
+                model: document.getElementById('openrouterModel').value,
+                endpoint: document.getElementById('openrouterEndpoint').value.trim(),
+                referer: document.getElementById('openrouterReferer').value.trim(),
+                title: document.getElementById('openrouterTitle').value.trim()
+            },
+            defaultProvider: document.getElementById('defaultProvider').value,
+            allowUserModelSelection: document.getElementById('allowUserModelSelection').checked
+        };
+    }
+    
+    /**
+     * 保存API配置到localStorage（作为备份）
+     */
+    function saveLocalApiConfig(config) {
+        localStorage.setItem('xpat_openai_api_key', config.openai.apiKey);
+        localStorage.setItem('xpat_openai_model', config.openai.model);
+        localStorage.setItem('xpat_openai_endpoint', config.openai.endpoint);
+        
+        localStorage.setItem('xpat_anthropic_api_key', config.anthropic.apiKey);
+        localStorage.setItem('xpat_anthropic_model', config.anthropic.model);
+        localStorage.setItem('xpat_anthropic_endpoint', config.anthropic.endpoint);
+        
+        localStorage.setItem('xpat_openrouter_api_key', config.openrouter.apiKey);
+        localStorage.setItem('xpat_openrouter_model', config.openrouter.model);
+        localStorage.setItem('xpat_openrouter_endpoint', config.openrouter.endpoint);
+        localStorage.setItem('xpat_openrouter_referer', config.openrouter.referer);
+        localStorage.setItem('xpat_openrouter_title', config.openrouter.title);
+        
+        localStorage.setItem('xpat_default_provider', config.defaultProvider);
+        localStorage.setItem('xpat_allow_user_model_selection', config.allowUserModelSelection);
     }
     
     /**
