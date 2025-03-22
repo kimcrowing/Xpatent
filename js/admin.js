@@ -18,6 +18,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const promptCategoryFilter = document.getElementById('promptCategoryFilter');
     const addPromptBtn = document.getElementById('addPromptBtn');
     
+    // API配置相关元素
+    const apiConfigForm = document.getElementById('apiConfigForm');
+    const saveApiConfigBtn = document.getElementById('saveApiConfigBtn');
+    const apiConfigError = document.getElementById('apiConfigError');
+    
     // 模态框相关元素
     const modalOverlay = document.getElementById('modalOverlay');
     const closeModalBtn = document.getElementById('closeModalBtn');
@@ -54,6 +59,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 设置CORS模式以适应GitHub Pages环境
         setupCorsMode();
+        
+        // 加载API配置（如果登录了）
+        if (localStorage.getItem('xpat_auth_token')) {
+            loadApiConfig();
+        }
     }
     
     /**
@@ -144,6 +154,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // 添加提示词按钮
         addPromptBtn.addEventListener('click', handleAddPrompt);
         
+        // 保存API配置按钮
+        if (saveApiConfigBtn) {
+            saveApiConfigBtn.addEventListener('click', handleSaveApiConfig);
+        }
+        
         // 模态框关闭按钮
         closeModalBtn.addEventListener('click', closeModal);
         cancelPromptBtn.addEventListener('click', closeModal);
@@ -183,6 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.user && response.user.role === 'admin') {
                 showAdminInterface();
                 loadPrompts();
+                loadApiConfig(); // 登录成功后加载API配置
             } else {
                 window.backendApi.clearAuth();
                 loginError.textContent = '只有管理员才能访问该页面';
@@ -467,5 +483,102 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeDeleteModal() {
         deleteModalOverlay.style.display = 'none';
         deletePromptId.value = '';
+    }
+    
+    /**
+     * 加载API配置
+     */
+    async function loadApiConfig() {
+        try {
+            // 假设我们有一个API端点来获取配置
+            // 如果后端API尚未实现，可以先从localStorage加载
+            const savedConfig = localStorage.getItem('xpat_api_config');
+            
+            if (savedConfig) {
+                const config = JSON.parse(savedConfig);
+                
+                // 填充表单
+                document.getElementById('openaiApiKey').value = config.openai?.apiKey || '';
+                document.getElementById('openaiModel').value = config.openai?.model || 'gpt-4';
+                document.getElementById('openaiEndpoint').value = config.openai?.endpoint || 'https://api.openai.com/v1';
+                
+                document.getElementById('anthropicApiKey').value = config.anthropic?.apiKey || '';
+                document.getElementById('anthropicModel').value = config.anthropic?.model || 'claude-3-opus-20240229';
+                document.getElementById('anthropicEndpoint').value = config.anthropic?.endpoint || 'https://api.anthropic.com';
+                
+                document.getElementById('defaultProvider').value = config.defaultProvider || 'openai';
+                document.getElementById('allowUserModelSelection').checked = config.allowUserModelSelection || false;
+            }
+            
+            // 当实现后端API后，这里可以替换为真实的API调用
+            // const response = await fetch('/api/admin/config', {
+            //     headers: {
+            //         'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
+            //     }
+            // });
+            // const config = await response.json();
+            // 然后填充表单...
+            
+        } catch (error) {
+            console.error('加载API配置失败:', error);
+            apiConfigError.textContent = '加载配置失败: ' + (error.message || '未知错误');
+        }
+    }
+    
+    /**
+     * 处理保存API配置
+     */
+    async function handleSaveApiConfig() {
+        try {
+            // 收集表单数据
+            const config = {
+                openai: {
+                    apiKey: document.getElementById('openaiApiKey').value,
+                    model: document.getElementById('openaiModel').value,
+                    endpoint: document.getElementById('openaiEndpoint').value
+                },
+                anthropic: {
+                    apiKey: document.getElementById('anthropicApiKey').value,
+                    model: document.getElementById('anthropicModel').value,
+                    endpoint: document.getElementById('anthropicEndpoint').value
+                },
+                defaultProvider: document.getElementById('defaultProvider').value,
+                allowUserModelSelection: document.getElementById('allowUserModelSelection').checked
+            };
+            
+            // 保存到localStorage（临时方案，直到后端API实现）
+            localStorage.setItem('xpat_api_config', JSON.stringify(config));
+            
+            // 提示保存成功
+            apiConfigError.textContent = '';
+            apiConfigError.style.color = '#4caf50';
+            apiConfigError.textContent = '配置保存成功';
+            
+            // 当后端API实现后，这里应该发送至服务器
+            // const response = await fetch('/api/admin/config', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
+            //     },
+            //     body: JSON.stringify(config)
+            // });
+            
+            // if (!response.ok) {
+            //     throw new Error('保存配置失败');
+            // }
+            
+            // 三秒后清除成功消息
+            setTimeout(() => {
+                if (apiConfigError.style.color === '#4caf50') {
+                    apiConfigError.textContent = '';
+                }
+            }, 3000);
+            
+        } catch (error) {
+            console.error('保存API配置失败:', error);
+            apiConfigError.style.color = '#f44336';
+            apiConfigError.textContent = '保存配置失败: ' + (error.message || '未知错误');
+        }
     }
 }); 

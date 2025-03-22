@@ -69,6 +69,7 @@
             <aside class="sidebar">
                 <ul class="menu">
                     <li class="menu-item active" data-section="promptsManagement">提示词管理</li>
+                    <li class="menu-item" data-section="apiConfig">API配置</li>
                     <li class="menu-item" data-section="userManagement">用户管理</li>
                     <li class="menu-item" data-section="subscriptionManagement">订阅管理</li>
                     <li class="menu-item" data-section="apiUsage">API使用统计</li>
@@ -120,6 +121,76 @@
                         <div class="loading-state" id="promptsLoadingState">
                             <p>加载中...</p>
                         </div>
+                    </div>
+                </section>
+
+                <!-- API配置 -->
+                <section id="apiConfig" class="admin-section" style="display: none;">
+                    <div class="section-header">
+                        <h2>AI模型API配置</h2>
+                        <button class="btn btn-primary" id="saveApiConfigBtn">保存配置</button>
+                    </div>
+                    
+                    <div class="card api-config-card">
+                        <form id="apiConfigForm">
+                            <div class="form-group">
+                                <h3>OpenAI API配置</h3>
+                                <label for="openaiApiKey">API密钥</label>
+                                <input type="password" id="openaiApiKey" placeholder="sk-...">
+                                
+                                <label for="openaiModel">默认模型</label>
+                                <select id="openaiModel">
+                                    <option value="gpt-4">GPT-4</option>
+                                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                </select>
+                                
+                                <label for="openaiEndpoint">API端点 (可选)</label>
+                                <input type="text" id="openaiEndpoint" placeholder="https://api.openai.com/v1">
+                            </div>
+                            
+                            <hr class="divider">
+                            
+                            <div class="form-group">
+                                <h3>Anthropic API配置</h3>
+                                <label for="anthropicApiKey">API密钥</label>
+                                <input type="password" id="anthropicApiKey" placeholder="sk-ant-...">
+                                
+                                <label for="anthropicModel">默认模型</label>
+                                <select id="anthropicModel">
+                                    <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                                    <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                                    <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                                </select>
+                                
+                                <label for="anthropicEndpoint">API端点 (可选)</label>
+                                <input type="text" id="anthropicEndpoint" placeholder="https://api.anthropic.com">
+                            </div>
+                            
+                            <hr class="divider">
+                            
+                            <div class="form-group">
+                                <h3>通用设置</h3>
+                                <label for="defaultProvider">默认AI提供商</label>
+                                <select id="defaultProvider">
+                                    <option value="openai">OpenAI</option>
+                                    <option value="anthropic">Anthropic</option>
+                                </select>
+                                
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="allowUserModelSelection">
+                                        <span>允许用户选择模型</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="form-note">
+                                <p>注意: API密钥将以加密方式存储在服务器端，并用于向AI提供商发送请求。</p>
+                            </div>
+                            
+                            <div class="form-error" id="apiConfigError"></div>
+                        </form>
                     </div>
                 </section>
 
