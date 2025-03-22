@@ -12,6 +12,20 @@ const USER_INFO_KEY = 'user_info';
 const TOKEN_KEY_OLD = 'xpat_auth_token';
 const USER_INFO_KEY_OLD = 'xpat_user_info';
 
+// 加密API密钥函数 - 简单的Base64编码，实际应用中应使用更安全的方法
+window.encryptMyApiKey = function(apiKey) {
+    if (!apiKey) return '';
+    try {
+        // 简单的Base64编码
+        const encrypted = btoa(apiKey);
+        console.log('API密钥已加密');
+        return encrypted;
+    } catch (error) {
+        console.error('加密API密钥时出错:', error);
+        return '';
+    }
+};
+
 // 创建API调用基础函数
 async function apiCall(endpoint, method = 'GET', data = null, includeToken = true) {
     const url = `${API_BASE_URL}${endpoint}`;
@@ -158,14 +172,20 @@ async function validateToken(token) {
         if (!tokenToValidate) return false;
         
         try {
+            // 尝试通过API验证token
             const result = await apiRequest('/auth/validate', 'POST', { token: tokenToValidate }, false);
             return result.valid === true;
         } catch (error) {
             console.warn('验证token接口不可用，可能是后端未启动或未实现此功能，将使用本地用户信息验证');
-            // 如果验证失败但有token，暂时认为有效，避免无法登录
-            // 从localStorage获取用户信息，如果有用户信息则认为token有效
+            
+            // 如果API验证失败，直接从localStorage获取用户信息进行本地验证
             const userInfo = getUserInfo();
-            return !!userInfo && !!tokenToValidate;
+            if (userInfo && tokenToValidate) {
+                console.log('使用本地存储的用户信息验证token有效性');
+                // 本地有token和用户信息，视为有效
+                return true;
+            }
+            return false;
         }
     } catch (error) {
         console.error('验证token时出错:', error);

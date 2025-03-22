@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const registerError = document.getElementById('registerError');
     const userMenuBtn = document.getElementById('userMenuBtn');
     const featureMenuBtn = document.getElementById('featureMenuBtn');
+    const userMenu = document.getElementById('userMenu');
+    const logoutBtn = document.getElementById('logoutBtn');
 
     // 初始化应用状态
     let currentUser = null;
@@ -99,28 +101,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 显示登录页面
     function showLoginPage() {
-        loginPage.style.display = 'flex';
-        registerPage.style.display = 'none';
-        appContent.style.display = 'none';
+        if (loginPage) loginPage.style.display = 'flex';
+        if (registerPage) registerPage.style.display = 'none';
+        if (appContent) appContent.style.display = 'none';
     }
     
     // 显示注册页面
     function showRegisterPage() {
-        loginPage.style.display = 'none';
-        registerPage.style.display = 'flex';
-        appContent.style.display = 'none';
+        if (loginPage) loginPage.style.display = 'none';
+        if (registerPage) registerPage.style.display = 'flex';
+        if (appContent) appContent.style.display = 'none';
     }
     
     // 显示主应用内容
     function showAppContent() {
-        loginPage.style.display = 'none';
-        registerPage.style.display = 'none';
-        appContent.style.display = 'flex';
+        if (loginPage) loginPage.style.display = 'none';
+        if (registerPage) registerPage.style.display = 'none';
+        if (appContent) appContent.style.display = 'flex';
     }
     
     // 处理登录
     function handleLogin(email, password) {
-        loginError.textContent = '';
+        if (loginError) loginError.textContent = '';
         
         // 检查backendApi对象是否存在且有login方法
         if (window.backendApi && typeof window.backendApi.login === 'function') {
@@ -130,24 +132,24 @@ document.addEventListener('DOMContentLoaded', function() {
                         loadUserProfile();
                         showAppContent();
                     } else {
-                        loginError.textContent = '登录失败：' + (result.message || '未知错误');
+                        if (loginError) loginError.textContent = '登录失败：' + (result.message || '未知错误');
                     }
                 })
                 .catch(err => {
-                    loginError.textContent = '登录失败：' + (err.message || '服务器错误');
+                    if (loginError) loginError.textContent = '登录失败：' + (err.message || '服务器错误');
                 });
         } else {
-            loginError.textContent = '登录功能不可用，请联系管理员';
+            if (loginError) loginError.textContent = '登录功能不可用，请联系管理员';
         }
     }
     
     // 处理注册
     function handleRegister(username, email, password) {
-        registerError.textContent = '';
+        if (registerError) registerError.textContent = '';
         
-        const confirmPassword = document.getElementById('registerPasswordConfirm').value;
+        const confirmPassword = document.getElementById('registerPasswordConfirm')?.value;
         if (password !== confirmPassword) {
-            registerError.textContent = '两次密码输入不一致';
+            if (registerError) registerError.textContent = '两次密码输入不一致';
             return;
         }
         
@@ -159,14 +161,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         // 注册成功后自动登录
                         handleLogin(email, password);
                     } else {
-                        registerError.textContent = '注册失败：' + (result.message || '未知错误');
+                        if (registerError) registerError.textContent = '注册失败：' + (result.message || '未知错误');
                     }
                 })
                 .catch(err => {
-                    registerError.textContent = '注册失败：' + (err.message || '服务器错误');
+                    if (registerError) registerError.textContent = '注册失败：' + (err.message || '服务器错误');
                 });
         } else {
-            registerError.textContent = '注册功能不可用，请联系管理员';
+            if (registerError) registerError.textContent = '注册功能不可用，请联系管理员';
         }
     }
     
@@ -186,8 +188,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (loginForm) {
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
+            const email = document.getElementById('loginEmail')?.value || '';
+            const password = document.getElementById('loginPassword')?.value || '';
             handleLogin(email, password);
         });
     }
@@ -195,9 +197,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (registerForm) {
         registerForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            const username = document.getElementById('registerUsername').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
+            const username = document.getElementById('registerUsername')?.value || '';
+            const email = document.getElementById('registerEmail')?.value || '';
+            const password = document.getElementById('registerPassword')?.value || '';
             handleRegister(username, email, password);
         });
     }
@@ -213,6 +215,35 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoginBtn.addEventListener('click', function(e) {
             e.preventDefault();
             showLoginPage();
+        });
+    }
+    
+    // 添加用户菜单点击事件处理
+    if (userMenuBtn && userMenu) {
+        userMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            // 切换用户菜单显示状态
+            if (userMenu.style.display === 'block') {
+                userMenu.style.display = 'none';
+            } else {
+                userMenu.style.display = 'block';
+            }
+        });
+        
+        // 点击页面其他区域关闭菜单
+        document.addEventListener('click', function(e) {
+            if (!userMenuBtn.contains(e.target) && !userMenu.contains(e.target)) {
+                userMenu.style.display = 'none';
+            }
+        });
+    }
+    
+    // 绑定退出登录按钮
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function() {
+            handleLogout();
+            // 关闭用户菜单
+            if (userMenu) userMenu.style.display = 'none';
         });
     }
     
