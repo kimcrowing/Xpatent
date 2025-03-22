@@ -157,13 +157,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // 根据当前活动功能模式构建API请求
-    function buildAPIRequest(message) {
+    async function buildAPIRequest(message) {
         // 使用聊天模式选择器提供的系统提示词
         let systemPrompt = '';
         
         // 如果聊天模式选择器功能可用
         if (window.getChatModeSystemPrompt && typeof window.getChatModeSystemPrompt === 'function') {
-            systemPrompt = window.getChatModeSystemPrompt();
+            try {
+                systemPrompt = await window.getChatModeSystemPrompt();
+            } catch (error) {
+                console.error('获取模式提示词失败:', error);
+                // fallback到原来的功能
+                const activeFeature = localStorage.getItem('activeFeature') || '通用对话';
+                
+                // 根据不同功能设置不同的系统提示
+                switch(activeFeature) {
+                    case '通用对话':
+                        systemPrompt = '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。';
+                        break;
+                    case '内容创作':
+                        systemPrompt = '你是Xpat创作助手，擅长帮助用户创作各类内容。根据用户的描述，提供创意建议、内容结构和详细内容。';
+                        break;
+                    case '文档分析':
+                        systemPrompt = '你是Xpat分析助手，擅长分析文档并提取重要信息。请分析用户提供的文本，归纳要点，并提供见解。';
+                        break;
+                    default:
+                        systemPrompt = '你是Xpat助手，为用户提供智能对话服务。';
+                }
+            }
         } else {
             // fallback到原来的功能
             const activeFeature = localStorage.getItem('activeFeature') || '通用对话';
@@ -195,51 +216,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // 发送消息
     async function sendMessage() {
         console.log('准备发送消息');
-        if (!userInput) {
-            console.error('找不到用户输入元素');
+        
+        // 获取用户输入
+        const userInput = document.getElementById('userInput');
+        const userMessage = userInput.value.trim();
+        
+        // 检查用户输入是否为空
+        if (userMessage === '') {
             return;
         }
         
-        const message = userInput.value.trim();
-        console.log('用户输入:', message);
+        // 获取附件信息
+        let attachment = '';
+        let fullMessage = userMessage;
         
-        if (!message) {
-            console.log('消息为空，不发送');
-            return;
+        // 如果有附件信息，添加到消息中
+        if (window.currentAttachment) {
+            attachment = window.currentAttachment;
+            const attachmentName = document.getElementById('fileName').textContent;
+            fullMessage = `${userMessage}\n\n附件：${attachmentName}\n${attachment}`;
         }
         
         // 清空输入框
         userInput.value = '';
         
-        // 获取附件内容（如果有）
-        let fullMessage = message;
-        if (window.getAttachmentText && typeof window.getAttachmentText === 'function') {
-            try {
-                const attachmentText = window.getAttachmentText();
-                console.log('附件内容长度:', attachmentText ? attachmentText.length : 0);
-                
-                if (attachmentText) {
-                    // 在用户消息后添加文档内容
-                    fullMessage += "\n\n===== 附件内容 =====\n" + attachmentText;
-                    
-                    // 获取当前附件文件名
-                    const attachmentFileName = document.getElementById('fileName').textContent;
-                    
-                    // 在UI中只显示用户输入的消息，同时显示附件文件名
-                    addUserMessage(message + ` <span class="attachment-badge">[已上传附件: ${attachmentFileName}]</span>`);
-                } else {
-                    // 没有附件，正常显示消息
-                    addUserMessage(message);
-                }
-            } catch (e) {
-                console.error('获取附件内容时出错:', e);
-                addUserMessage(message);
-            }
-        } else {
-            // 如果附件功能不可用，正常显示消息
-            console.log('附件功能不可用');
-            addUserMessage(message);
-        }
+        // 添加用户消息到聊天界面
+        addUserMessage(userMessage);
         
         // 显示加载指示器
         const loadingIndicator = addLoadingIndicator();
@@ -247,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             console.log('准备调用API');
             // 构建API请求 
-            const request = buildAPIRequest(fullMessage);
+            const request = await buildAPIRequest(fullMessage);
             
             // 调用API获取回复
             const response = await callOpenRouterAPI(request.message, request.systemPrompt);

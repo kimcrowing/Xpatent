@@ -877,4 +877,62 @@ svg path {
 .message-content pre::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
     border-radius: 3px;
+}
+
+/* Chat Mode Dropdown 样式增强 */
+.chat-mode-dropdown {
+    position: absolute;
+    background-color: var(--dropdown-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    display: none;
+    max-height: 400px;
+    overflow-y: auto;
+    width: 200px;
+    padding: 8px 0;
+}
+
+.chat-mode-dropdown.show {
+    display: block;
+}
+
+.chat-mode-dropdown ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.chat-mode-dropdown li {
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.chat-mode-dropdown li:hover {
+    background-color: var(--hover-bg);
+}
+
+.chat-mode-dropdown li.active {
+    background-color: var(--accent-color-transparent);
+    color: var(--accent-color);
+}
+
+/* 新增：模式分类标题 */
+.mode-category-title {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 16px 4px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-color);
+    margin-top: 8px;
+}
+
+.mode-category-title:first-child {
+    margin-top: 0;
+}
+
+.chat-mode-dropdown ul + .mode-category-title {
+    margin-top: 8px;
 } 
