@@ -1,9 +1,102 @@
 // OpenRouter API调用
 // 实际应用中API密钥应该从后端获取，不应该暴露在前端
-const OPENROUTER_API_KEY = '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'; // 默认API密钥
+// 使用简单加密存储API密钥
+const ENCRYPTED_API_KEY = 'tl.ps.w2.6:2:67c:4:4358b9778fefbd87dd6889b4ca:c8b775584e5e766aa9:6:c878c5e67g2';
+const API_KEY_SALT = 'xpatent-2024';
+
+// 加密API密钥的函数 (仅开发使用，不应在生产环境使用)
+function encryptApiKey(apiKey, salt) {
+    try {
+        let encrypted = '';
+        const saltChars = salt.split('');
+        let saltIndex = 0;
+        
+        for (let i = 0; i < apiKey.length; i++) {
+            // 保留特殊字符
+            if (apiKey[i] === '-' || apiKey[i] === ':' || apiKey[i] === '.') {
+                encrypted += apiKey[i];
+                continue;
+            }
+            
+            // 使用salt字符进行简单加密
+            const char = apiKey.charCodeAt(i);
+            const saltChar = saltChars[saltIndex].charCodeAt(0);
+            saltIndex = (saltIndex + 1) % saltChars.length;
+            
+            // 字符偏移加密
+            const encryptedChar = String.fromCharCode(char + (saltChar % 7));
+            encrypted += encryptedChar;
+        }
+        
+        return encrypted;
+    } catch (error) {
+        console.error('API密钥加密失败:', error);
+        return '';
+    }
+}
+
+// 解密API密钥的函数
+function decryptApiKey(encryptedKey, salt) {
+    // 简单的解密算法，将加密的密钥转换回原始密钥
+    // 注意：这种方法只能提供基本混淆，不是真正的安全加密
+    try {
+        let decrypted = '';
+        const saltChars = salt.split('');
+        let saltIndex = 0;
+        
+        for (let i = 0; i < encryptedKey.length; i++) {
+            // 跳过特殊字符
+            if (encryptedKey[i] === '-' || encryptedKey[i] === ':' || encryptedKey[i] === '.') {
+                decrypted += encryptedKey[i];
+                continue;
+            }
+            
+            // 使用salt字符进行简单解密
+            const char = encryptedKey.charCodeAt(i);
+            const saltChar = saltChars[saltIndex].charCodeAt(0);
+            saltIndex = (saltIndex + 1) % saltChars.length;
+            
+            // 字符偏移解密
+            const decryptedChar = String.fromCharCode(char - (saltChar % 7));
+            decrypted += decryptedChar;
+        }
+        
+        return decrypted;
+    } catch (error) {
+        console.error('API密钥解密失败:', error);
+        return '';
+    }
+}
 
 // 默认模型设置
 window.CURRENT_MODEL = 'deepseek/deepseek-r1:free';
+
+// 获取解密后的API密钥
+let OPENROUTER_API_KEY = '';
+try {
+    OPENROUTER_API_KEY = decryptApiKey(ENCRYPTED_API_KEY, API_KEY_SALT);
+} catch (error) {
+    console.error('API密钥初始化失败:', error);
+    OPENROUTER_API_KEY = '';
+}
+
+// 开发者工具 - 控制台加密API密钥
+window.encryptMyApiKey = function(apiKey) {
+    if (!apiKey) {
+        console.error('请提供有效的API密钥');
+        return;
+    }
+    
+    const encrypted = encryptApiKey(apiKey, API_KEY_SALT);
+    console.log('加密后的API密钥:');
+    console.log(encrypted);
+    console.log('将此加密密钥添加到源代码中的ENCRYPTED_API_KEY变量');
+    
+    return encrypted;
+};
+
+// 使用方法说明
+console.log('开发者可以通过控制台调用 window.encryptMyApiKey("你的API密钥") 来获取加密后的密钥');
 
 // 标记是否使用模拟响应
 let usingMockResponse = false;
