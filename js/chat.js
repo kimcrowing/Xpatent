@@ -574,6 +574,197 @@ document.addEventListener('DOMContentLoaded', () => {
         return "我收到了您的消息，但当前我正在本地模式下运行，功能有限。这是因为系统未配置API密钥或与API的连接出现了问题。请联系系统管理员配置正确的API密钥，以便启用完整的AI对话功能。";
     }
     
+    /**
+     * 使用用户自己的API密钥直接调用模型
+     * @param {string} prompt - 用户的提示词
+     * @param {string} model - 模型名称
+     * @returns {Promise<Object>} - 响应结果
+     */
+    async function callModelWithUserApiKey(prompt, model) {
+        try {
+            // 根据模型确定提供商
+            let provider = 'openai';
+            if (model.includes('claude')) provider = 'anthropic';
+            if (model.includes('gemini')) provider = 'google';
+            if (model.includes('gpt-4o')) provider = 'openai';
+            if (model.includes('gpt-4')) provider = 'openai';
+            if (model.includes('gpt-3.5')) provider = 'openai';
+            if (model.includes('spark')) provider = 'xunfei';
+            if (model.includes('qwen')) provider = 'ali';
+            if (model.includes('baidu') || model.includes('ernie')) provider = 'baidu';
+            
+            // 获取用户的API密钥
+            const apiKeyResponse = await fetch(`${window.API_BASE_URL}/api/apikeys/provider/${provider}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
+                }
+            });
+            
+            if (!apiKeyResponse.ok) {
+                // 如果用户没有配置API密钥，则回退到服务器端代理方式
+                console.warn(`未找到${provider}的API密钥，将使用服务器端代理调用。`);
+                return callModelViaServer(prompt, model);
+            }
+            
+            const apiKeyData = await apiKeyResponse.json();
+            const apiKey = apiKeyData.api_key;
+            
+            // 根据不同的提供商构建请求
+            let endpoint, headers, payload, usageInfo;
+            
+            if (provider === 'openai') {
+                endpoint = 'https://api.openai.com/v1/chat/completions';
+                headers = {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                };
+                payload = {
+                    model,
+                    messages: [{ role: 'user', content: prompt }],
+                    max_tokens: 2000
+                };
+            } else if (provider === 'anthropic') {
+                endpoint = 'https://api.anthropic.com/v1/messages';
+                headers = {
+                    'x-api-key': apiKey,
+                    'Content-Type': 'application/json',
+                    'anthropic-version': '2023-06-01'
+                };
+                payload = {
+                    model,
+                    messages: [{ role: 'user', content: prompt }],
+                    max_tokens: 2000
+                };
+            } else if (provider === 'google') {
+                endpoint = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+                headers = {
+                    'Content-Type': 'application/json'
+                };
+                payload = {
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }]
+                };
+            } else {
+                throw new Error(`不支持的提供商: ${provider}`);
+            }
+            
+            // 发送请求
+            const startTime = new Date();
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(payload)
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                console.error('API调用失败:', error);
+                throw new Error(error.error?.message || error.message || '调用模型失败');
+            }
+            
+            const result = await response.json();
+            
+            // 提取返回的文本内容
+            let responseText = '';
+            let usageData = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+            
+            if (provider === 'openai') {
+                responseText = result.choices[0]?.message?.content || '';
+                usageData = result.usage || usageData;
+            } else if (provider === 'anthropic') {
+                responseText = result.content[0]?.text || '';
+                // Anthropic目前不直接返回token计数，使用估算
+                const estimatedPromptTokens = Math.ceil(prompt.length / 4);
+                const estimatedCompletionTokens = Math.ceil(responseText.length / 4);
+                usageData = {
+                    prompt_tokens: estimatedPromptTokens,
+                    completion_tokens: estimatedCompletionTokens,
+                    total_tokens: estimatedPromptTokens + estimatedCompletionTokens
+                };
+            } else if (provider === 'google') {
+                responseText = result.candidates[0]?.content?.parts[0]?.text || '';
+                // Google API也不直接返回token计数，使用估算
+                const estimatedPromptTokens = Math.ceil(prompt.length / 4);
+                const estimatedCompletionTokens = Math.ceil(responseText.length / 4);
+                usageData = {
+                    prompt_tokens: estimatedPromptTokens,
+                    completion_tokens: estimatedCompletionTokens,
+                    total_tokens: estimatedPromptTokens + estimatedCompletionTokens
+                };
+            }
+            
+            // 记录API使用情况
+            try {
+                const endTime = new Date();
+                const requestDuration = endTime - startTime;
+                
+                await fetch(`${window.API_BASE_URL}/api/chat/log`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model,
+                        prompt_tokens: usageData.prompt_tokens,
+                        completion_tokens: usageData.completion_tokens,
+                        total_tokens: usageData.total_tokens,
+                        request_duration: requestDuration
+                    })
+                });
+            } catch (logError) {
+                console.error('记录API使用情况失败:', logError);
+                // 继续处理，不影响用户体验
+            }
+            
+            return {
+                text: responseText,
+                usage: usageData
+            };
+        } catch (error) {
+            console.error('使用用户API密钥调用模型失败:', error);
+            // 出错时尝试回退到服务器调用
+            console.warn('尝试回退到服务器代理调用...');
+            try {
+                return await callModelViaServer(prompt, model);
+            } catch (fallbackError) {
+                console.error('服务器代理调用也失败:', fallbackError);
+                throw error; // 抛出原始错误
+            }
+        }
+    }
+    
+    /**
+     * 通过服务器代理调用模型（原始方法）
+     * @param {string} prompt - 用户的提示词
+     * @param {string} model - 模型名称
+     * @returns {Promise<Object>} - 响应结果
+     */
+    async function callModelViaServer(prompt, model) {
+        try {
+            const response = await fetch(`${window.API_BASE_URL}/api/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model,
+                    prompt
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || '调用模型失败');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('通过服务器调用模型失败:', error);
+            throw error;
+        }
+    }
+    
     // 发送消息
     async function sendMessage() {
         const userInput = document.getElementById('userInput');
@@ -681,20 +872,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            // 调用API获取回复
-            const response = await callOpenRouterAPI([{
-                role: 'system',
-                content: apiRequest.systemPrompt
-            }, {
-                role: 'user',
-                content: apiRequest.message
-            }], window.CURRENT_MODEL);
+            let response;
+            // 优先使用用户自己的API密钥
+            try {
+                response = await callModelWithUserApiKey(apiRequest.message, window.CURRENT_MODEL);
+            } catch (directCallError) {
+                console.error('直接调用失败，回退到服务器代理:', directCallError);
+                // 如果直接调用失败，回退到服务器代理
+                response = await callModelViaServer(apiRequest.message, window.CURRENT_MODEL);
+            }
             
             // 移除加载指示器
             loadingIndicator.remove();
             
             // 添加AI回复到界面
-            addAIMessage(response);
+            addAIMessage(response.text);
         } catch (error) {
             console.error('发送消息时出错:', error);
             loadingIndicator.remove();

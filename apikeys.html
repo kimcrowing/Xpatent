@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API密钥管理 - AI专利系统</title>
+  <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- 侧边栏 -->
+      <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+        <!-- 侧边栏内容将通过common.js注入 -->
+      </nav>
+
+      <!-- 主内容区 -->
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <h1 class="h2">API密钥管理</h1>
+        </div>
+        
+        <!-- 提示消息区域 -->
+        <div id="alert-container"></div>
+        
+        <!-- 密钥添加表单 -->
+        <div class="card mb-4">
+          <div class="card-header bg-primary text-white">
+            <i class="bi bi-key"></i> 添加API密钥
+          </div>
+          <div class="card-body">
+            <div class="alert alert-info">
+              <p><i class="bi bi-info-circle"></i> 添加您的API密钥后，您可以直接从浏览器调用AI模型。您的密钥将被安全加密存储。</p>
+              <p>支持的服务提供商：OpenAI、Anthropic、Google AI等</p>
+            </div>
+            
+            <form id="apikey-form">
+              <div class="mb-3">
+                <label for="provider" class="form-label">服务提供商 <span class="text-danger">*</span></label>
+                <select class="form-select" id="provider" required>
+                  <!-- 由JS动态填充 -->
+                </select>
+              </div>
+              
+              <div class="mb-3">
+                <label for="apikey" class="form-label">API密钥 <span class="text-danger">*</span></label>
+                <input type="password" class="form-control" id="apikey" required>
+                <div class="form-text">您的API密钥将被加密存储，仅在需要时解密使用。</div>
+              </div>
+              
+              <button type="submit" class="btn btn-primary">保存</button>
+            </form>
+          </div>
+        </div>
+        
+        <!-- 密钥列表 -->
+        <div class="card">
+          <div class="card-header bg-secondary text-white">
+            <i class="bi bi-list"></i> 已保存的API密钥
+          </div>
+          <div class="card-body p-0">
+            <div id="keys-list" class="list-group list-group-flush">
+              <!-- 由JS动态填充 -->
+              <div class="alert alert-info m-3">正在加载...</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 使用说明 -->
+        <div class="card mt-4">
+          <div class="card-header bg-info text-white">
+            <i class="bi bi-question-circle"></i> 使用说明
+          </div>
+          <div class="card-body">
+            <h5>如何获取API密钥？</h5>
+            <ul>
+              <li>OpenAI：访问 <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">OpenAI API密钥页面</a></li>
+              <li>Anthropic：访问 <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">Anthropic控制台</a></li>
+              <li>Google AI：访问 <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a></li>
+              <li>其他提供商：请访问各自的官方网站获取API密钥</li>
+            </ul>
+            
+            <h5>注意事项</h5>
+            <ul>
+              <li>请确保您已阅读并同意各提供商的服务条款</li>
+              <li>API调用将使用您自己的API密钥和配额</li>
+              <li>本系统会记录API调用次数，但不会存储具体的对话内容</li>
+            </ul>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  
+  <!-- 引入脚本 -->
+  <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/apikeys.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 初始化通用元素
+      if (window.common) common.init();
+      
+      // 初始化API密钥页面
+      if (window.apiKeys) apiKeys.init();
+    });
+    
+    // 声明全局函数，供HTML中的onclick调用
+    function deleteApiKey(id) {
+      if (window.apiKeys) window.apiKeys.delete(id);
+    }
+    
+    function toggleApiKey(id, currentState) {
+      if (window.apiKeys) window.apiKeys.toggle(id, currentState);
+    }
+  </script>
+</body>
+</html> 
