@@ -188,11 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 userMenu.style.display = 'block';
                 console.log('用户菜单状态: 显示');
                 
-                // 关闭通知面板
-                if (notificationPanel) {
-                    notificationPanel.style.display = 'none';
-                }
-                
                 // 关闭历史对话面板
                 if (historyPanel) {
                     historyPanel.style.display = 'none';
