@@ -37,9 +37,9 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             {
                 id: 'patent-analysis',
-                name: '专利分析',
-                systemPrompt: '你是一个专利分析专家，请帮助用户分析专利文件和专利战略。',
-                placeholder: '请输入您需要分析的专利信息或问题...'
+                name: '专利答审',
+                systemPrompt: '你是一个专利答审专家，专注于帮助用户分析和回复专利审查意见通知书。请根据用户提供的审查意见，协助起草答复意见，提供修改建议，并解释如何克服审查员提出的新颖性、创造性、支持性等问题。',
+                placeholder: '请输入您需要答复的审查意见或专利问题...'
             }
         ]
     };
