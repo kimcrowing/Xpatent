@@ -799,131 +799,105 @@ document.addEventListener('DOMContentLoaded', () => {
             detectedDomain = window.DETECTED_PATENT_DOMAIN;
             console.log('检测到专利领域:', detectedDomain);
             
-            // 获取当前聊天模式
-            const currentMode = window.getCurrentChatModeId ? window.getCurrentChatModeId() : 'general';
-            
-            // 只对专利相关模式应用专业模板
-            if (currentMode.startsWith('patent-')) {
-                try {
-                    // 从后端获取特定领域和模式的专业提示词模板
-                    const token = localStorage.getItem('xpat_auth_token');
-                    if (token) {
-                        const response = await fetch(`${window.API_BASE_URL}/prompts/domain?domain=${encodeURIComponent(detectedDomain)}&mode=${encodeURIComponent(currentMode)}`, {
-                            method: 'GET',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            }
-                        });
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (data.template) {
-                                specializedTemplate = data.template;
-                                console.log('获取到专业提示词模板:', specializedTemplate.name);
-                                
-                                // 应用专业模板的名称和占位符
-                                if (window.selectChatMode && specializedTemplate.name) {
-                                    window.selectChatMode(currentMode, specializedTemplate.name, specializedTemplate.systemPrompt);
-                                    // 显示领域专业模式切换提示
-                                    addSystemMessage(`已切换到"${specializedTemplate.name}"模式，这将为您提供针对${detectedDomain}领域的专业回答。`);
-                                }
-                            }
-                        } else {
-                            console.error('获取专业提示词模板失败:', response.status);
-                        }
+            // 尝试获取专利领域的专用提示词
+            try {
+                // 获取当前聊天模式
+                const currentMode = localStorage.getItem('selected_chat_mode') || 'general';
+                
+                const response = await fetch(`${window.API_BASE_URL}/prompts/domain?domain=${encodeURIComponent(detectedDomain)}&mode=${encodeURIComponent(currentMode)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
+                        'Content-Type': 'application/json'
                     }
-                } catch (error) {
-                    console.error('请求专业提示词模板时出错:', error);
-                }
-            } else {
-                // 如果当前不是专利相关模式，推荐切换到适合的专利模式
-                let recommendedMode = null;
+                });
                 
-                // 判断领域与聊天模式的匹配关系
-                if (['电子信息', '新材料', '能源环保', '化学化工'].includes(detectedDomain)) {
-                    recommendedMode = 'patent-writing'; // 专利撰写
-                    console.log('根据检测到的领域推荐专利撰写模式');
-                } else if (['生物医药', '机械工程', '农业食品', '交通运输'].includes(detectedDomain)) {
-                    recommendedMode = 'patent-search'; // 专利检索
-                    console.log('根据检测到的领域推荐专利检索模式');
-                }
-                
-                // 如果有推荐的模式，则提示用户
-                if (recommendedMode && window.PROMPT_TEMPLATES) {
-                    const modes = window.PROMPT_TEMPLATES.chatModes;
-                    const mode = modes.find(m => m.id === recommendedMode);
-                    if (mode) {
-                        addSystemMessage(`检测到您的文档可能与${detectedDomain}领域相关，建议切换到"${mode.name}"模式获取更专业的帮助。`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.prompt) {
+                        specializedTemplate = data.prompt;
+                        console.log('使用专用模板:', specializedTemplate.substring(0, 50) + '...');
                     }
                 }
+            } catch (error) {
+                console.error('获取专用提示词失败:', error);
             }
-            
-            // 重置检测结果，避免影响下一次对话
-            window.DETECTED_PATENT_DOMAIN = null;
         }
         
-        // 禁用输入区域
-        userInput.disabled = true;
-        sendButton.disabled = true;
+        // 创建用户消息文本
+        let fullMessage = '';
+        
+        // 如果有附件，将其添加到消息中
+        if (attachmentText) {
+            fullMessage = `${message}\n\n附件内容:\n${attachmentText}`;
+        } else {
+            fullMessage = message;
+        }
+        
+        // 添加用户消息到聊天
+        addUserMessage(message);
+        
+        // 添加加载指示器
+        const loadingIndicator = addLoadingIndicator();
         
         try {
-            // 显示用户消息
-            addUserMessage(message);
+            // 构建请求
+            const apiRequest = buildAPIRequest(fullMessage, specializedTemplate);
             
-            // 显示加载指示器
-            const loadingIndicator = addLoadingIndicator();
-            
-            // 准备请求数据
-            const apiRequest = buildAPIRequest(message, specializedTemplate ? specializedTemplate.systemPrompt : null);
-            
-            // 检查是否有错误信息
-            if (apiRequest && apiRequest.error) {
-                // 如果有错误，显示错误信息
+            if (apiRequest.error) {
+                // 如果构建请求时发现错误，显示错误消息
                 loadingIndicator.remove();
                 addAIMessage(apiRequest.message);
                 return;
             }
             
             let response;
-            // 优先使用用户自己的API密钥
+            
+            // 优先使用OpenRouter API
             try {
-                response = await callModelWithUserApiKey(apiRequest.message, window.CURRENT_MODEL);
-            } catch (directCallError) {
-                console.error('直接调用失败，回退到服务器代理:', directCallError);
-                // 如果直接调用失败，回退到服务器代理
-                const serverResponse = await callModelViaServer(apiRequest.message, window.CURRENT_MODEL);
+                // 获取当前选择的模型，如果未指定则使用默认
+                const selectedModel = window.CURRENT_MODEL || 'deepseek/deepseek-r1:free';
                 
-                // 处理服务器返回的OpenAI/OpenRouter格式响应
-                if (serverResponse && serverResponse.choices && serverResponse.choices.length > 0) {
-                    response = {
-                        text: serverResponse.choices[0].message.content
-                    };
-                } else {
-                    throw new Error('无法解析服务器响应');
+                // 构建消息数组
+                const messages = [];
+                
+                // 添加系统提示词
+                if (apiRequest.systemPrompt && apiRequest.systemPrompt.trim()) {
+                    messages.push({
+                        role: 'system',
+                        content: apiRequest.systemPrompt
+                    });
                 }
+                
+                // 添加用户消息
+                messages.push({
+                    role: 'user',
+                    content: apiRequest.message
+                });
+                
+                console.log('调用OpenRouter API');
+                response = await callOpenRouterAPI(messages, selectedModel);
+            } catch (openRouterError) {
+                console.error('OpenRouter API调用失败:', openRouterError);
+                
+                // 回退到服务器端调用
+                console.log('回退到服务器代理调用');
+                const serverResponse = await callModelViaServer(apiRequest.message, window.CURRENT_MODEL);
+                response = serverResponse.text;
             }
             
             // 移除加载指示器
             loadingIndicator.remove();
             
-            // 恢复输入区域
-            userInput.disabled = false;
-            sendButton.disabled = false;
-            userInput.focus();
-            
-            // 添加AI回复到界面
-            addAIMessage(response.text);
+            // 添加AI回复到聊天
+            addAIMessage(response);
         } catch (error) {
-            console.error('发送消息时出错:', error);
+            console.error('处理消息失败:', error);
+            
+            // 移除加载指示器
             loadingIndicator.remove();
             
-            // 恢复输入区域
-            userInput.disabled = false;
-            sendButton.disabled = false;
-            userInput.focus();
-            
-            addAIMessage("发生错误，请稍后重试。错误信息：" + error.message);
+            // 添加错误消息
+            addAIMessage(`很抱歉，我遇到了一个问题: ${error.message || '未知错误'}`);
         }
     }
     

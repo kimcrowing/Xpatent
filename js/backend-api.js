@@ -6,7 +6,8 @@
  */
 
 // 后端API基础URL - 可以动态修改，以支持GitHub Pages环境
-window.API_BASE_URL = 'https://5e65-2408-8262-1871-4896-4412-5f5c-46fc-3230.ngrok-free.app/api';
+// window.API_BASE_URL = 'https://5e65-2408-8262-1871-4896-4412-5f5c-46fc-3230.ngrok-free.app/api';
+window.API_BASE_URL = 'http://localhost:3000/api';
 
 // 本地存储密钥
 const TOKEN_KEY = 'xpat_auth_token';
@@ -251,7 +252,7 @@ async function getApiConfig() {
  * 保存API配置 (到后端)
  */
 async function saveApiConfig(config) {
-  return apiRequest('/config', 'POST', config);
+  return apiRequest('/config', 'PUT', config);
 }
 
 /**
@@ -294,24 +295,70 @@ async function getUserPermissions() {
  * 获取指定用户的权限配置（管理员用）
  */
 async function getUserPermissionsByAdmin(userId) {
-  return apiRequest(`/users/${userId}/permissions`);
+  return apiRequest(`/admin/users/${userId}/permissions`);
 }
 
 /**
  * 设置用户权限（管理员用）
  */
 async function setUserPermissions(userId, permissions) {
-  return apiRequest(`/users/${userId}/permissions`, 'PUT', permissions);
+  return apiRequest(`/admin/users/${userId}/permissions`, 'PUT', permissions);
 }
 
-// 检测是否在GitHub Pages环境，并尝试设置API地址
+/**
+ * 获取用户的API密钥列表 (仅管理员)
+ */
+async function getUserApiKeys(userId) {
+  return apiRequest(`/admin/users/${userId}/apikeys`);
+}
+
+/**
+ * 添加用户的API密钥 (仅管理员)
+ */
+async function addUserApiKey(userId, data) {
+  return apiRequest(`/admin/users/${userId}/apikeys`, 'POST', data);
+}
+
+/**
+ * 切换用户API密钥状态 (仅管理员)
+ */
+async function toggleUserApiKey(userId, keyId, isActive) {
+  return apiRequest(`/admin/users/${userId}/apikeys/${keyId}/toggle`, 'PATCH', { is_active: isActive });
+}
+
+/**
+ * 删除用户的API密钥 (仅管理员)
+ */
+async function deleteUserApiKey(userId, keyId) {
+  return apiRequest(`/admin/users/${userId}/apikeys/${keyId}`, 'DELETE');
+}
+
+// 强制设置API地址部分也需要修改
 (function detectEnvironment() {
-  // 强制使用ngrok地址，无论是否在GitHub Pages环境
-  window.API_BASE_URL = 'https://5e65-2408-8262-1871-4896-4412-5f5c-46fc-3230.ngrok-free.app/api';
-  console.log('已强制设置API地址:', window.API_BASE_URL);
-  
-  // 更新本地存储中的API地址，确保一致性
-  localStorage.setItem('xpat_api_url', window.API_BASE_URL);
+    // 尝试从本地存储中读取API地址
+    const savedApiUrl = localStorage.getItem('xpat_api_url');
+    
+    // 如果存在本地存储的API地址，则使用它
+    if (savedApiUrl) {
+        window.API_BASE_URL = savedApiUrl;
+        console.log('从本地存储加载API地址:', window.API_BASE_URL);
+        return;
+    }
+    
+    // 默认本地开发环境使用localhost
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        window.API_BASE_URL = 'http://localhost:3000/api';
+        console.log('本地开发环境使用localhost API');
+        return;
+    }
+    
+    // 默认使用当前环境的API
+    // window.API_BASE_URL = 'https://5e65-2408-8262-1871-4896-4412-5f5c-46fc-3230.ngrok-free.app/api';
+    window.API_BASE_URL = 'http://localhost:3000/api';
+    console.log('已强制设置API地址:', window.API_BASE_URL);
+    
+    // 保存到本地存储
+    localStorage.setItem('xpat_api_url', window.API_BASE_URL);
 })();
 
 // 导出API函数
@@ -345,7 +392,11 @@ window.backendApi = {
   deleteUser,
   getUserPermissions,
   getUserPermissionsByAdmin,
-  setUserPermissions
+  setUserPermissions,
+  getUserApiKeys,
+  addUserApiKey,
+  toggleUserApiKey,
+  deleteUserApiKey
 };
 
 /**
