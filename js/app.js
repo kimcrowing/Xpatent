@@ -82,12 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // 获取用户菜单元素，在整个DOM加载函数中复用
     const userMenuBtn = document.getElementById('userMenuBtn');
     const userMenu = document.getElementById('userMenu');
-    const notificationBtn = document.getElementById('notificationBtn');
-    const notificationPanel = document.getElementById('notificationPanel');
     const historyBtn = document.getElementById('historyBtn');
     const historyPanel = document.getElementById('historyPanel');
     const languageBtn = document.getElementById('languageBtn');
     const languageMenu = document.getElementById('languageMenu');
+    const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+    const newConversationBtn = document.getElementById('newConversationBtn');
     
     console.log('用户菜单元素检查:', {
         userMenuBtn: userMenuBtn ? '找到' : '未找到',
@@ -189,15 +189,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('用户菜单状态: 显示');
                 
                 // 关闭通知面板
-                const notificationPanel = document.getElementById('notificationPanel');
                 if (notificationPanel) {
-                    notificationPanel.classList.remove('active');
+                    notificationPanel.style.display = 'none';
                 }
                 
                 // 关闭历史对话面板
-                const historyPanel = document.getElementById('historyPanel');
                 if (historyPanel) {
-                    historyPanel.classList.remove('active');
+                    historyPanel.style.display = 'none';
                 }
             }
         });
@@ -285,9 +283,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // 历史对话按钮点击事件
-    const closeHistoryBtn = document.getElementById('closeHistoryBtn');
-    const newConversationBtn = document.getElementById('newConversationBtn');
-    
     if (historyBtn && historyPanel) {
         historyBtn.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -300,9 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // 如果用户菜单是打开的，则关闭它
             if (userMenu) userMenu.style.display = 'none';
-            
-            // 如果通知面板是打开的，则关闭它
-            if (notificationPanel) notificationPanel.style.display = 'none';
             
             // 如果语言菜单是打开的，则关闭它
             if (languageMenu) languageMenu.style.display = 'none';
@@ -731,7 +723,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 userMenu.style.display = userMenu.style.display === 'block' ? 'none' : 'block';
                 // 关闭其他面板
-                if (notificationPanel) notificationPanel.style.display = 'none';
                 if (historyPanel) historyPanel.style.display = 'none';
                 if (languageMenu) languageMenu.style.display = 'none';
             });
@@ -740,7 +731,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // 点击外部区域关闭菜单
         document.addEventListener('click', function() {
             if (userMenu) userMenu.style.display = 'none';
-            if (notificationPanel) notificationPanel.style.display = 'none';
             if (historyPanel) historyPanel.style.display = 'none';
             if (languageMenu) languageMenu.style.display = 'none';
         });
@@ -752,7 +742,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 languageMenu.style.display = languageMenu.style.display === 'block' ? 'none' : 'block';
                 // 关闭其他菜单
                 if (userMenu) userMenu.style.display = 'none';
-                if (notificationPanel) notificationPanel.style.display = 'none';
                 if (historyPanel) historyPanel.style.display = 'none';
             });
         }
