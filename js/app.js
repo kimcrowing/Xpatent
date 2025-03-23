@@ -712,24 +712,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 初始化菜单项点击事件
     function initializeMenuItems() {
-        // 用户菜单按钮点击事件
-        if (userMenuBtn) {
-            userMenuBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                userMenu.style.display = userMenu.style.display === 'block' ? 'none' : 'block';
-                // 关闭其他面板
-                if (historyPanel) historyPanel.style.display = 'none';
-                if (languageMenu) languageMenu.style.display = 'none';
-            });
-        }
-        
-        // 点击外部区域关闭菜单
-        document.addEventListener('click', function() {
-            if (userMenu) userMenu.style.display = 'none';
-            if (historyPanel) historyPanel.style.display = 'none';
-            if (languageMenu) languageMenu.style.display = 'none';
-        });
-        
         // 语言切换按钮点击事件
         if (languageBtn) {
             languageBtn.addEventListener('click', function(e) {
