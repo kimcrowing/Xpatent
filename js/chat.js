@@ -51,10 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const loginPrompt = document.createElement('div');
         loginPrompt.className = 'login-prompt';
         loginPrompt.innerHTML = `
-            <h3>请先登录</h3>
-            <p>您需要登录后才能使用AI聊天功能。登录后您将获得API配额并能够跟踪使用情况。</p>
-            <a href="./login.html" class="login-button">登录</a>
-            <a href="./register.html" class="login-button" style="margin-left: 10px;">注册</a>
+            <h3>Xpat - 用简单的方式革新世界</h3>
+            <p>请订阅或登录新世界</p>
+            <a href="./subscriptions.html" class="login-button">订阅</a>
+            <a href="./login.html" class="login-button" style="margin-left: 10px;">登录</a>
         `;
         
         // 添加到聊天区域
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 禁用输入框和发送按钮
         if (userInput) {
             userInput.disabled = true;
-            userInput.placeholder = '请先登录后使用';
+            userInput.placeholder = '请先登录或订阅后使用';
         }
         
         if (sendBtn) {
