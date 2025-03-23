@@ -1613,25 +1613,73 @@ document.addEventListener('DOMContentLoaded', function() {
      * 渲染API使用图表
      */
     function renderApiUsageCharts(stats) {
-        // 这里应该使用图表库如Chart.js来渲染图表
-        // 以下为示例，实际实现需要引入相应的图表库
+        console.log('尝试渲染API使用图表，Chart对象是否存在:', typeof Chart !== 'undefined');
         
-        // 日调用量图表
-        if (stats.dailyApiCalls && typeof Chart !== 'undefined') {
-            // 假设已经引入了Chart.js
-            const dailyCtx = dailyApiCallsChart.getContext('2d');
+        // 确保stats对象存在且有效
+        if (!stats) {
+            console.error('API统计数据无效');
+            displayChartError();
+            return;
+        }
+        
+        // 先检查Chart对象是否可用
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js库未加载');
+            displayChartError();
+            return;
+        }
+        
+        try {
+            // 日调用量图表
+            renderDailyApiCallsChart(stats);
             
+            // 模型分布图表
+            renderModelDistributionChart(stats);
+        } catch (error) {
+            console.error('渲染图表时出错:', error);
+            displayChartError();
+        }
+    }
+    
+    /**
+     * 显示图表错误信息
+     */
+    function displayChartError() {
+        // 在所有图表容器中显示错误信息
+        const chartContainers = [dailyApiCallsChart, modelDistributionChart];
+        chartContainers.forEach(container => {
+            if (container) {
+                container.innerHTML = '<div class="placeholder-chart"><p>图表库未引入或数据无效，无法显示图表</p></div>';
+            }
+        });
+    }
+    
+    /**
+     * 渲染日API调用图表
+     */
+    function renderDailyApiCallsChart(stats) {
+        if (!stats.dailyApiCalls || Object.keys(stats.dailyApiCalls).length === 0) {
+            dailyApiCallsChart.innerHTML = '<div class="placeholder-chart"><p>暂无日调用数据</p></div>';
+            return;
+        }
+        
+        try {
             // 清除之前的图表实例
             if (window.dailyApiChart) {
                 window.dailyApiChart.destroy();
             }
+            
+            // 准备canvas元素
+            dailyApiCallsChart.innerHTML = '<canvas></canvas>';
+            const canvas = dailyApiCallsChart.querySelector('canvas');
+            const ctx = canvas.getContext('2d');
             
             // 准备数据
             const labels = Object.keys(stats.dailyApiCalls);
             const data = Object.values(stats.dailyApiCalls);
             
             // 创建新图表
-            window.dailyApiChart = new Chart(dailyCtx, {
+            window.dailyApiChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
@@ -1652,49 +1700,69 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             });
-        } else {
-            // 如果没有引入Chart.js，则显示文本数据
-            dailyApiCallsChart.innerHTML = '图表库未引入，无法显示图表';
+        } catch (error) {
+            console.error('渲染日调用图表时出错:', error);
+            dailyApiCallsChart.innerHTML = '<div class="placeholder-chart"><p>渲染图表时出错</p></div>';
+        }
+    }
+    
+    /**
+     * 渲染模型分布图表
+     */
+    function renderModelDistributionChart(stats) {
+        if (!stats.modelDistribution || Object.keys(stats.modelDistribution).length === 0) {
+            modelDistributionChart.innerHTML = '<div class="placeholder-chart"><p>暂无模型使用数据</p></div>';
+            return;
         }
         
-        // 模型分布图表
-        if (stats.modelDistribution && typeof Chart !== 'undefined') {
-            const modelCtx = modelDistributionChart.getContext('2d');
-            
+        try {
             // 清除之前的图表实例
             if (window.modelDistChart) {
                 window.modelDistChart.destroy();
             }
             
+            // 准备canvas元素
+            modelDistributionChart.innerHTML = '<canvas></canvas>';
+            const canvas = modelDistributionChart.querySelector('canvas');
+            const ctx = canvas.getContext('2d');
+            
             // 准备数据
             const labels = Object.keys(stats.modelDistribution);
             const data = Object.values(stats.modelDistribution);
             
+            // 创建背景色数组
+            const backgroundColors = [
+                'rgba(255, 99, 132, 0.6)',
+                'rgba(54, 162, 235, 0.6)',
+                'rgba(255, 206, 86, 0.6)',
+                'rgba(75, 192, 192, 0.6)',
+                'rgba(153, 102, 255, 0.6)',
+                'rgba(255, 159, 64, 0.6)'
+            ];
+            
             // 创建新图表
-            window.modelDistChart = new Chart(modelCtx, {
+            window.modelDistChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: labels,
                     datasets: [{
                         data: data,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.6)',
-                            'rgba(54, 162, 235, 0.6)',
-                            'rgba(255, 206, 86, 0.6)',
-                            'rgba(75, 192, 192, 0.6)',
-                            'rgba(153, 102, 255, 0.6)',
-                            'rgba(255, 159, 64, 0.6)'
-                        ],
+                        backgroundColor: backgroundColors.slice(0, labels.length),
                         borderWidth: 1
                     }]
                 },
                 options: {
-                    responsive: true
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
                 }
             });
-        } else {
-            // 如果没有引入Chart.js，则显示文本数据
-            modelDistributionChart.innerHTML = '图表库未引入，无法显示图表';
+        } catch (error) {
+            console.error('渲染模型分布图表时出错:', error);
+            modelDistributionChart.innerHTML = '<div class="placeholder-chart"><p>渲染图表时出错</p></div>';
         }
     }
 
