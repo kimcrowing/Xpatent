@@ -93,7 +93,14 @@
                                 <option value="general">通用对话</option>
                                 <option value="patent-search">专利检索</option>
                                 <option value="patent-writing">专利撰写</option>
-                                <option value="patent-analysis">专利分析</option>
+                                <option value="patent-response">专利答审</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="promptFieldFilterContainer" style="display: none;">
+                            <label for="promptFieldFilter">技术领域</label>
+                            <select id="promptFieldFilter">
+                                <option value="">所有领域</option>
+                                <!-- 技术领域选项将通过JavaScript动态填充 -->
                             </select>
                         </div>
                     </div>
@@ -413,7 +420,19 @@
                             <option value="general">通用对话</option>
                             <option value="patent-search">专利检索</option>
                             <option value="patent-writing">专利撰写</option>
-                            <option value="patent-analysis">专利分析</option>
+                            <option value="patent-response">专利答审</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="promptFieldContainer" style="display: none;">
+                        <label for="promptField">技术领域</label>
+                        <select id="promptField">
+                            <option value="">无 (通用)</option>
+                            <option value="mechanical">机械</option>
+                            <option value="electrical">电子电气</option>
+                            <option value="software">软件</option>
+                            <option value="chemical">化学</option>
+                            <option value="biomedical">生物医药</option>
+                            <option value="energy">能源环保</option>
                         </select>
                     </div>
                     <div class="form-group">

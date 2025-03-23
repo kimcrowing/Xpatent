@@ -250,130 +250,184 @@ document.addEventListener('DOMContentLoaded', function() {
             item.addEventListener('click', handleMenuItemClick);
         });
         
-        // 提示词管理相关事件
-        promptCategoryFilter.addEventListener('change', function() {
-            loadPrompts(this.value);
-        });
+        // 提示词分类筛选变更
+        promptCategoryFilter.addEventListener('change', handleCategoryFilterChange);
         
+        // 提示词领域筛选变更
+        const promptFieldFilter = document.getElementById('promptFieldFilter');
+        if (promptFieldFilter) {
+            promptFieldFilter.addEventListener('change', handleFieldFilterChange);
+        }
+        
+        // 提示词模态框中的分类变更事件
+        promptCategory.addEventListener('change', handlePromptCategoryChange);
+        
+        // 添加提示词按钮
         addPromptBtn.addEventListener('click', handleAddPrompt);
         
-        // 用户管理相关事件
-        userRoleFilter.addEventListener('change', function() {
-            currentUserRole = this.value;
+        // 关闭模态框按钮
+        closeModalBtn.addEventListener('click', closeModal);
+        
+        // 取消按钮
+        cancelPromptBtn.addEventListener('click', closeModal);
+        
+        // 保存按钮
+        savePromptBtn.addEventListener('click', handleSavePrompt);
+        
+        // 删除确认模态框关闭按钮
+        closeDeleteModalBtn.addEventListener('click', closeDeleteModal);
+        
+        // 取消删除按钮
+        cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+        
+        // 确认删除按钮
+        confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
+        
+        // API配置保存按钮
+        saveApiConfigBtn.addEventListener('click', handleSaveApiConfig);
+        
+        // 用户过滤和搜索
+        userRoleFilter.addEventListener('change', () => {
+            currentUserRole = userRoleFilter.value;
             currentUserPage = 1;
             loadUsers();
         });
         
-        userSearchBtn.addEventListener('click', function() {
+        userSearchBtn.addEventListener('click', () => {
             currentUserSearch = userSearchInput.value.trim();
             currentUserPage = 1;
             loadUsers();
         });
         
-        userSearchInput.addEventListener('keypress', function(e) {
+        userSearchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                currentUserSearch = this.value.trim();
+                currentUserSearch = userSearchInput.value.trim();
                 currentUserPage = 1;
                 loadUsers();
             }
         });
         
-        prevPageBtn.addEventListener('click', function() {
-            if (currentUserPage > 1) {
-                currentUserPage--;
-                loadUsers();
-            }
-        });
+        // 分页控制
+        if (prevPageBtn) {
+            prevPageBtn.addEventListener('click', () => {
+                if (currentUserPage > 1) {
+                    currentUserPage--;
+                    loadUsers();
+                }
+            });
+        }
         
-        nextPageBtn.addEventListener('click', function() {
-            if (currentUserPage < totalUserPages) {
-                currentUserPage++;
-                loadUsers();
-            }
-        });
+        if (nextPageBtn) {
+            nextPageBtn.addEventListener('click', () => {
+                if (currentUserPage < totalUserPages) {
+                    currentUserPage++;
+                    loadUsers();
+                }
+            });
+        }
         
-        // 新增用户按钮事件
+        // 添加用户按钮
         if (addUserBtn) {
             addUserBtn.addEventListener('click', handleAddUser);
         }
         
-        // 订阅管理相关事件
+        // 添加订阅按钮
         if (addSubscriptionBtn) {
             addSubscriptionBtn.addEventListener('click', handleAddSubscription);
         }
+    }
+    
+    /**
+     * 处理分类筛选变更
+     */
+    async function handleCategoryFilterChange() {
+        const selectedCategory = promptCategoryFilter.value;
+        const fieldFilterContainer = document.getElementById('promptFieldFilterContainer');
+        const fieldFilter = document.getElementById('promptFieldFilter');
         
-        if (addFeatureBtn) {
-            addFeatureBtn.addEventListener('click', addFeatureItem);
+        if (selectedCategory === 'patent-writing' || 
+            selectedCategory === 'patent-search' || 
+            selectedCategory === 'patent-response') {
+            // 显示领域筛选器
+            fieldFilterContainer.style.display = 'block';
+            
+            try {
+                // 获取该类别下的所有领域
+                const fields = await window.backendApi.getPromptFields(selectedCategory);
+                
+                // 清空现有选项，保留默认选项
+                while (fieldFilter.options.length > 1) {
+                    fieldFilter.remove(1);
+                }
+                
+                // 添加领域选项
+                fields.forEach(field => {
+                    const option = document.createElement('option');
+                    option.value = field;
+                    
+                    // 设置显示名称
+                    let displayName = field;
+                    switch (field) {
+                        case 'mechanical': displayName = '机械'; break;
+                        case 'electrical': displayName = '电子电气'; break;
+                        case 'software': displayName = '软件'; break;
+                        case 'chemical': displayName = '化学'; break;
+                        case 'biomedical': displayName = '生物医药'; break;
+                        case 'energy': displayName = '能源环保'; break;
+                    }
+                    
+                    option.textContent = displayName;
+                    fieldFilter.appendChild(option);
+                });
+                
+                // 重置为全部
+                fieldFilter.value = '';
+            } catch (error) {
+                console.error('获取领域列表失败:', error);
+            }
+        } else {
+            // 隐藏领域筛选器
+            fieldFilterContainer.style.display = 'none';
+            
+            // 重置领域筛选值
+            if (fieldFilter) {
+                fieldFilter.value = '';
+            }
         }
         
-        // 订阅编辑模态框事件
-        if (closeSubscriptionModalBtn) {
-            closeSubscriptionModalBtn.addEventListener('click', closeSubscriptionModal);
+        // 加载提示词列表（仅按分类筛选）
+        loadPrompts(selectedCategory);
+    }
+    
+    /**
+     * 处理领域筛选变更
+     */
+    function handleFieldFilterChange() {
+        const selectedCategory = promptCategoryFilter.value;
+        const selectedField = document.getElementById('promptFieldFilter').value;
+        
+        // 加载提示词列表（按分类和领域筛选）
+        loadPrompts(selectedCategory, selectedField);
+    }
+    
+    /**
+     * 处理提示词模态框中的分类变更
+     */
+    function handlePromptCategoryChange() {
+        const selectedCategory = promptCategory.value;
+        const fieldContainer = document.getElementById('promptFieldContainer');
+        
+        if (selectedCategory === 'patent-writing' || 
+            selectedCategory === 'patent-search' || 
+            selectedCategory === 'patent-response') {
+            // 显示领域选择器
+            fieldContainer.style.display = 'block';
+        } else {
+            // 隐藏领域选择器
+            fieldContainer.style.display = 'none';
+            // 重置领域值
+            document.getElementById('promptField').value = '';
         }
-        
-        if (cancelSubscriptionBtn) {
-            cancelSubscriptionBtn.addEventListener('click', closeSubscriptionModal);
-        }
-        
-        if (saveSubscriptionBtn) {
-            saveSubscriptionBtn.addEventListener('click', handleSaveSubscription);
-        }
-        
-        // 删除订阅确认模态框事件
-        if (closeDeleteSubscriptionModalBtn) {
-            closeDeleteSubscriptionModalBtn.addEventListener('click', closeDeleteSubscriptionModal);
-        }
-        
-        if (cancelDeleteSubscriptionBtn) {
-            cancelDeleteSubscriptionBtn.addEventListener('click', closeDeleteSubscriptionModal);
-        }
-        
-        if (confirmDeleteSubscriptionBtn) {
-            confirmDeleteSubscriptionBtn.addEventListener('click', handleConfirmDeleteSubscription);
-        }
-        
-        // 用户编辑模态框事件
-        closeUserModalBtn.addEventListener('click', closeUserModal);
-        cancelUserBtn.addEventListener('click', closeUserModal);
-        saveUserBtn.addEventListener('click', handleSaveUser);
-        
-        // 角色修改确认模态框事件
-        closeRoleConfirmModalBtn.addEventListener('click', closeRoleConfirmModal);
-        cancelRoleChangeBtn.addEventListener('click', closeRoleConfirmModal);
-        confirmRoleChangeBtn.addEventListener('click', handleConfirmRoleChange);
-        
-        // API配置相关事件
-        if (saveApiConfigBtn) {
-            saveApiConfigBtn.addEventListener('click', handleSaveApiConfig);
-        }
-        
-        // 提示词管理模态框事件
-        closeModalBtn.addEventListener('click', closeModal);
-        cancelPromptBtn.addEventListener('click', closeModal);
-        savePromptBtn.addEventListener('click', handleSavePrompt);
-        
-        // 删除模态框操作
-        closeDeleteModalBtn.addEventListener('click', closeDeleteModal);
-        cancelDeleteBtn.addEventListener('click', closeDeleteModal);
-        confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
-        
-        // 绑定新增用户模态框相关事件
-        if (closeAddUserModalBtn) {
-            closeAddUserModalBtn.addEventListener('click', closeAddUserModal);
-        }
-        
-        if (cancelAddUserBtn) {
-            cancelAddUserBtn.addEventListener('click', closeAddUserModal);
-        }
-        
-        if (saveAddUserBtn) {
-            saveAddUserBtn.addEventListener('click', handleSaveAddUser);
-        }
-        
-        // 删除用户模态框事件
-        closeDeleteUserModalBtn.addEventListener('click', closeDeleteUserModal);
-        cancelDeleteUserBtn.addEventListener('click', closeDeleteUserModal);
-        confirmDeleteUserBtn.addEventListener('click', handleDeleteUser);
     }
     
     /**
@@ -455,7 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * 加载提示词列表
      */
-    async function loadPrompts(category = '') {
+    async function loadPrompts(category = '', field = '') {
         // 显示加载状态
         promptsLoadingState.style.display = 'block';
         promptsEmptyState.style.display = 'none';
@@ -463,8 +517,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             // 调用API获取提示词列表
-            const response = await window.backendApi.getAllPrompts(category);
-            const templates = response.templates || [];
+            const response = await window.backendApi.getAllPrompts(category, field);
+            const templates = response || [];
             
             // 渲染表格
             renderPromptsTable(templates);
@@ -504,57 +558,48 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'general': categoryDisplay = '通用对话'; break;
                 case 'patent-search': categoryDisplay = '专利检索'; break;
                 case 'patent-writing': categoryDisplay = '专利撰写'; break;
-                case 'patent-analysis': categoryDisplay = '专利分析'; break;
+                case 'patent-response': categoryDisplay = '专利答审'; break;
+            }
+            
+            // 格式化领域显示
+            let fieldDisplay = template.field || '';
+            switch(template.field) {
+                case 'mechanical': fieldDisplay = '机械'; break;
+                case 'electrical': fieldDisplay = '电子电气'; break;
+                case 'software': fieldDisplay = '软件'; break;
+                case 'chemical': fieldDisplay = '化学'; break;
+                case 'biomedical': fieldDisplay = '生物医药'; break;
+                case 'energy': fieldDisplay = '能源环保'; break;
+                case '': fieldDisplay = '通用'; break;
+                case null: fieldDisplay = '通用'; break;
             }
             
             // 格式化创建时间
             const createdAt = new Date(template.created_at);
-            const formattedDate = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}-${String(createdAt.getDate()).padStart(2, '0')}`;
+            const formattedDate = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}-${String(createdAt.getDate()).padStart(2, '0')} ${String(createdAt.getHours()).padStart(2, '0')}:${String(createdAt.getMinutes()).padStart(2, '0')}`;
             
+            // 创建表格行
             tr.innerHTML = `
                 <td>${template.id}</td>
                 <td>${template.name}</td>
-                <td>${categoryDisplay}</td>
-                <td>${template.is_public ? '公开' : '私有'}</td>
-                <td>${template.creator_id || '系统'}</td>
+                <td>${categoryDisplay}${fieldDisplay ? ` (${fieldDisplay})` : ''}</td>
+                <td>${template.is_public ? '<span class="badge badge-success">公开</span>' : '<span class="badge badge-secondary">私有</span>'}</td>
+                <td>${template.creator_id || 'System'}</td>
                 <td>${formattedDate}</td>
                 <td>
-                    <div class="action-buttons">
-                        <button class="action-button edit-button" data-id="${template.id}" title="编辑">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M11 4H4C3.44772 4 3 4.44772 3 5V19C3 19.5523 3.44772 20 4 20H18C18.5523 20 19 19.5523 19 19V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M18.5 2.5C18.7626 2.23735 19.1189 2.07855 19.5 2.07855C19.8811 2.07855 20.2374 2.23735 20.5 2.5C20.7626 2.76265 20.9214 3.11895 20.9214 3.5C20.9214 3.88105 20.7626 4.23735 20.5 4.5L12 13L9 14L10 11L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                        <button class="action-button delete-button" data-id="${template.id}" title="删除">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M4 7H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M5 7L6 19C6 19.5304 6.21071 20.0391 6.58579 20.4142C6.96086 20.7893 7.46957 21 8 21H16C16.5304 21 17.0391 20.7893 17.4142 20.4142C17.7893 20.0391 18 19.5304 18 19L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M9 7V4C9 3.73478 9.10536 3.48043 9.29289 3.29289C9.48043 3.10536 9.73478 3 10 3H14C14.2652 3 14.5196 3.10536 14.7071 3.29289C14.8946 3.48043 15 3.73478 15 4V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                    </div>
+                    <button class="btn btn-sm btn-secondary edit-btn" data-id="${template.id}">编辑</button>
+                    <button class="btn btn-sm btn-danger delete-btn" data-id="${template.id}">删除</button>
                 </td>
             `;
             
+            // 添加行到表格
             tbody.appendChild(tr);
-        });
-        
-        // 绑定编辑和删除按钮事件
-        document.querySelectorAll('.edit-button').forEach(button => {
-            button.addEventListener('click', function() {
-                const id = this.getAttribute('data-id');
-                handleEditPrompt(id);
-            });
-        });
-        
-        document.querySelectorAll('.delete-button').forEach(button => {
-            button.addEventListener('click', function() {
-                const id = this.getAttribute('data-id');
-                handleDeletePrompt(id);
-            });
+            
+            // 绑定编辑按钮事件
+            tr.querySelector('.edit-btn').addEventListener('click', () => handleEditPrompt(template.id));
+            
+            // 绑定删除按钮事件
+            tr.querySelector('.delete-btn').addEventListener('click', () => handleDeletePrompt(template.id));
         });
     }
     
@@ -578,30 +623,34 @@ document.addEventListener('DOMContentLoaded', function() {
      * 处理编辑提示词
      */
     async function handleEditPrompt(id) {
-        // 显示加载状态
-        promptFormError.textContent = '加载中...';
-        
-        // 显示模态框
-        modalOverlay.style.display = 'flex';
-        modalTitle.textContent = '编辑提示词';
-        
         try {
             // 获取提示词详情
-            const response = await window.backendApi.getPrompt(id);
+            const response = await window.backendApi.getPromptById(id);
             const template = response.template;
             
-            // 填充表单
-            promptId.value = template.id;
-            promptName.value = template.name;
-            promptCategory.value = template.category;
-            promptContent.value = template.content;
-            promptIsPublic.checked = template.is_public === 1;
+            if (!template) {
+                throw new Error('找不到提示词');
+            }
             
-            // 清除错误信息
-            promptFormError.textContent = '';
+            // 打开模态框
+            openPromptModal(template);
+            
+            // 根据分类显示/隐藏领域选择器
+            const selectedCategory = template.category;
+            const fieldContainer = document.getElementById('promptFieldContainer');
+            
+            if (selectedCategory === 'patent-writing' || 
+                selectedCategory === 'patent-search' || 
+                selectedCategory === 'patent-response') {
+                // 显示领域选择器
+                fieldContainer.style.display = 'block';
+            } else {
+                // 隐藏领域选择器
+                fieldContainer.style.display = 'none';
+            }
         } catch (error) {
             console.error('获取提示词详情失败:', error);
-            promptFormError.textContent = '加载提示词详情失败: ' + (error.message || '未知错误');
+            alert('获取提示词详情失败: ' + (error.message || '未知错误'));
         }
     }
     
@@ -647,6 +696,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const id = promptId.value;
         const name = promptName.value;
         const category = promptCategory.value;
+        const field = document.getElementById('promptField').value;
         const content = promptContent.value;
         const isPublic = promptIsPublic.checked;
         
@@ -663,19 +713,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 await window.backendApi.updatePrompt(id, {
                     name,
                     category,
+                    field,
                     content,
                     isPublic
                 });
             } else {
                 // 创建
-                await window.backendApi.createPrompt(name, category, content, isPublic);
+                await window.backendApi.createPrompt(name, category, content, isPublic, field);
             }
             
             // 关闭模态框
             closeModal();
             
             // 重新加载提示词列表
-            loadPrompts(promptCategoryFilter.value);
+            loadPrompts(promptCategoryFilter.value, document.getElementById('promptFieldFilter').value);
         } catch (error) {
             console.error('保存提示词失败:', error);
             promptFormError.textContent = '保存失败: ' + (error.message || '未知错误');
@@ -2016,10 +2067,24 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('promptId').value = prompt.id;
             document.getElementById('promptName').value = prompt.name;
             document.getElementById('promptCategory').value = prompt.category;
+            document.getElementById('promptField').value = prompt.field || '';
             document.getElementById('promptContent').value = prompt.content;
             document.getElementById('promptIsPublic').checked = prompt.is_public;
+            
+            // 处理领域选择器显示
+            const fieldContainer = document.getElementById('promptFieldContainer');
+            if (prompt.category === 'patent-writing' || 
+                prompt.category === 'patent-search' || 
+                prompt.category === 'patent-response') {
+                fieldContainer.style.display = 'block';
+            } else {
+                fieldContainer.style.display = 'none';
+            }
         } else {
             document.getElementById('promptId').value = '';
+            
+            // 默认隐藏领域选择器，除非选择专利相关分类
+            document.getElementById('promptFieldContainer').style.display = 'none';
         }
         
         // 显示模态框

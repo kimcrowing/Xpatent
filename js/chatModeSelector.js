@@ -43,10 +43,42 @@ document.addEventListener('DOMContentLoaded', function() {
     function getChatModes() {
         let modes = [];
         
+        // 检查是否有全局提示词模板数据
         if (window.PROMPT_TEMPLATES && window.PROMPT_TEMPLATES.chatModes) {
             modes = window.PROMPT_TEMPLATES.chatModes;
         } else {
-            console.warn('无法从服务器获取提示词模板，只使用通用对话模式');
+            try {
+                // 尝试从后端API获取提示词模板并转换为聊天模式格式
+                if (window.backendApi && window.backendApi.getAllPrompts) {
+                    // 异步获取数据，设置全局变量
+                    window.backendApi.getAllPrompts().then(response => {
+                        if (response && response.prompts && response.prompts.length > 0) {
+                            // 将API返回的提示词模板转换为聊天模式格式
+                            const chatModes = response.prompts.map(prompt => ({
+                                id: prompt.category,
+                                name: prompt.name,
+                                systemPrompt: prompt.content
+                            }));
+                            
+                            // 设置全局变量以便后续使用
+                            window.PROMPT_TEMPLATES = {
+                                chatModes: chatModes
+                            };
+                            
+                            console.log('成功从API加载提示词模板:', chatModes.length);
+                            
+                            // 重新初始化选择器
+                            checkSelectedChatMode();
+                        }
+                    }).catch(error => {
+                        console.error('从API加载提示词模板失败:', error);
+                    });
+                }
+            } catch (error) {
+                console.error('处理提示词模板时出错:', error);
+            }
+            
+            console.warn('使用默认聊天模式作为临时解决方案');
             modes = localChatModes;
         }
         
@@ -210,4 +242,185 @@ document.addEventListener('DOMContentLoaded', function() {
             chatModeDropdown.classList.remove('show');
         }
     });
-}); 
+});
+
+// 修改初始化函数，添加领域选择器
+async function initializeChatModeSelector() {
+    const container = document.getElementById('chat-mode-selector');
+    if (!container) return;
+
+    // 初始加载提示词类别
+    try {
+        // 获取所有提示词模板
+        const templates = await backendApi.getAllPrompts();
+        PROMPT_TEMPLATES = templates;
+        
+        // 提取不同的类别
+        const categories = Array.from(new Set(templates.map(t => t.category)));
+        
+        // 创建类别选择器
+        const categorySelect = document.createElement('select');
+        categorySelect.id = 'category-select';
+        categorySelect.className = 'form-select';
+        
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            
+            // 设置显示名称
+            let displayName = category;
+            switch (category) {
+                case 'general':
+                    displayName = '通用对话';
+                    break;
+                case 'patent-search':
+                    displayName = '专利查询';
+                    break;
+                case 'patent-writing':
+                    displayName = '专利撰写';
+                    break;
+                case 'patent-response':
+                    displayName = '专利答审';
+                    break;
+            }
+            
+            option.textContent = displayName;
+            categorySelect.appendChild(option);
+        });
+        
+        // 创建领域选择器（初始隐藏）
+        const fieldContainer = document.createElement('div');
+        fieldContainer.id = 'field-selector-container';
+        fieldContainer.style.display = 'none';
+        fieldContainer.className = 'mt-2';
+        
+        const fieldSelect = document.createElement('select');
+        fieldSelect.id = 'field-select';
+        fieldSelect.className = 'form-select';
+        
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = '选择技术领域（可选）';
+        fieldSelect.appendChild(defaultOption);
+        
+        fieldContainer.appendChild(fieldSelect);
+        
+        // 添加到容器
+        container.innerHTML = '';
+        container.appendChild(categorySelect);
+        container.appendChild(fieldContainer);
+        
+        // 类别变更事件
+        categorySelect.addEventListener('change', async () => {
+            const selectedCategory = categorySelect.value;
+            
+            // 根据选中的类别更新模板
+            updatePromptTemplate(selectedCategory);
+            
+            // 如果是专利撰写/查询/答审类别，则显示领域选择器并加载领域列表
+            if (selectedCategory === 'patent-writing' || 
+                selectedCategory === 'patent-search' || 
+                selectedCategory === 'patent-response') {
+                fieldContainer.style.display = 'block';
+                
+                try {
+                    // 获取该类别下的所有领域
+                    const fields = await backendApi.getPromptFields(selectedCategory);
+                    
+                    // 清空现有选项，保留默认选项
+                    while (fieldSelect.options.length > 1) {
+                        fieldSelect.remove(1);
+                    }
+                    
+                    // 添加领域选项
+                    fields.forEach(field => {
+                        const option = document.createElement('option');
+                        option.value = field;
+                        
+                        // 设置显示名称
+                        let displayName = field;
+                        switch (field) {
+                            case 'mechanical':
+                                displayName = '机械';
+                                break;
+                            case 'electrical':
+                                displayName = '电子电气';
+                                break;
+                            case 'software':
+                                displayName = '软件';
+                                break;
+                            case 'chemical':
+                                displayName = '化学';
+                                break;
+                            case 'biomedical':
+                                displayName = '生物医药';
+                                break;
+                            case 'energy':
+                                displayName = '能源环保';
+                                break;
+                        }
+                        
+                        option.textContent = displayName;
+                        fieldSelect.appendChild(option);
+                    });
+                    
+                    // 默认选择为空
+                    fieldSelect.value = '';
+                } catch (error) {
+                    console.error('获取领域列表失败:', error);
+                }
+            } else {
+                fieldContainer.style.display = 'none';
+            }
+        });
+        
+        // 领域变更事件
+        fieldSelect.addEventListener('change', async () => {
+            const selectedCategory = categorySelect.value;
+            const selectedField = fieldSelect.value;
+            
+            if (selectedField) {
+                try {
+                    // 获取特定领域的提示词模板
+                    const fieldTemplates = await backendApi.getPromptsByField(selectedCategory, selectedField);
+                    
+                    if (fieldTemplates && fieldTemplates.length > 0) {
+                        // 更新当前使用的提示词模板
+                        currentPrompt = fieldTemplates[0];
+                        
+                        // 触发自定义事件
+                        const event = new CustomEvent('promptTemplateChanged', { detail: currentPrompt });
+                        document.dispatchEvent(event);
+                    }
+                } catch (error) {
+                    console.error('获取领域提示词失败:', error);
+                }
+            } else {
+                // 如果未选择领域，则使用该类别的通用模板
+                updatePromptTemplate(selectedCategory);
+            }
+        });
+        
+        // 初始化时触发类别选择事件
+        categorySelect.dispatchEvent(new Event('change'));
+        
+    } catch (error) {
+        console.error('获取提示词模板失败:', error);
+        // 设置默认为通用对话
+        updatePromptTemplate('general');
+    }
+}
+
+// 更新提示词模板
+function updatePromptTemplate(category) {
+    // 从已加载的模板中查找匹配的类别
+    const matchingTemplates = PROMPT_TEMPLATES.filter(t => t.category === category && (!t.field || t.field === ''));
+    
+    if (matchingTemplates.length > 0) {
+        currentPrompt = matchingTemplates[0];
+        
+        // 触发自定义事件
+        const event = new CustomEvent('promptTemplateChanged', { detail: currentPrompt });
+        document.dispatchEvent(event);
+    }
+} 
