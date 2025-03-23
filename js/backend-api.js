@@ -125,126 +125,40 @@ async function getUserProfile() {
 /**
  * 获取所有提示词模板
  */
-async function getAllPrompts(category = '', field = '') {
-  try {
-    let url = '/prompts';
-    const params = [];
-    
-    if (category) {
-      params.push(`category=${encodeURIComponent(category)}`);
-    }
-    
-    if (field) {
-      params.push(`field=${encodeURIComponent(field)}`);
-    }
-    
-    if (params.length > 0) {
-      url += '?' + params.join('&');
-    }
-    
-    const response = await apiRequest(url);
-    return response;
-  } catch (error) {
-    console.error('获取提示词模板失败:', error);
-    throw error;
+async function getAllPrompts(category = null) {
+  let endpoint = '/prompts';
+  if (category) {
+    endpoint += `?category=${encodeURIComponent(category)}`;
   }
-}
-
-/**
- * 获取所有提示词模板
- */
-async function getAllPrompts() {
-  try {
-    const response = await apiRequest('/prompts');
-    return response;
-  } catch (error) {
-    console.error('获取提示词失败:', error);
-    throw error;
-  }
-}
-
-/**
- * 按领域获取提示词模板
- */
-async function getPromptsByField(category, field) {
-  try {
-    const response = await apiRequest(`/prompts/by-field?category=${encodeURIComponent(category)}&field=${encodeURIComponent(field)}`);
-    return response;
-  } catch (error) {
-    console.error('获取领域提示词失败:', error);
-    throw error;
-  }
-}
-
-/**
- * 获取特定类别下的所有领域
- */
-async function getPromptFields(category) {
-  try {
-    const response = await apiRequest(`/prompts/fields?category=${encodeURIComponent(category)}`);
-    return response;
-  } catch (error) {
-    console.error('获取提示词领域失败:', error);
-    throw error;
-  }
+  return apiRequest(endpoint);
 }
 
 /**
  * 获取单个提示词模板
  */
-async function getPromptById(id) {
-  try {
-    const response = await apiRequest(`/prompts/${id}`);
-    return response;
-  } catch (error) {
-    console.error('获取提示词模板失败:', error);
-    throw error;
-  }
+async function getPrompt(id) {
+  return apiRequest(`/prompts/${id}`);
 }
 
 /**
  * 创建新的提示词模板
  */
-async function createPrompt(name, category, content, isPublic, field = '') {
-  try {
-    const response = await apiRequest('/prompts', 'POST', {
-      name,
-      category,
-      content,
-      isPublic: isPublic ? 1 : 0,
-      field
-    });
-    return response;
-  } catch (error) {
-    console.error('创建提示词模板失败:', error);
-    throw error;
-  }
+async function createPrompt(name, category, content, isPublic = false) {
+  return apiRequest('/prompts', 'POST', { name, category, content, isPublic });
 }
 
 /**
  * 更新提示词模板
  */
 async function updatePrompt(id, data) {
-  try {
-    const response = await apiRequest(`/prompts/${id}`, 'PUT', data);
-    return response;
-  } catch (error) {
-    console.error('更新提示词模板失败:', error);
-    throw error;
-  }
+  return apiRequest(`/prompts/${id}`, 'PUT', data);
 }
 
 /**
  * 删除提示词模板
  */
 async function deletePrompt(id) {
-  try {
-    const response = await apiRequest(`/prompts/${id}`, 'DELETE');
-    return response;
-  } catch (error) {
-    console.error('删除提示词模板失败:', error);
-    throw error;
-  }
+  return apiRequest(`/prompts/${id}`, 'DELETE');
 }
 
 /**
@@ -400,61 +314,38 @@ async function setUserPermissions(userId, permissions) {
   localStorage.setItem('xpat_api_url', window.API_BASE_URL);
 })();
 
-// 向全局环境暴露API
+// 导出API函数
 window.backendApi = {
-  apiRequest,
-  register,
   login,
-  logout,
-  refreshToken,
-  checkAuth,
+  register,
   getUserProfile,
   getAllPrompts,
-  getPromptById,
+  getPrompt,
   createPrompt,
   updatePrompt,
   deletePrompt,
-  getPromptsByField,
-  getPromptFields,
-  getApiConfig,
-  updateApiConfig,
-  getUsers,
-  createUser,
-  updateUser,
-  deleteUser,
-  getUserStatistics,
-  getSubscriptions,
-  createSubscription,
-  updateSubscription,
-  deleteSubscription,
-  getUserSubscriptions,
-  addUserSubscription,
-  getSubscriptionStatistics,
-  getApiUsageStatistics,
-  resetUserApiQuota,
-  getUserPermissions,
-  getUserPermissionsByAdmin,
-  setUserPermissions,
-  sendOpenRouterRequest,
-  isAdmin: () => {
-    try {
-      const userInfo = JSON.parse(localStorage.getItem('xpat_user_info') || '{}');
-      return userInfo.role === 'admin';
-    } catch (e) {
-      return false;
-    }
-  },
   getSubscriptionPlans,
   getApiUsage,
+  isAdmin,
+  clearAuth,
+  getUserInfo,
   getAllUsers,
   updateUserRole,
+  resetUserApiQuota,
   getAllSubscriptionPlans,
   createSubscriptionPlan,
   updateSubscriptionPlan,
   deleteSubscriptionPlan,
   getApiUsageStats,
   getSubscriptionStats,
-  saveApiConfig
+  getApiConfig,
+  saveApiConfig,
+  sendOpenRouterRequest,
+  createUser,
+  deleteUser,
+  getUserPermissions,
+  getUserPermissionsByAdmin,
+  setUserPermissions
 };
 
 /**
