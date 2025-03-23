@@ -14,9 +14,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return; // 如果必要元素不存在，退出初始化
     }
     
-    // 模型列表 - 将DeepSeek作为默认放在最前面
+    // 模型列表
     const allModels = [
-        { id: 'deepseek/deepseek-r1:free', name: 'Deepseek (推荐)' },
+        { id: 'deepseek/deepseek-r1:free', name: 'Deepseek' },
         { id: 'anthropic/claude-3-opus:beta', name: 'Claude 3 Opus' },
         { id: 'anthropic/claude-3-sonnet:beta', name: 'Claude 3 Sonnet' },
         { id: 'anthropic/claude-3-haiku:beta', name: 'Claude 3 Haiku' },
@@ -43,8 +43,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('加载用户权限失败:', error);
-            // 加载失败时默认使用DeepSeek
-            selectModel('deepseek/deepseek-r1:free', 'Deepseek (推荐)');
         }
     }
     
@@ -123,12 +121,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 更新API中使用的模型
                 window.CURRENT_MODEL = savedModel;
             } else {
-                // 如果保存的模型不在可用列表中，使用DeepSeek模型
-                selectModel('deepseek/deepseek-r1:free', 'Deepseek (推荐)');
+                // 如果保存的模型不在可用列表中，使用第一个可用模型
+                if (availableModels.length > 0) {
+                    selectModel(availableModels[0].id, availableModels[0].name);
+                }
             }
         } else {
-            // 未保存过模型，默认使用DeepSeek
-            selectModel('deepseek/deepseek-r1:free', 'Deepseek (推荐)');
+            // 未保存过模型，使用第一个可用模型
+            const availableModels = getAvailableModels();
+            if (availableModels.length > 0) {
+                selectModel(availableModels[0].id, availableModels[0].name);
+            }
         }
     }
     
@@ -145,10 +148,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log(`模型已切换为: ${modelName} (${modelId})`);
     }
-    
-    // 初始时设置默认模型为DeepSeek
-    window.CURRENT_MODEL = 'deepseek/deepseek-r1:free';
-    currentModelText.textContent = 'Deepseek (推荐)';
     
     // 初始化时加载用户权限
     loadUserPermissions();

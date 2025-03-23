@@ -138,7 +138,7 @@
             <span>Xpat</span>
         </div>
         <div class="nav-controls">
-            <button class="icon-btn notification-btn" title="通知">
+            <button class="icon-btn notification-btn" title="通知" id="notificationBtn">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M10 2C6.68632 2 4 4.68632 4 8V13.5858L3.29289 14.2929C3.10536 14.4804 3 14.7348 3 15V16C3 16.5523 3.44772 17 4 17H16C16.5523 17 17 16.5523 17 16V15C17 14.7348 16.8946 14.4804 16.7071 14.2929L16 13.5858V8C16 4.68632 13.3137 2 10 2ZM10 20C8.89543 20 8 19.1046 8 18H12C12 19.1046 11.1046 20 10 20Z" fill="white"/>
                 </svg>
@@ -194,12 +194,38 @@
         </div>
     </header>
 
-    <!-- 聊天区域 -->
+    <!-- 会话侧边栏 -->
+    <div class="sessions-sidebar">
+        <div class="sessions-header">
+            <div class="sessions-title">历史对话</div>
+            <button class="new-session-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                新对话
+            </button>
+        </div>
+        <div id="sessionList" class="session-list">
+            <!-- 会话列表将由JS动态填充 -->
+        </div>
+    </div>
+    
+    <!-- 会话切换按钮（移动端） -->
+    <button class="toggle-sessions-btn" id="toggleSessionsBtn" aria-label="切换历史对话" title="显示历史对话">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+    
+    <!-- 聊天容器 -->
     <div class="chat-container">
-        <div class="messages" id="chatMessages">
+        <div id="messages" class="messages">
             <div class="welcome-message">
-                <h2>欢迎使用 Xpat</h2>
-                <p>请输入您的问题，我将为您提供帮助</p>
+                <h2>欢迎使用AI专利助手</h2>
+                <p>请输入您的问题，AI将为您提供专业解答</p>
             </div>
         </div>
         <div class="input-area">
@@ -233,17 +259,13 @@
                         <!-- 聊天模式选择按钮 -->
                         <button class="icon-btn chat-mode-selector" id="chatModeSelector" title="选择聊天模式">
                             <span id="currentChatMode">通用对话</span>
-                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M5.29289 7.29289C5.68342 6.90237 6.31658 6.90237 6.70711 7.29289L10 10.5858L13.2929 7.29289C13.6834 6.90237 14.3166 6.90237 14.7071 7.29289C15.0976 7.68342 15.0976 8.31658 14.7071 8.70711L10.7071 12.7071C10.3166 13.0976 9.68342 13.0976 9.29289 12.7071L5.29289 8.70711C4.90237 8.31658 4.90237 7.68342 5.29289 7.29289Z" fill="white"/>
-                            </svg>
+                            <i class="bi bi-chevron-down"></i>
                         </button>
                         
                         <!-- 模型选择按钮 -->
                         <button class="icon-btn model-selector" id="modelSelector" title="选择AI模型">
                             <span id="currentModel">Deepseek</span>
-                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M5.29289 7.29289C5.68342 6.90237 6.31658 6.90237 6.70711 7.29289L10 10.5858L13.2929 7.29289C13.6834 6.90237 14.3166 6.90237 14.7071 7.29289C15.0976 7.68342 15.0976 8.31658 14.7071 8.70711L10.7071 12.7071C10.3166 13.0976 9.68342 13.0976 9.29289 12.7071L5.29289 8.70711C4.90237 8.31658 4.90237 7.68342 5.29289 7.29289Z" fill="white"/>
-                            </svg>
+                            <i class="bi bi-chevron-down"></i>
                         </button>
                     </div>
                 </div>
@@ -284,6 +306,260 @@
         </div>
     </div>
 
+    <!-- 设置模态窗口 -->
+    <div class="modal-container" id="settingsModalContainer" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content" style="width: 500px; max-width: 90%;">
+            <div class="modal-header">
+                <h2>设置</h2>
+                <button class="close-btn" id="closeSettingsModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-container">
+                    <div class="settings-section">
+                        <h3>个人设置</h3>
+                        <div class="form-group">
+                            <label for="userNickname">用户昵称</label>
+                            <input type="text" id="userNickname" class="form-control" placeholder="请输入您的昵称">
+                        </div>
+                        <div class="form-group">
+                            <label for="userEmail">电子邮箱</label>
+                            <input type="email" id="userEmail" class="form-control" placeholder="请输入您的邮箱" disabled>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>系统设置</h3>
+                        <div class="form-group">
+                            <label for="language">界面语言</label>
+                            <select id="language" class="form-control">
+                                <option value="zh-CN" selected>简体中文</option>
+                                <option value="en-US">English</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="label-with-toggle">
+                                <span>自动保存会话历史</span>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="autoSaveHistory" checked>
+                                    <span class="toggle-slider"></span>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="label-with-toggle">
+                                <span>允许发送使用统计</span>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="allowMetrics" checked>
+                                    <span class="toggle-slider"></span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>高级设置</h3>
+                        <div class="form-group">
+                            <label for="defaultModel">默认模型</label>
+                            <select id="defaultModel" class="form-control">
+                                <option value="deepseek/deepseek-r1:free" selected>Deepseek</option>
+                                <option value="anthropic/claude-3-opus:beta">Claude 3 Opus</option>
+                                <option value="anthropic/claude-3-sonnet:beta">Claude 3 Sonnet</option>
+                                <option value="anthropic/claude-3-haiku:beta">Claude 3 Haiku</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="defaultChatMode">默认聊天模式</label>
+                            <select id="defaultChatMode" class="form-control">
+                                <option value="general" selected>通用对话</option>
+                                <option value="patent-search">专利检索</option>
+                                <option value="patent-writing">专利撰写</option>
+                                <option value="patent-analysis">专利答审</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="resetSettings" class="btn secondary-btn">恢复默认</button>
+                <button id="saveSettings" class="btn primary-btn">保存设置</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 帮助与反馈模态窗口 -->
+    <div class="modal-container" id="helpModalContainer" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content" style="width: 600px; max-width: 90%; height: 80%; max-height: 600px;">
+            <div class="modal-header">
+                <h2>帮助 & 反馈</h2>
+                <button class="close-btn" id="closeHelpModal">×</button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; padding: 0;">
+                <div class="tab-container help-tabs">
+                    <div class="tab-header">
+                        <button class="tab-btn active" data-tab="quickStart">快速入门</button>
+                        <button class="tab-btn" data-tab="chatMode">聊天模式</button>
+                        <button class="tab-btn" data-tab="models">模型介绍</button>
+                        <button class="tab-btn" data-tab="faq">常见问题</button>
+                        <button class="tab-btn" data-tab="feedback">意见反馈</button>
+                    </div>
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="quickStart">
+                            <div class="help-content">
+                                <h3>欢迎使用Xpat</h3>
+                                <p>Xpat是一个专业的智能助手，为您提供专业、准确的信息和帮助。以下是使用Xpat的基本步骤：</p>
+                                
+                                <h4>1. 开始聊天</h4>
+                                <p>在底部输入框中输入您的问题或需求，按下发送按钮或回车键发送消息。</p>
+                                
+                                <h4>2. 选择聊天模式</h4>
+                                <p>根据您的需求，选择合适的聊天模式，如专利检索、专利撰写等。</p>
+                                
+                                <h4>3. 上传文件</h4>
+                                <p>点击附件按钮上传PDF或Word文档，让AI助手帮您分析文档内容。</p>
+                                
+                                <h4>4. 个性化设置</h4>
+                                <p>通过设置菜单，您可以自定义界面、保存偏好设置等。</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="chatMode">
+                            <div class="help-content">
+                                <h3>聊天模式说明</h3>
+                                <p>Xpat提供多种专业聊天模式，每种模式针对不同场景进行了优化：</p>
+                                
+                                <div class="mode-card">
+                                    <h4>通用对话</h4>
+                                    <p>适用于日常交流和一般性问答，AI会以全能助手的身份回答各类问题。</p>
+                                </div>
+                                
+                                <div class="mode-card">
+                                    <h4>专利检索</h4>
+                                    <p>帮助您查找和了解相关专利信息，提供专业的专利检索建议和策略。</p>
+                                </div>
+                                
+                                <div class="mode-card">
+                                    <h4>专利撰写</h4>
+                                    <p>协助您撰写高质量的专利申请文档，提供专业的撰写建议和指导。</p>
+                                </div>
+                                
+                                <div class="mode-card">
+                                    <h4>专利答审</h4>
+                                    <p>分析和回复专利审查意见通知书，帮助您克服审查员提出的各类问题。</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="models">
+                            <div class="help-content">
+                                <h3>AI模型介绍</h3>
+                                <p>Xpat支持多种先进的AI模型，您可以根据需求选择适合的模型：</p>
+                                
+                                <div class="model-card">
+                                    <h4>Deepseek</h4>
+                                    <p>免费可用的高性能模型，在多种任务上表现良好。</p>
+                                    <span class="model-tag free">免费</span>
+                                </div>
+                                
+                                <div class="model-card">
+                                    <h4>Claude 3 Opus</h4>
+                                    <p>Anthropic公司的顶级大模型，具有强大的理解能力和创造性。</p>
+                                    <span class="model-tag premium">高级</span>
+                                </div>
+                                
+                                <div class="model-card">
+                                    <h4>Claude 3 Sonnet</h4>
+                                    <p>平衡性能和效率的中端模型，适合大多数专业应用场景。</p>
+                                    <span class="model-tag premium">高级</span>
+                                </div>
+                                
+                                <div class="model-card">
+                                    <h4>Claude 3 Haiku</h4>
+                                    <p>轻量级模型，响应迅速，适合简单任务和实时对话。</p>
+                                    <span class="model-tag premium">高级</span>
+                                </div>
+                                
+                                <div class="model-card">
+                                    <h4>Llama 3.1 8B</h4>
+                                    <p>Meta开源的轻量级模型，适合简单任务。</p>
+                                    <span class="model-tag free">免费</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="faq">
+                            <div class="help-content">
+                                <h3>常见问题</h3>
+                                
+                                <div class="faq-item">
+                                    <h4>如何升级到Pro版本？</h4>
+                                    <p>点击顶部导航栏中的"PRO"按钮，进入订阅页面，选择适合您的套餐完成订阅即可。</p>
+                                </div>
+                                
+                                <div class="faq-item">
+                                    <h4>忘记密码怎么办？</h4>
+                                    <p>在登录界面点击"忘记密码"，按照提示进行密码重置操作。</p>
+                                </div>
+                                
+                                <div class="faq-item">
+                                    <h4>如何更改默认模型？</h4>
+                                    <p>在设置页面的"高级设置"部分，您可以选择默认使用的AI模型。</p>
+                                </div>
+                                
+                                <div class="faq-item">
+                                    <h4>上传文件有大小限制吗？</h4>
+                                    <p>是的，当前PDF和Word文档上传限制为10MB。</p>
+                                </div>
+                                
+                                <div class="faq-item">
+                                    <h4>聊天记录会保存多久？</h4>
+                                    <p>默认情况下，聊天记录会保存30天。Pro用户可享有更长的保存时间。</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="feedback">
+                            <div class="help-content">
+                                <h3>意见反馈</h3>
+                                <p>我们非常重视您的意见和建议，它们将帮助我们不断改进产品。</p>
+                                
+                                <form id="feedbackForm">
+                                    <div class="form-group">
+                                        <label for="feedbackType">反馈类型</label>
+                                        <select id="feedbackType" class="form-control">
+                                            <option value="suggestion">功能建议</option>
+                                            <option value="bug">问题报告</option>
+                                            <option value="other">其他</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="feedbackContent">反馈内容</label>
+                                        <textarea id="feedbackContent" class="form-control" rows="6" placeholder="请详细描述您的意见或遇到的问题..."></textarea>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="contactEmail">联系邮箱 (选填)</label>
+                                        <input type="email" id="contactEmail" class="form-control" placeholder="留下您的邮箱，方便我们回复">
+                                    </div>
+                                    
+                                    <button type="submit" class="btn primary-btn btn-block">提交反馈</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加缺失的modelDropdown元素 -->
+    <div id="modelDropdown" class="dropdown-menu" style="display:none;"></div>
+
+    <!-- 添加缺失的chatModeDropdown元素 -->
+    <div id="chatModeDropdown" class="dropdown-menu" style="display:none;"></div>
+
+    <!-- 引入重构的辅助模块 -->
+    <script src="js/error-handler.js"></script>
+    <script src="js/auth-manager.js"></script>
+    <script src="js/ui-helper.js"></script>
     <script src="js/app.js?v=1.3"></script>
     <script src="js/chat.js?v=1.3"></script>
     <script src="js/theme.js?v=1.3"></script>

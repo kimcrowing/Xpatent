@@ -776,202 +776,623 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // 发送消息
-    async function sendMessage() {
-        const userInput = document.getElementById('userInput');
-        const message = userInput.value.trim();
-        const attachmentText = window.getAttachmentText ? window.getAttachmentText() : '';
-        
-        if (!message && !attachmentText) {
-            return; // 如果没有输入和附件，则不发送
-        }
-        
-        // 清空输入框
-        userInput.value = '';
-        
-        console.log('发送消息:', message);
-        
-        let detectedDomain = null;
-        let specializedTemplate = null;
-        
-        // 检查是否有检测到的专利领域
-        if (window.DETECTED_PATENT_DOMAIN && typeof window.DETECTED_PATENT_DOMAIN === 'string') {
-            detectedDomain = window.DETECTED_PATENT_DOMAIN;
-            console.log('检测到专利领域:', detectedDomain);
-            
-            // 尝试获取专利领域的专用提示词
-            try {
-                // 获取当前聊天模式
-                const currentMode = localStorage.getItem('selected_chat_mode') || 'general';
-                
-                const response = await fetch(`${window.API_BASE_URL}/prompts/domain?domain=${encodeURIComponent(detectedDomain)}&mode=${encodeURIComponent(currentMode)}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.prompt) {
-                        specializedTemplate = data.prompt;
-                        console.log('使用专用模板:', specializedTemplate.substring(0, 50) + '...');
-                    }
-                }
-            } catch (error) {
-                console.error('获取专用提示词失败:', error);
-            }
-        }
-        
-        // 创建用户消息文本
-        let fullMessage = '';
-        
-        // 如果有附件，将其添加到消息中
-        if (attachmentText) {
-            fullMessage = `${message}\n\n附件内容:\n${attachmentText}`;
-        } else {
-            fullMessage = message;
-        }
-        
-        // 添加用户消息到聊天
-        addUserMessage(message);
-        
-        // 添加加载指示器
-        const loadingIndicator = addLoadingIndicator();
-        
+    // 发送消息到后端API
+    async function sendToBackend(requestData) {
         try {
-            // 构建请求
-            const apiRequest = buildAPIRequest(fullMessage, specializedTemplate);
-            
-            if (apiRequest.error) {
-                // 如果构建请求时发现错误，显示错误消息
-                loadingIndicator.remove();
-                addAIMessage(apiRequest.message);
-                return;
+            // 检查是否有API基础URL
+            if (!window.API_BASE_URL) {
+                throw new Error('API配置信息缺失');
             }
-            
-            let response;
-            
-            // 优先使用OpenRouter API
-            try {
-                // 获取当前选择的模型，如果未指定则使用默认
-                const selectedModel = window.CURRENT_MODEL || 'deepseek/deepseek-r1:free';
-                
-                // 构建消息数组
-                const messages = [];
-                
-                // 添加系统提示词
-                if (apiRequest.systemPrompt && apiRequest.systemPrompt.trim()) {
-                    messages.push({
-                        role: 'system',
-                        content: apiRequest.systemPrompt
-                    });
-                }
-                
-                // 添加用户消息
-                messages.push({
-                    role: 'user',
-                    content: apiRequest.message
-                });
-                
-                console.log('调用OpenRouter API');
-                response = await callOpenRouterAPI(messages, selectedModel);
-            } catch (openRouterError) {
-                console.error('OpenRouter API调用失败:', openRouterError);
-                
-                // 回退到服务器端调用
-                console.log('回退到服务器代理调用');
-                const serverResponse = await callModelViaServer(apiRequest.message, window.CURRENT_MODEL);
-                response = serverResponse.text;
+
+            // 获取认证令牌
+            const token = localStorage.getItem('xpat_auth_token');
+            if (!token) {
+                throw new Error('请先登录');
             }
-            
-            // 移除加载指示器
-            loadingIndicator.remove();
-            
-            // 添加AI回复到聊天
-            addAIMessage(response);
+
+            // 发送请求
+            const response = await fetch(`${window.API_BASE_URL}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            // 检查响应状态
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `请求失败: ${response.status}`);
+            }
+
+            // 返回响应数据
+            return await response.json();
         } catch (error) {
-            console.error('处理消息失败:', error);
-            
-            // 移除加载指示器
-            loadingIndicator.remove();
-            
-            // 添加错误消息
-            addAIMessage(`很抱歉，我遇到了一个问题: ${error.message || '未知错误'}`);
+            console.error('API请求错误:', error);
+            throw error;
         }
     }
-    
-    // 发送按钮点击事件
+
+    // 当发送按钮点击时发送消息
     if (sendButton) {
         sendButton.addEventListener('click', () => {
-            console.log('发送按钮点击');
+            // 初始化会话（如果需要）
+            if (window.sessionManager && !window.sessionManager.getCurrentSessionId()) {
+                window.sessionManager.createSession();
+            }
+            
             sendMessage();
         });
-    } else {
-        console.error('找不到发送按钮元素(sendButton)');
     }
     
-    // Enter键发送消息
+    // 按Enter键发送消息
     if (userInput) {
-        userInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                console.log('检测到Enter键按下');
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
+                
+                // 初始化会话（如果需要）
+                if (window.sessionManager && !window.sessionManager.getCurrentSessionId()) {
+                    window.sessionManager.createSession();
+                }
+                
                 sendMessage();
             }
         });
     }
+});
+
+// 发送消息函数
+function sendMessage() {
+    const userInput = document.getElementById('userInput');
+    const userMessage = userInput.value.trim();
     
-    // 设置消息操作事件
-    chatMessages.addEventListener('click', (e) => {
-        const actionBtn = e.target.closest('.action-btn');
-        if (!actionBtn) return;
+    if (!userMessage) return;
+    
+    // 清空输入框
+    userInput.value = '';
+    
+    // 添加用户消息到聊天界面
+    appendMessage('user', userMessage);
+    
+    // 保存消息到当前会话
+    const userMessageObj = {
+        role: 'user',
+        content: userMessage,
+        timestamp: new Date().toISOString()
+    };
+    
+    // 使用会话管理器保存消息
+    if (window.sessionManager) {
+        window.sessionManager.addMessageToCurrentSession(userMessageObj);
+    }
+    
+    // 显示加载动画
+    const loadingIndicator = addLoadingIndicator();
+    
+    // 检查是否有附件
+    const extractedText = window.extractedText || '';
+    
+    // 获取当前聊天模式的系统提示词
+    const systemPrompt = window.getChatModeSystemPrompt?.() || 
+        '你是一个全能助手，请帮助用户解答各种问题。';
+    
+    // 获取当前选择的模型
+    const model = window.CURRENT_MODEL || 'deepseek/deepseek-r1:free';
+    
+    // 构建请求数据
+    const requestData = {
+        model,
+        messages: [
+            {
+                role: 'system',
+                content: systemPrompt
+            },
+            {
+                role: 'user',
+                content: extractedText ? 
+                    `我上传了一个文档，内容如下:\n\n${extractedText}\n\n我的问题是: ${userMessage}` :
+                    userMessage
+            }
+        ]
+    };
+    
+    // 从会话管理器获取历史消息并加入请求
+    if (window.sessionManager) {
+        const currentSession = window.sessionManager.getCurrentSession();
         
-        const messageDiv = actionBtn.closest('.message');
-        const messageContent = messageDiv.querySelector('.message-content').textContent;
+        // 获取最近的消息（最多10条，以保持请求大小合理）
+        const recentMessages = currentSession.messages
+            .slice(0, -1) // 排除刚刚添加的当前用户消息
+            .slice(-10) // 最近10条消息
+            .filter(msg => msg.role === 'user' || msg.role === 'assistant') // 只包含用户和助手消息
+            .map(msg => ({ role: msg.role, content: msg.content })); // 只保留角色和内容
         
-        if (actionBtn.title === '复制') {
-            navigator.clipboard.writeText(messageContent)
-                .then(() => {
-                    // 显示复制成功提示
-                    actionBtn.innerHTML = `
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M6.5 12L2 7.5L3.5 6L6.5 9L12.5 3L14 4.5L6.5 12Z" fill="#4CAF50"/>
-                        </svg>
-                    `;
-                    setTimeout(() => {
-                        actionBtn.innerHTML = `
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M2 2V11H5V14H14V5H11V2H2ZM3 3H10V10H3V3ZM11 6H13V13H6V11H11V6Z" fill="white"/>
-                            </svg>
-                        `;
-                    }, 2000);
-                });
+        // 如果有历史消息，插入到系统消息和当前用户消息之间
+        if (recentMessages.length > 0) {
+            requestData.messages.splice(1, 0, ...recentMessages);
         }
-    });
+    }
     
-    // 添加系统消息的函数
-    function addSystemMessage(content) {
-        if (!content) return;
+    // 发送请求到API
+    sendToBackend(requestData)
+        .then(response => {
+            // 移除加载指示器
+            if (loadingIndicator && loadingIndicator.parentNode) {
+                loadingIndicator.parentNode.removeChild(loadingIndicator);
+            }
+            
+            if (response && response.choices && response.choices.length > 0) {
+                const assistantMessage = response.choices[0].message.content;
+                
+                // 添加助手回复到聊天界面
+                appendMessage('assistant', assistantMessage);
+                
+                // 保存助手回复到当前会话
+                const assistantMessageObj = {
+                    role: 'assistant',
+                    content: assistantMessage,
+                    timestamp: new Date().toISOString()
+                };
+                
+                if (window.sessionManager) {
+                    window.sessionManager.addMessageToCurrentSession(assistantMessageObj);
+                }
+            } else {
+                appendMessage('assistant', '抱歉，我无法处理您的请求，请稍后再试。');
+            }
+        })
+        .catch(error => {
+            console.error('发送消息时出错:', error);
+            
+            // 移除加载指示器
+            if (loadingIndicator && loadingIndicator.parentNode) {
+                loadingIndicator.parentNode.removeChild(loadingIndicator);
+            }
+            
+            // 显示错误消息
+            const errorMessage = error.message || '发送消息时出错，请稍后再试';
+            appendMessage('assistant', `抱歉，出现了问题：${errorMessage}`);
+        });
         
-        const messagesContainer = document.getElementById('messages');
+    // 清除已提取的文本
+    window.extractedText = '';
+    
+    // 隐藏附件信息
+    const attachmentInfo = document.getElementById('attachmentInfo');
+    if (attachmentInfo) {
+        attachmentInfo.style.display = 'none';
+    }
+    const fileName = document.getElementById('fileName');
+    if (fileName) {
+        fileName.textContent = '';
+    }
+}
+
+// 显示加载指示器
+function showTypingIndicator() {
+    return addLoadingIndicator();
+}
+
+// 移除加载指示器
+function removeTypingIndicator() {
+    const loadingIndicator = document.querySelector('.message.ai-message.loading');
+    if (loadingIndicator && loadingIndicator.parentNode) {
+        loadingIndicator.parentNode.removeChild(loadingIndicator);
+    }
+}
+
+// 会话管理相关功能
+const sessionManager = {
+    sessions: [],
+    currentSessionId: null,
+    
+    // 初始化会话管理器
+    init() {
+        console.log('初始化会话管理器');
+        this.loadSessions();
         
-        // 创建系统消息元素
-        const systemMessageElement = document.createElement('div');
-        systemMessageElement.className = 'message system-message';
+        // 如果没有会话或当前会话不存在，创建一个新会话
+        if (!this.sessions.length || !this.getCurrentSession()) {
+            this.createSession();
+        }
         
-        // 创建消息文本元素
-        const messageTextElement = document.createElement('div');
-        messageTextElement.className = 'message-text';
-        messageTextElement.textContent = content;
+        // 渲染会话列表
+        this.renderSessionList();
         
-        // 将文本元素添加到系统消息元素
-        systemMessageElement.appendChild(messageTextElement);
+        // 绑定事件
+        this.bindEvents();
+    },
+    
+    // 创建新会话
+    createSession(title = '', metadata = {}) {
+        const sessionId = 'session_' + Date.now();
+        const timestamp = new Date().toISOString();
         
-        // 将系统消息添加到消息容器
-        messagesContainer.appendChild(systemMessageElement);
+        // 如果未提供标题，生成默认标题
+        if (!title) {
+            const date = new Date();
+            title = `对话 ${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+        }
+        
+        const newSession = {
+            id: sessionId,
+            title,
+            messages: [],
+            created: timestamp,
+            updated: timestamp,
+            metadata
+        };
+        
+        this.sessions.unshift(newSession);
+        this.setCurrentSessionId(sessionId);
+        this.saveAllSessions();
+        this.renderSessionList();
+        
+        return sessionId;
+    },
+    
+    // 保存会话
+    saveSession(session) {
+        // 更新最后修改时间
+        session.updated = new Date().toISOString();
+        
+        // 在现有会话中查找匹配的ID
+        const index = this.sessions.findIndex(s => s.id === session.id);
+        
+        if (index !== -1) {
+            // 更新现有会话
+            this.sessions[index] = session;
+        } else {
+            // 添加新会话到列表开头
+            this.sessions.unshift(session);
+        }
+        
+        this.saveAllSessions();
+        this.renderSessionList();
+    },
+    
+    // 获取所有会话
+    getAllSessions() {
+        return this.sessions;
+    },
+    
+    // 保存所有会话到本地存储
+    saveAllSessions() {
+        // 按最后更新时间排序会话
+        this.sessions.sort((a, b) => new Date(b.updated) - new Date(a.updated));
+        
+        // 保存到localStorage
+        localStorage.setItem('chat_sessions', JSON.stringify(this.sessions));
+        // 保存当前会话ID
+        localStorage.setItem('current_session_id', this.currentSessionId);
+    },
+    
+    // 从本地存储加载会话
+    loadSessions() {
+        try {
+            // 加载会话列表
+            const savedSessions = localStorage.getItem('chat_sessions');
+            if (savedSessions) {
+                this.sessions = JSON.parse(savedSessions);
+            }
+            
+            // 加载当前会话ID
+            this.currentSessionId = localStorage.getItem('current_session_id');
+            
+            console.log(`已加载${this.sessions.length}个会话`);
+        } catch (error) {
+            console.error('加载会话时出错:', error);
+            this.sessions = [];
+            this.currentSessionId = null;
+        }
+    },
+    
+    // 设置当前会话ID
+    setCurrentSessionId(sessionId) {
+        this.currentSessionId = sessionId;
+        localStorage.setItem('current_session_id', sessionId);
+        
+        // 渲染会话列表（高亮当前会话）
+        this.renderSessionList();
+        
+        // 加载当前会话的消息
+        this.loadSessionMessages(sessionId);
+    },
+    
+    // 获取当前会话ID
+    getCurrentSessionId() {
+        return this.currentSessionId;
+    },
+    
+    // 获取当前会话
+    getCurrentSession() {
+        if (!this.currentSessionId) return null;
+        return this.sessions.find(session => session.id === this.currentSessionId);
+    },
+    
+    // 获取指定ID的会话
+    getSessionById(sessionId) {
+        return this.sessions.find(session => session.id === sessionId);
+    },
+    
+    // 删除会话
+    deleteSession(sessionId) {
+        const index = this.sessions.findIndex(session => session.id === sessionId);
+        
+        if (index !== -1) {
+            this.sessions.splice(index, 1);
+            
+            // 如果删除的是当前会话，则切换到第一个会话或创建新会话
+            if (this.currentSessionId === sessionId) {
+                if (this.sessions.length > 0) {
+                    this.setCurrentSessionId(this.sessions[0].id);
+                } else {
+                    this.createSession();
+                }
+            }
+            
+            this.saveAllSessions();
+            this.renderSessionList();
+        }
+    },
+    
+    // 添加消息到当前会话
+    addMessageToCurrentSession(message) {
+        const currentSession = this.getCurrentSession();
+        
+        if (currentSession) {
+            // 添加消息
+            currentSession.messages.push(message);
+            
+            // 如果是用户消息且是会话的第一条消息，使用该消息更新会话标题
+            if (message.role === 'user' && currentSession.messages.length === 1) {
+                // 使用用户消息的前20个字符作为标题
+                const newTitle = message.content.length > 20 
+                    ? message.content.substring(0, 20) + '...' 
+                    : message.content;
+                
+                currentSession.title = newTitle;
+            }
+            
+            // 更新最后修改时间
+            currentSession.updated = new Date().toISOString();
+            
+            // 保存会话
+            this.saveSession(currentSession);
+            
+            return true;
+        }
+        
+        return false;
+    },
+    
+    // 清空当前会话的消息
+    clearCurrentSessionMessages() {
+        const currentSession = this.getCurrentSession();
+        
+        if (currentSession) {
+            currentSession.messages = [];
+            currentSession.title = `新对话 ${new Date().toLocaleString('zh-CN', {
+                month: 'numeric',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            })}`;
+            currentSession.updated = new Date().toISOString();
+            
+            this.saveSession(currentSession);
+            
+            // 清空聊天界面
+            const chatMessages = document.getElementById('messages');
+            if (chatMessages) {
+                chatMessages.innerHTML = '';
+            }
+            
+            return true;
+        }
+        
+        return false;
+    },
+    
+    // 重命名会话
+    renameSession(sessionId, newTitle) {
+        const session = this.getSessionById(sessionId);
+        
+        if (session) {
+            session.title = newTitle;
+            session.updated = new Date().toISOString();
+            
+            this.saveSession(session);
+            return true;
+        }
+        
+        return false;
+    },
+    
+    // 加载会话的消息到聊天界面
+    loadSessionMessages(sessionId) {
+        // 清空当前聊天界面
+        const chatMessages = document.getElementById('messages');
+        if (!chatMessages) return;
+        
+        chatMessages.innerHTML = '';
+        
+        // 如果没有指定sessionId，使用当前会话
+        const session = sessionId 
+            ? this.getSessionById(sessionId) 
+            : this.getCurrentSession();
+        
+        if (!session || !session.messages || session.messages.length === 0) {
+            // 如果没有消息，显示欢迎消息
+            chatMessages.innerHTML = `
+                <div class="welcome-message">
+                    <h2>欢迎使用AI专利助手</h2>
+                    <p>请输入您的问题，AI将为您提供专业解答</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // 渲染每条消息
+        session.messages.forEach(message => {
+            if (message.role === 'user') {
+                appendMessage('user', message.content);
+            } else if (message.role === 'assistant') {
+                appendMessage('assistant', message.content);
+            } else if (message.role === 'system') {
+                // 在界面上显示系统消息
+                const systemMsg = document.createElement('div');
+                systemMsg.className = 'message system-message';
+                systemMsg.textContent = message.content;
+                chatMessages.appendChild(systemMsg);
+            }
+        });
         
         // 滚动到底部
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    },
+    
+    // 渲染会话列表
+    renderSessionList() {
+        const sessionList = document.getElementById('sessionList');
+        if (!sessionList) return;
+        
+        // 清空现有列表
+        sessionList.innerHTML = '';
+        
+        if (this.sessions.length === 0) {
+            // 显示空状态
+            sessionList.innerHTML = '<div class="empty-sessions">暂无历史会话</div>';
+            return;
+        }
+        
+        // 按最后更新时间排序会话
+        const sortedSessions = [...this.sessions].sort((a, b) => 
+            new Date(b.updated) - new Date(a.updated)
+        );
+        
+        // 渲染每个会话
+        sortedSessions.forEach(session => {
+            const sessionItem = document.createElement('div');
+            sessionItem.className = 'session-item';
+            sessionItem.dataset.id = session.id;
+            
+            // 如果是当前会话，添加active类
+            if (session.id === this.currentSessionId) {
+                sessionItem.classList.add('active');
+            }
+            
+            // 显示会话标题和时间
+            const date = new Date(session.updated);
+            const formattedDate = `${date.getMonth() + 1}月${date.getDate()}日`;
+            
+            sessionItem.innerHTML = `
+                <div class="session-info">
+                    <div class="session-title" title="${session.title}">${session.title}</div>
+                    <div class="session-date">${formattedDate}</div>
+                </div>
+                <div class="session-actions">
+                    <button class="rename-session" title="重命名">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="delete-session" title="删除">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            sessionList.appendChild(sessionItem);
+        });
+    },
+    
+    // 绑定事件处理程序
+    bindEvents() {
+        // 获取会话列表元素
+        const sessionList = document.getElementById('sessionList');
+        if (!sessionList) return;
+        
+        // 委托点击事件
+        sessionList.addEventListener('click', (e) => {
+            // 处理会话项点击
+            const sessionItem = e.target.closest('.session-item');
+            if (sessionItem && !e.target.closest('.session-actions')) {
+                const sessionId = sessionItem.dataset.id;
+                if (sessionId) {
+                    this.setCurrentSessionId(sessionId);
+                }
+            }
+            
+            // 处理重命名按钮点击
+            if (e.target.closest('.rename-session')) {
+                const sessionItem = e.target.closest('.session-item');
+                const sessionId = sessionItem.dataset.id;
+                if (sessionId) {
+                    this.promptRenameSession(sessionId);
+                }
+                e.stopPropagation();
+            }
+            
+            // 处理删除按钮点击
+            if (e.target.closest('.delete-session')) {
+                const sessionItem = e.target.closest('.session-item');
+                const sessionId = sessionItem.dataset.id;
+                if (sessionId) {
+                    this.promptDeleteSession(sessionId);
+                }
+                e.stopPropagation();
+            }
+        });
+        
+        // 处理新会话按钮点击
+        const newSessionBtn = document.querySelector('.new-session-btn');
+        if (newSessionBtn) {
+            newSessionBtn.addEventListener('click', () => {
+                this.createSession();
+                
+                // 清空输入框，聚焦
+                const userInput = document.getElementById('userInput');
+                if (userInput) {
+                    userInput.value = '';
+                    userInput.focus();
+                }
+            });
+        }
+    },
+    
+    // 弹出重命名会话对话框
+    promptRenameSession(sessionId) {
+        const session = this.getSessionById(sessionId);
+        if (!session) return;
+        
+        const newTitle = prompt('请输入新的会话名称:', session.title);
+        if (newTitle !== null && newTitle.trim() !== '') {
+            this.renameSession(sessionId, newTitle.trim());
+        }
+    },
+    
+    // 弹出删除会话确认对话框
+    promptDeleteSession(sessionId) {
+        const session = this.getSessionById(sessionId);
+        if (!session) return;
+        
+        if (confirm(`确定要删除会话"${session.title}"吗？此操作无法撤销。`)) {
+            this.deleteSession(sessionId);
+        }
     }
+};
+
+// 全局暴露会话管理器
+window.sessionManager = sessionManager;
+
+// 初始化会话管理器
+document.addEventListener('DOMContentLoaded', () => {
+    sessionManager.init();
 }); 

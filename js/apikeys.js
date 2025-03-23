@@ -5,6 +5,108 @@
 // API基础URL
 const API_BASE_URL = window.API_BASE_URL || '';
 
+// 创建apiKeys对象，用于暴露公共方法
+const apiKeys = {
+  init: function() {
+    loadApiKeys();
+    
+    // 绑定表单提交事件
+    const form = document.getElementById('apikey-form');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveApiKey();
+      });
+    }
+    
+    // 显示支持的提供商
+    displaySupportedProviders();
+  },
+  
+  deleteApiKey: function(id) {
+    // 避免递归调用，直接实现删除逻辑
+    if (!confirm('确定要删除这个API密钥吗?')) return;
+    
+    try {
+      showLoading('keys-list');
+      
+      fetch(`${window.API_BASE_URL}/api/apikeys/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(data => {
+            throw new Error(data.message || '删除API密钥失败');
+          });
+        }
+        return response.json();
+      })
+      .then(() => {
+        // 刷新密钥列表
+        loadApiKeys();
+        showAlert('success', '密钥已删除');
+      })
+      .catch(error => {
+        console.error('删除API密钥失败:', error);
+        showAlert('error', `删除失败: ${error.message}`);
+      })
+      .finally(() => {
+        hideLoading('keys-list');
+      });
+    } catch (error) {
+      console.error('删除API密钥时出错:', error);
+      showAlert('error', `操作失败: ${error.message}`);
+      hideLoading('keys-list');
+    }
+  },
+  
+  toggleApiKey: function(id, currentState) {
+    // 避免递归调用，直接实现切换逻辑
+    try {
+      showLoading('keys-list');
+      
+      fetch(`${window.API_BASE_URL}/api/apikeys/${id}/toggle`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ is_active: !currentState })
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(data => {
+            throw new Error(data.message || '更新API密钥状态失败');
+          });
+        }
+        return response.json();
+      })
+      .then(result => {
+        // 刷新密钥列表
+        loadApiKeys();
+        showAlert('success', result.message);
+      })
+      .catch(error => {
+        console.error('更新API密钥状态失败:', error);
+        showAlert('error', `操作失败: ${error.message}`);
+      })
+      .finally(() => {
+        hideLoading('keys-list');
+      });
+    } catch (error) {
+      console.error('更新API密钥状态时出错:', error);
+      showAlert('error', `操作失败: ${error.message}`);
+      hideLoading('keys-list');
+    }
+  }
+};
+
+// 将apiKeys对象暴露给全局
+window.apiKeys = apiKeys;
+
 /**
  * 初始化API密钥管理页面
  */
@@ -33,7 +135,7 @@ async function loadApiKeys() {
   try {
     showLoading('keys-list');
     
-    const response = await fetch(`${API_BASE_URL}/api/apikeys/me`, {
+    const response = await fetch(`${window.API_BASE_URL}/api/apikeys/me`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
       }
@@ -68,7 +170,7 @@ async function saveApiKey() {
     
     showLoading('apikey-form');
     
-    const response = await fetch(`${API_BASE_URL}/api/apikeys`, {
+    const response = await fetch(`${window.API_BASE_URL}/api/apikeys`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
@@ -96,76 +198,6 @@ async function saveApiKey() {
     showAlert('error', `保存失败: ${error.message}`);
   } finally {
     hideLoading('apikey-form');
-  }
-}
-
-/**
- * 删除API密钥
- * @param {number} id - 密钥ID
- */
-async function deleteApiKey(id) {
-  if (!confirm('确定要删除这个API密钥吗?')) return;
-  
-  try {
-    showLoading('keys-list');
-    
-    const response = await fetch(`${API_BASE_URL}/api/apikeys/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
-      }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || '删除API密钥失败');
-    }
-    
-    // 刷新密钥列表
-    loadApiKeys();
-    
-    showAlert('success', '密钥已删除');
-  } catch (error) {
-    console.error('删除API密钥失败:', error);
-    showAlert('error', `删除失败: ${error.message}`);
-  } finally {
-    hideLoading('keys-list');
-  }
-}
-
-/**
- * 切换API密钥状态（启用/禁用）
- * @param {number} id - 密钥ID
- * @param {boolean} currentState - 当前状态
- */
-async function toggleApiKey(id, currentState) {
-  try {
-    showLoading('keys-list');
-    
-    const response = await fetch(`${API_BASE_URL}/api/apikeys/${id}/toggle`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ is_active: !currentState })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || '更新API密钥状态失败');
-    }
-    
-    // 刷新密钥列表
-    loadApiKeys();
-    
-    const result = await response.json();
-    showAlert('success', result.message);
-  } catch (error) {
-    console.error('更新API密钥状态失败:', error);
-    showAlert('error', `操作失败: ${error.message}`);
-  } finally {
-    hideLoading('keys-list');
   }
 }
 
@@ -323,13 +355,4 @@ function showAlert(type, message) {
       alertContainer.removeChild(alertElement);
     }, 150);
   }, 5000);
-}
-
-// 导出模块函数
-window.apiKeys = {
-  init: initApiKeysPage,
-  load: loadApiKeys,
-  save: saveApiKey,
-  delete: deleteApiKey,
-  toggle: toggleApiKey
-}; 
+} 

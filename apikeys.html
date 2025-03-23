@@ -109,11 +109,11 @@
     
     // 声明全局函数，供HTML中的onclick调用
     function deleteApiKey(id) {
-      if (window.apiKeys) window.apiKeys.delete(id);
+      if (window.apiKeys) window.apiKeys.deleteApiKey(id);
     }
     
     function toggleApiKey(id, currentState) {
-      if (window.apiKeys) window.apiKeys.toggle(id, currentState);
+      if (window.apiKeys) window.apiKeys.toggleApiKey(id, currentState);
     }
   </script>
 </body>

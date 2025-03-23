@@ -79,9 +79,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // 用户菜单交互 - 完全重写
-    const userMenuBtn = document.getElementById('userMenuBtn');
+    // 获取用户菜单元素，在整个DOM加载函数中复用
     const userMenu = document.getElementById('userMenu');
+    const userMenuBtn = document.getElementById('userMenuBtn');
     
     console.log('用户菜单元素检查:', {
         userMenuBtn: userMenuBtn ? '找到' : '未找到',
@@ -247,4 +247,300 @@ document.addEventListener('DOMContentLoaded', () => {
             if (sendButton) sendButton.setAttribute('disabled', true);
         }
     });
+    
+    // 通知按钮点击事件
+    const notificationBtn = document.getElementById('notificationBtn');
+    if (notificationBtn) {
+        notificationBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // 如果uiHelper已加载，调用显示通知面板方法
+            if (window.uiHelper && typeof window.uiHelper.showNotificationPanel === 'function') {
+                window.uiHelper.showNotificationPanel();
+            } else {
+                console.error('UI辅助模块未加载，无法显示通知面板');
+            }
+        });
+    }
+    
+    // 模拟添加一些测试通知（仅供开发测试，实际使用时应删除）
+    setTimeout(() => {
+        if (window.uiHelper) {
+            window.uiHelper.showNotification('欢迎使用Xpat智能助手，这是一条测试通知', 'info');
+            
+            // 更新计数器
+            window.uiHelper.updateNotificationCounter();
+        }
+    }, 1000);
+    
+    // 用户菜单项点击事件处理
+    if (userMenu) {
+        // 设置菜单项
+        const settingsItem = document.querySelector('#userMenu ul li:nth-child(3)');
+        if (settingsItem) {
+            settingsItem.addEventListener('click', function() {
+                // 关闭用户菜单
+                userMenu.classList.remove('active');
+                
+                // 显示设置模态窗口
+                const settingsModal = document.getElementById('settingsModalContainer');
+                if (settingsModal) {
+                    // 加载用户设置
+                    loadUserSettings();
+                    
+                    // 显示模态窗口
+                    settingsModal.style.display = 'flex';
+                }
+            });
+        }
+        
+        // 帮助与反馈菜单项
+        const helpItem = document.querySelector('#userMenu ul li:nth-child(4)');
+        if (helpItem) {
+            helpItem.addEventListener('click', function() {
+                // 关闭用户菜单
+                userMenu.classList.remove('active');
+                
+                // 显示帮助模态窗口
+                const helpModal = document.getElementById('helpModalContainer');
+                if (helpModal) {
+                    helpModal.style.display = 'flex';
+                }
+            });
+        }
+    }
+    
+    // 设置模态窗口相关事件处理
+    const settingsModal = document.getElementById('settingsModalContainer');
+    const closeSettingsModal = document.getElementById('closeSettingsModal');
+    const saveSettings = document.getElementById('saveSettings');
+    const resetSettings = document.getElementById('resetSettings');
+    
+    if (closeSettingsModal) {
+        closeSettingsModal.addEventListener('click', function() {
+            settingsModal.style.display = 'none';
+        });
+    }
+    
+    if (settingsModal) {
+        // 点击模态窗口外部关闭
+        settingsModal.querySelector('.modal-overlay').addEventListener('click', function() {
+            settingsModal.style.display = 'none';
+        });
+    }
+    
+    if (saveSettings) {
+        saveSettings.addEventListener('click', function() {
+            // 保存设置
+            saveUserSettings();
+            
+            // 关闭模态窗口
+            settingsModal.style.display = 'none';
+            
+            // 显示保存成功提示
+            if (window.uiHelper) {
+                window.uiHelper.showNotification('设置已保存', 'success');
+            }
+        });
+    }
+    
+    if (resetSettings) {
+        resetSettings.addEventListener('click', function() {
+            if (confirm('确定要恢复默认设置吗？')) {
+                // 恢复默认设置
+                resetUserSettings();
+                
+                // 更新表单
+                loadUserSettings();
+                
+                // 显示提示
+                if (window.uiHelper) {
+                    window.uiHelper.showNotification('已恢复默认设置', 'info');
+                }
+            }
+        });
+    }
+    
+    // 帮助模态窗口相关事件处理
+    const helpModal = document.getElementById('helpModalContainer');
+    const closeHelpModal = document.getElementById('closeHelpModal');
+    
+    if (closeHelpModal) {
+        closeHelpModal.addEventListener('click', function() {
+            helpModal.style.display = 'none';
+        });
+    }
+    
+    if (helpModal) {
+        // 点击模态窗口外部关闭
+        helpModal.querySelector('.modal-overlay').addEventListener('click', function() {
+            helpModal.style.display = 'none';
+        });
+        
+        // 绑定标签页切换事件
+        const tabBtns = helpModal.querySelectorAll('.tab-btn');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 移除所有标签页按钮的active类
+                tabBtns.forEach(b => b.classList.remove('active'));
+                
+                // 添加当前按钮的active类
+                this.classList.add('active');
+                
+                // 获取目标标签页
+                const targetTabId = this.getAttribute('data-tab');
+                const tabPanes = helpModal.querySelectorAll('.tab-pane');
+                
+                // 隐藏所有标签页内容
+                tabPanes.forEach(pane => pane.classList.remove('active'));
+                
+                // 显示目标标签页内容
+                const targetPane = document.getElementById(targetTabId);
+                if (targetPane) {
+                    targetPane.classList.add('active');
+                }
+            });
+        });
+        
+        // 绑定反馈表单提交事件
+        const feedbackForm = document.getElementById('feedbackForm');
+        if (feedbackForm) {
+            feedbackForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 获取表单数据
+                const feedbackType = document.getElementById('feedbackType').value;
+                const feedbackContent = document.getElementById('feedbackContent').value;
+                const contactEmail = document.getElementById('contactEmail').value;
+                
+                if (!feedbackContent.trim()) {
+                    alert('请输入反馈内容');
+                    return;
+                }
+                
+                // 模拟提交反馈
+                console.log('提交反馈:', { feedbackType, feedbackContent, contactEmail });
+                
+                // 显示提交成功提示
+                if (window.uiHelper) {
+                    window.uiHelper.showNotification('感谢您的反馈！我们会认真考虑您的建议', 'success');
+                }
+                
+                // 重置表单
+                feedbackForm.reset();
+                
+                // 关闭模态窗口
+                helpModal.style.display = 'none';
+            });
+        }
+    }
+    
+    // 加载用户设置
+    function loadUserSettings() {
+        try {
+            const settings = JSON.parse(localStorage.getItem('xpat_user_settings') || '{}');
+            
+            // 设置各表单控件的值
+            const userInfo = window.backendApi.getUserInfo() || {};
+            
+            // 用户昵称
+            const nicknameInput = document.getElementById('userNickname');
+            if (nicknameInput) {
+                nicknameInput.value = settings.nickname || userInfo.username || '';
+            }
+            
+            // 用户邮箱
+            const emailInput = document.getElementById('userEmail');
+            if (emailInput) {
+                emailInput.value = userInfo.email || '';
+            }
+            
+            // 界面语言
+            const languageSelect = document.getElementById('language');
+            if (languageSelect) {
+                languageSelect.value = settings.language || 'zh-CN';
+            }
+            
+            // 自动保存会话历史
+            const autoSaveCheck = document.getElementById('autoSaveHistory');
+            if (autoSaveCheck) {
+                autoSaveCheck.checked = settings.autoSaveHistory !== false;
+            }
+            
+            // 允许发送使用统计
+            const allowMetricsCheck = document.getElementById('allowMetrics');
+            if (allowMetricsCheck) {
+                allowMetricsCheck.checked = settings.allowMetrics !== false;
+            }
+            
+            // 默认模型
+            const defaultModelSelect = document.getElementById('defaultModel');
+            if (defaultModelSelect) {
+                defaultModelSelect.value = settings.defaultModel || 'deepseek/deepseek-r1:free';
+            }
+            
+            // 默认聊天模式
+            const defaultChatModeSelect = document.getElementById('defaultChatMode');
+            if (defaultChatModeSelect) {
+                defaultChatModeSelect.value = settings.defaultChatMode || 'general';
+            }
+        } catch (error) {
+            console.error('加载用户设置失败:', error);
+        }
+    }
+    
+    // 保存用户设置
+    function saveUserSettings() {
+        try {
+            const settings = {
+                nickname: document.getElementById('userNickname').value,
+                language: document.getElementById('language').value,
+                autoSaveHistory: document.getElementById('autoSaveHistory').checked,
+                allowMetrics: document.getElementById('allowMetrics').checked,
+                defaultModel: document.getElementById('defaultModel').value,
+                defaultChatMode: document.getElementById('defaultChatMode').value,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            // 保存到本地存储
+            localStorage.setItem('xpat_user_settings', JSON.stringify(settings));
+            
+            // 应用部分设置
+            if (window.modelSelector && settings.defaultModel) {
+                const modelOption = Array.from(document.getElementById('defaultModel').options)
+                    .find(option => option.value === settings.defaultModel);
+                
+                if (modelOption && typeof window.selectModel === 'function') {
+                    window.selectModel(settings.defaultModel, modelOption.textContent);
+                }
+            }
+            
+            if (window.chatModeSelector && settings.defaultChatMode) {
+                const chatModeOption = Array.from(document.getElementById('defaultChatMode').options)
+                    .find(option => option.value === settings.defaultChatMode);
+                
+                if (chatModeOption && typeof window.selectChatMode === 'function') {
+                    const modes = window.getChatModes ? window.getChatModes() : [];
+                    const mode = modes.find(m => m.id === settings.defaultChatMode);
+                    
+                    if (mode) {
+                        window.selectChatMode(mode.id, mode.name, mode.systemPrompt);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('保存用户设置失败:', error);
+            if (window.uiHelper) {
+                window.uiHelper.showNotification('保存设置失败', 'error');
+            }
+        }
+    }
+    
+    // 重置用户设置
+    function resetUserSettings() {
+        try {
+            localStorage.removeItem('xpat_user_settings');
+        } catch (error) {
+            console.error('重置用户设置失败:', error);
+        }
+    }
 }); 
