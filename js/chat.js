@@ -741,11 +741,20 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function callModelViaServer(prompt, model) {
         try {
-            const response = await fetch(`${window.API_BASE_URL}/api/chat/completions`, {
+            // 修正URL路径，移除重复的/api前缀
+            // 获取API基础URL，确保不会重复添加/api
+            let apiUrl = window.API_BASE_URL;
+            // 如果API_BASE_URL已包含/api结尾，则不再添加
+            const endpoint = apiUrl.endsWith('/api') ? '/chat/completions' : '/api/chat/completions';
+            
+            console.log('发送请求到:', apiUrl + endpoint);
+            
+            const response = await fetch(`${apiUrl}${endpoint}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': '1'
                 },
                 body: JSON.stringify({
                     model,
