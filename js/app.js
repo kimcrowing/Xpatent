@@ -197,27 +197,17 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('找不到用户菜单元素', { 按钮: userMenuBtn, 菜单: userMenu });
     }
     
-    // 功能菜单交互
-    const featureMenuBtn = document.getElementById('featureMenuBtn');
-    const featureMenu = document.getElementById('featureMenu');
+    // Pro订阅按钮交互
+    const proSubscriptionBtn = document.getElementById('proSubscriptionBtn');
     
-    if (featureMenuBtn && featureMenu) {
-        console.log('功能菜单按钮已注册事件');
-        featureMenuBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            featureMenu.classList.toggle('active');
-            console.log('功能菜单状态:', featureMenu.classList.contains('active') ? '显示' : '隐藏');
-        });
-        
-        // 点击外部关闭菜单
-        document.addEventListener('click', (e) => {
-            if (featureMenu.classList.contains('active') && !featureMenuBtn.contains(e.target) && !featureMenu.contains(e.target)) {
-                featureMenu.classList.remove('active');
-                console.log('功能菜单已关闭');
-            }
+    if (proSubscriptionBtn) {
+        console.log('Pro订阅按钮已注册事件');
+        proSubscriptionBtn.addEventListener('click', () => {
+            window.location.href = 'subscriptions.html';
+            console.log('跳转到订阅页面');
         });
     } else {
-        console.error('找不到功能菜单元素', { 按钮: featureMenuBtn, 菜单: featureMenu });
+        console.error('找不到Pro订阅按钮');
     }
     
     // 输入框焦点效果

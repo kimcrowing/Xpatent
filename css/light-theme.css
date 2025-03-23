@@ -176,12 +176,24 @@
 /* 确保亮色主题下菜单图标正确显示 */
 .light-theme .feature-btn svg path,
 .light-theme .icon-btn svg path {
-    fill: var(--text-color);
+    fill: var(--text-color-dark);
 }
 
 .light-theme .feature-menu {
     background-color: var(--menu-bg);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 添加Pro按钮样式 */
+.light-theme .pro-btn {
+    background-color: #f8f9fa;
+    border: 1px solid #FFD700;
+    transition: all 0.3s ease;
+}
+
+.light-theme .pro-btn:hover {
+    background-color: #f0f0f0;
+    transform: scale(1.05);
 }
 
 /* 移除可能与暗色主题冲突的根变量 */

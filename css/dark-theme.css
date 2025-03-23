@@ -120,6 +120,17 @@
     fill: var(--text-color);
 }
 
+.dark-theme .pro-btn {
+    background-color: #2c2c2c;
+    border: 1px solid #FFD700;
+    transition: all 0.3s ease;
+}
+
+.dark-theme .pro-btn:hover {
+    background-color: #3a3a3a;
+    transform: scale(1.05);
+}
+
 .dark-theme .feature-menu {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
