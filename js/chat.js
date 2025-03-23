@@ -556,8 +556,47 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 发送消息
     async function sendMessage() {
+        const userInput = document.getElementById('userInput');
         const message = userInput.value.trim();
-        if (!message) return;
+        const attachmentText = window.getAttachmentText ? window.getAttachmentText() : '';
+        
+        if (!message && !attachmentText) {
+            return; // 如果没有输入和附件，则不发送
+        }
+        
+        console.log('发送消息:', message);
+        
+        // 检查是否有检测到的专利领域，并自动切换适合的聊天模式
+        if (window.DETECTED_PATENT_DOMAIN && typeof window.DETECTED_PATENT_DOMAIN === 'string') {
+            const detectedDomain = window.DETECTED_PATENT_DOMAIN;
+            console.log('检测到专利领域:', detectedDomain);
+            
+            // 根据检测到的领域选择合适的聊天模式
+            let recommendedMode = null;
+            
+            // 判断领域与聊天模式的匹配关系
+            if (['电子信息', '新材料', '能源环保', '化学化工'].includes(detectedDomain)) {
+                recommendedMode = 'patent-writing'; // 专利撰写
+                console.log('根据检测到的领域自动切换到专利撰写模式');
+            } else if (['生物医药', '机械工程', '农业食品', '交通运输'].includes(detectedDomain)) {
+                recommendedMode = 'patent-search'; // 专利检索
+                console.log('根据检测到的领域自动切换到专利检索模式');
+            }
+            
+            // 如果有推荐的模式，并且当前不是该模式，则自动切换
+            if (recommendedMode && window.getCurrentChatModeId && window.getCurrentChatModeId() !== recommendedMode) {
+                const modes = window.PROMPT_TEMPLATES.chatModes;
+                const mode = modes.find(m => m.id === recommendedMode);
+                if (mode && window.selectChatMode) {
+                    window.selectChatMode(mode.id, mode.name, mode.systemPrompt);
+                    // 显示模式切换提示
+                    addSystemMessage(`已根据您的文档内容自动切换到"${mode.name}"模式，这可能更适合处理${detectedDomain}领域的专利问题。`);
+                }
+            }
+            
+            // 重置检测结果，避免影响下一次对话
+            window.DETECTED_PATENT_DOMAIN = null;
+        }
         
         // 禁用输入区域
         userInput.value = '';
@@ -648,4 +687,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         }
     });
+    
+    // 添加系统消息的函数
+    function addSystemMessage(content) {
+        if (!content) return;
+        
+        const messagesContainer = document.getElementById('messages');
+        
+        // 创建系统消息元素
+        const systemMessageElement = document.createElement('div');
+        systemMessageElement.className = 'message system-message';
+        
+        // 创建消息文本元素
+        const messageTextElement = document.createElement('div');
+        messageTextElement.className = 'message-text';
+        messageTextElement.textContent = content;
+        
+        // 将文本元素添加到系统消息元素
+        systemMessageElement.appendChild(messageTextElement);
+        
+        // 将系统消息添加到消息容器
+        messagesContainer.appendChild(systemMessageElement);
+        
+        // 滚动到底部
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
 }); 

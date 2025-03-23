@@ -195,4 +195,58 @@ document.addEventListener('DOMContentLoaded', function() {
             console.warn('未检测到Mammoth.js库，Word文本提取功能将不可用');
         }
     });
+    
+    // 专利领域识别函数，根据文本内容识别可能的专利技术领域
+    window.identifyPatentDomain = function(text) {
+        if (!text || typeof text !== 'string' || text.length < 100) {
+            return '未知领域';
+        }
+        
+        // 定义技术领域关键词
+        const domainKeywords = {
+            '电子信息': ['计算机', '网络', '芯片', '半导体', '通信', '存储', '图像处理', '信号处理', '云计算', '人工智能', '大数据', '机器学习', '5G', '物联网', 'CPU', 'GPU'],
+            '生物医药': ['医药', '药物', '生物', '治疗', '疾病', '临床', '蛋白质', '基因', '抗体', '诊断', '疫苗', '细胞', '组织', '酶', '医疗器械'],
+            '新材料': ['材料', '聚合物', '合金', '纳米', '复合材料', '薄膜', '涂层', '陶瓷', '表面处理', '高分子', '石墨烯', '催化剂'],
+            '机械工程': ['机械', '设备', '装置', '机构', '齿轮', '轴承', '液压', '气动', '传动', '制造', '模具', '车床', '铣床', '焊接', '铸造'],
+            '能源环保': ['能源', '电池', '发电', '储能', '风力', '太阳能', '光伏', '新能源', '环保', '节能', '减排', '污染', '废水', '废气', '固废'],
+            '化学化工': ['化学', '化合物', '分子', '合成', '反应', '催化', '蒸馏', '萃取', '结晶', '高分子', '聚合', '有机', '无机', '电化学'],
+            '农业食品': ['农业', '农产品', '粮食', '种植', '养殖', '肥料', '农药', '食品', '饲料', '保鲜', '发酵', '灌溉', '土壤', '种子'],
+            '交通运输': ['车辆', '飞机', '船舶', '铁路', '公路', '航空', '航天', '运输', '导航', '轨道', '自动驾驶', '电动车', '充电', '燃料']
+        };
+        
+        // 统计各领域关键词出现次数
+        const counts = {};
+        const textLower = text.toLowerCase();
+        
+        for (const [domain, keywords] of Object.entries(domainKeywords)) {
+            counts[domain] = 0;
+            for (const keyword of keywords) {
+                // 使用正则表达式匹配关键词（考虑中英文混合情况）
+                const regex = new RegExp(keyword, 'gi');
+                const matches = textLower.match(regex);
+                if (matches) {
+                    counts[domain] += matches.length;
+                }
+            }
+        }
+        
+        // 找出关键词出现次数最多的领域
+        let maxCount = 0;
+        let detectedDomain = '未知领域';
+        
+        for (const [domain, count] of Object.entries(counts)) {
+            if (count > maxCount) {
+                maxCount = count;
+                detectedDomain = domain;
+            }
+        }
+        
+        // 如果没有匹配到足够的关键词，返回未知领域
+        if (maxCount < 3) {
+            return '未知领域';
+        }
+        
+        console.log('专利领域识别结果统计:', counts);
+        return detectedDomain;
+    };
 }); 

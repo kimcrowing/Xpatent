@@ -244,6 +244,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return window.CHAT_MODE_SYSTEM_PROMPT || getChatModes()[0].systemPrompt;
     };
     
+    // 暴露getCurrentChatModeId函数给全局作用域
+    window.getCurrentChatModeId = getCurrentChatModeId;
+    
+    // 暴露selectChatMode函数给全局作用域
+    window.selectChatMode = selectChatMode;
+    
     // 初始化时加载用户权限
     loadUserPermissions();
     
