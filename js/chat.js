@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="message-content">
                 <div class="message-actions">
-                    <button class="action-btn" title="复制">
+                    <button class="action-btn" title="复制" onclick="copyMessageContent(this)">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M2 2V11H5V14H14V5H11V2H2ZM3 3H10V10H3V3ZM11 6H13V13H6V11H11V6Z" fill="white"/>
                         </svg>
@@ -118,6 +118,36 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         chatMessages.appendChild(messageDiv);
         scrollToBottom();
+        
+        // 添加复制功能
+        addCopyFunctionality(messageDiv);
+    }
+    
+    // 添加复制功能
+    function addCopyFunctionality(messageDiv) {
+        const copyBtn = messageDiv.querySelector('.action-btn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', function() {
+                const content = messageDiv.querySelector('.message-content');
+                const textToCopy = content.innerText;
+                
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => {
+                        // 复制成功反馈
+                        copyBtn.setAttribute('data-copied', 'true');
+                        copyBtn.title = '已复制!';
+                        
+                        // 2秒后恢复
+                        setTimeout(() => {
+                            copyBtn.removeAttribute('data-copied');
+                            copyBtn.title = '复制';
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('复制失败:', err);
+                    });
+            });
+        }
     }
     
     // 添加加载指示器
@@ -161,7 +191,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 // 解析Markdown
-                return marked.parse(content);
+                const parsed = marked.parse(content);
+                
+                // 处理代码块，添加水平滚动以适应移动设备
+                return parsed.replace(/<pre><code>/g, '<pre><code class="responsive-code">');
             } else {
                 console.warn('marked库未加载，使用基本格式化');
                 // 回退到基本格式化
@@ -172,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 content = content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
                 
                 // 处理代码块
-                content = content.replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>');
+                content = content.replace(/```([^`]+)```/g, '<pre><code class="responsive-code">$1</code></pre>');
                 
                 // 处理内联代码
                 content = content.replace(/`([^`]+)`/g, '<code>$1</code>');

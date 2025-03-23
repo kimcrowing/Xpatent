@@ -1292,6 +1292,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 显示模态框
         subscriptionModalOverlay.classList.remove('hidden');
+        subscriptionModalOverlay.style.display = 'flex';
     }
 
     /**
@@ -1299,6 +1300,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function closeSubscriptionModal() {
         subscriptionModalOverlay.classList.add('hidden');
+        subscriptionModalOverlay.style.display = 'none';
     }
 
     /**
@@ -1426,6 +1428,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function openDeleteSubscriptionModal(planId) {
         deleteSubscriptionId.value = planId;
         deleteSubscriptionModalOverlay.classList.remove('hidden');
+        deleteSubscriptionModalOverlay.style.display = 'flex';
     }
 
     /**
@@ -1433,6 +1436,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function closeDeleteSubscriptionModal() {
         deleteSubscriptionModalOverlay.classList.add('hidden');
+        deleteSubscriptionModalOverlay.style.display = 'none';
     }
 
     /**
@@ -1466,19 +1470,38 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function loadApiUsageStats() {
         try {
+            // 显示加载状态
             apiUsageTable.classList.add('hidden');
             apiUsageEmptyState.classList.add('hidden');
             apiUsageLoadingState.classList.remove('hidden');
             
+            // 先清除旧数据，显示加载状态
+            todayApiCallsValue.textContent = '--';
+            totalApiCallsValue.textContent = '--';
+            activeUsersValue.textContent = '--';
+            
+            // 清除旧图表的内容
+            dailyApiCallsChart.innerHTML = '';
+            modelDistributionChart.innerHTML = '';
+            
             window.backendApi.getApiUsageStats()
                 .then(stats => {
+                    console.log('API使用统计数据:', stats);
                     apiUsageLoadingState.classList.add('hidden');
+                    
+                    // 更新统计数字
+                    if (stats) {
+                        todayApiCallsValue.textContent = stats.todayApiCalls || '0';
+                        totalApiCallsValue.textContent = stats.totalApiCalls || '0';
+                        activeUsersValue.textContent = stats.activeUsers || '0';
+                    }
                     
                     if (stats && stats.userRankings && stats.userRankings.length > 0) {
                         // 渲染表格
                         renderApiUsageTable(stats.userRankings);
                         apiUsageTable.classList.remove('hidden');
                     } else {
+                        apiUsageEmptyState.textContent = '暂无API使用记录';
                         apiUsageEmptyState.classList.remove('hidden');
                     }
                     
@@ -1488,10 +1511,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 .catch(error => {
                     console.error('获取API使用统计失败:', error);
                     apiUsageLoadingState.classList.add('hidden');
+                    apiUsageEmptyState.textContent = '获取API使用统计失败: ' + (error.message || '未知错误');
                     apiUsageEmptyState.classList.remove('hidden');
+                    
+                    // 在错误情况下提供默认数据进行图表渲染测试
+                    const mockData = {
+                        todayApiCalls: 0,
+                        totalApiCalls: 0,
+                        activeUsers: 0,
+                        dailyApiCalls: {
+                            '2023-01-01': 0,
+                            '2023-01-02': 0,
+                            '2023-01-03': 0
+                        },
+                        modelDistribution: {
+                            'gpt-3.5-turbo': 0,
+                            'gpt-4': 0
+                        },
+                        userRankings: []
+                    };
+                    
+                    renderApiUsageCharts(mockData);
                 });
         } catch (error) {
             console.error('加载API使用统计时出错:', error);
+            apiUsageLoadingState.classList.add('hidden');
+            apiUsageEmptyState.textContent = '加载统计数据时发生错误';
+            apiUsageEmptyState.classList.remove('hidden');
         }
     }
     
