@@ -594,16 +594,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (model.includes('baidu') || model.includes('ernie')) provider = 'baidu';
             
             // 获取用户的API密钥
-            let apiKeyPath = window.API_BASE_URL.endsWith('/api') 
-                ? `/apikeys/provider/${provider}` 
-                : `/api/apikeys/provider/${provider}`;
-
-            console.log('请求API密钥路径:', apiKeyPath);
-
-            const apiKeyResponse = await fetch(`${window.API_BASE_URL}${apiKeyPath}`, {
+            const apiKeyResponse = await fetch(`${window.API_BASE_URL}/api/apikeys/provider/${provider}`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
-                    'ngrok-skip-browser-warning': '1'
+                    'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
                 }
             });
             
@@ -704,17 +697,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const endTime = new Date();
                 const requestDuration = endTime - startTime;
                 
-                // 修正API路径
-                const logPath = window.API_BASE_URL.endsWith('/api') 
-                    ? '/chat/log' 
-                    : '/api/chat/log';
-                
-                await fetch(`${window.API_BASE_URL}${logPath}`, {
+                await fetch(`${window.API_BASE_URL}/api/chat/log`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': '1'
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         model,
@@ -771,7 +758,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     model,
-                    prompt
+                    messages: [
+                        { role: "user", content: prompt }
+                    ]
                 })
             });
             
@@ -796,6 +785,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!message && !attachmentText) {
             return; // 如果没有输入和附件，则不发送
         }
+        
+        // 清空输入框
+        userInput.value = '';
         
         console.log('发送消息:', message);
         
@@ -872,12 +864,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // 禁用输入区域
-        userInput.value = '';
         userInput.disabled = true;
         sendButton.disabled = true;
         
         try {
-            // 添加用户消息到界面
+            // 显示用户消息
             addUserMessage(message);
             
             // 显示加载指示器
@@ -898,28 +889,41 @@ document.addEventListener('DOMContentLoaded', () => {
             // 优先使用用户自己的API密钥
             try {
                 response = await callModelWithUserApiKey(apiRequest.message, window.CURRENT_MODEL);
-            } catch (error) {
-                console.error('直接调用失败，回退到服务器代理:', error);
+            } catch (directCallError) {
+                console.error('直接调用失败，回退到服务器代理:', directCallError);
                 // 如果直接调用失败，回退到服务器代理
-                response = await callModelViaServer(apiRequest.message, window.CURRENT_MODEL);
+                const serverResponse = await callModelViaServer(apiRequest.message, window.CURRENT_MODEL);
+                
+                // 处理服务器返回的OpenAI/OpenRouter格式响应
+                if (serverResponse && serverResponse.choices && serverResponse.choices.length > 0) {
+                    response = {
+                        text: serverResponse.choices[0].message.content
+                    };
+                } else {
+                    throw new Error('无法解析服务器响应');
+                }
             }
             
             // 移除加载指示器
-            if (loadingIndicator && typeof loadingIndicator.remove === 'function') {
-                loadingIndicator.remove();
-            }
+            loadingIndicator.remove();
+            
+            // 恢复输入区域
+            userInput.disabled = false;
+            sendButton.disabled = false;
+            userInput.focus();
             
             // 添加AI回复到界面
             addAIMessage(response.text);
         } catch (error) {
             console.error('发送消息时出错:', error);
-            // 确保在出错时移除加载指示器
-            if (loadingIndicator && typeof loadingIndicator.remove === 'function') {
-                loadingIndicator.remove();
-            }
+            loadingIndicator.remove();
             
-            // 显示错误消息到聊天窗口
-            addAIMessage("发生错误，请稍后重试。");
+            // 恢复输入区域
+            userInput.disabled = false;
+            sendButton.disabled = false;
+            userInput.focus();
+            
+            addAIMessage("发生错误，请稍后重试。错误信息：" + error.message);
         }
     }
     
@@ -995,19 +999,5 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 滚动到底部
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    /**
-     * 显示错误消息
-     * @param {string} message - 错误消息
-     */
-    function displayErrorMessage(message) {
-        // 在消息区域显示错误消息
-        addAIMessage(`错误: ${message}`);
-        
-        // 可选：显示一个临时的toast消息
-        if (window.showToast) {
-            window.showToast(message, 'error');
-        }
     }
 }); 
