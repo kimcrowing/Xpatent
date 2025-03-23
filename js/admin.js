@@ -722,7 +722,11 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('openrouterTitle').value = config.openrouter?.title || '';
             
             document.getElementById('defaultProvider').value = config.defaultProvider || 'openai';
-            document.getElementById('allowUserModelSelection').checked = config.allowUserModelSelection || false;
+            // allowUserModelSelection元素可能不存在，先检查
+            const allowUserModelSelectionElement = document.getElementById('allowUserModelSelection');
+            if (allowUserModelSelectionElement) {
+                allowUserModelSelectionElement.checked = config.allowUserModelSelection || false;
+            }
             
             return config;
         } catch (error) {
@@ -767,7 +771,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('openrouterTitle').value = backupConfig.openrouter.title;
                 
                 document.getElementById('defaultProvider').value = backupConfig.defaultProvider;
-                document.getElementById('allowUserModelSelection').checked = backupConfig.allowUserModelSelection;
+                // allowUserModelSelection元素可能不存在，先检查
+                const allowUserModelSelectionElement = document.getElementById('allowUserModelSelection');
+                if (allowUserModelSelectionElement) {
+                    allowUserModelSelectionElement.checked = backupConfig.allowUserModelSelection;
+                }
                 
                 document.getElementById('apiConfigError').textContent = '从服务器加载失败，使用本地缓存数据。';
                 document.getElementById('apiConfigError').style.color = '#f39c12';
@@ -834,7 +842,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 title: document.getElementById('openrouterTitle').value.trim()
             },
             defaultProvider: document.getElementById('defaultProvider').value,
-            allowUserModelSelection: document.getElementById('allowUserModelSelection').checked
+            // allowUserModelSelection元素可能不存在，先检查
+            allowUserModelSelection: document.getElementById('allowUserModelSelection')?.checked || false
         };
     }
     
@@ -857,7 +866,11 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('xpat_openrouter_title', config.openrouter.title);
         
         localStorage.setItem('xpat_default_provider', config.defaultProvider);
-        localStorage.setItem('xpat_allow_user_model_selection', config.allowUserModelSelection);
+        
+        // 保存用户模型选择设置（如果存在）
+        if (config.allowUserModelSelection !== undefined) {
+            localStorage.setItem('xpat_allow_user_model_selection', config.allowUserModelSelection);
+        }
     }
     
     /**
