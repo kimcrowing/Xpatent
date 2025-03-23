@@ -345,6 +345,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (!historySessionList) return;
         
+        // 获取当前语言
+        const currentLang = localStorage.getItem('interface_language') || 'zh-CN';
+        const text = translations[currentLang];
+        
         // 获取会话列表
         const sessions = window.chatManager ? window.chatManager.getSessions() : [];
         
@@ -352,8 +356,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // 没有历史会话
             historySessionList.innerHTML = `
                 <div class="empty-sessions">
-                    <p>暂无历史对话</p>
-                    <button class="btn" id="createFirstSession">开始新对话</button>
+                    <p>${text.emptySessionsText}</p>
+                    <button class="btn" id="createFirstSession">${text.createFirstSession}</button>
                 </div>
             `;
             
@@ -374,68 +378,63 @@ document.addEventListener('DOMContentLoaded', () => {
             sessions.forEach(session => {
                 const sessionItem = document.createElement('div');
                 sessionItem.className = `session-item ${session.id === window.chatManager.getCurrentSessionId() ? 'active' : ''}`;
-                sessionItem.dataset.id = session.id;
                 
-                const sessionDate = new Date(session.created);
-                const formattedDate = `${sessionDate.getMonth() + 1}月${sessionDate.getDate()}日`;
-                
-                // 获取第一条消息作为会话标题
-                let sessionTitle = '新对话';
-                if (session.messages && session.messages.length > 0) {
-                    // 如果是用户消息，直接使用内容
-                    if (session.messages[0].role === 'user') {
-                        sessionTitle = session.messages[0].content.substring(0, 25);
-                        if (session.messages[0].content.length > 25) {
-                            sessionTitle += '...';
-                        }
-                    }
-                }
+                // 格式化日期显示
+                const sessionDate = new Date(session.lastUpdated || session.created);
+                const formattedDate = formatDate(sessionDate, currentLang);
                 
                 sessionItem.innerHTML = `
-                    <div class="session-info">
-                        <div class="session-title">${sessionTitle}</div>
+                    <div class="session-info" data-id="${session.id}">
+                        <div class="session-title">${session.title || (currentLang === 'zh-CN' ? '新对话' : 'New Conversation')}</div>
                         <div class="session-date">${formattedDate}</div>
                     </div>
                     <div class="session-actions">
-                        <button class="delete-session" title="删除" data-id="${session.id}">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <button class="session-action-btn delete-session" title="${currentLang === 'zh-CN' ? '删除' : 'Delete'}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </button>
                     </div>
                 `;
                 
-                // 添加点击事件
-                sessionItem.addEventListener('click', function(e) {
-                    // 如果是点击删除按钮，则删除会话
-                    if (e.target.closest('.delete-session')) {
-                        e.stopPropagation();
-                        const sessionId = e.target.closest('.delete-session').dataset.id;
-                        
-                        if (window.chatManager && typeof window.chatManager.deleteSession === 'function') {
-                            window.chatManager.deleteSession(sessionId);
-                            loadHistorySessions(); // 重新加载会话列表
-                        }
-                        
-                        return;
-                    }
-                    
-                    // 否则切换到该会话
+                // 点击会话切换到对应会话
+                const sessionInfo = sessionItem.querySelector('.session-info');
+                sessionInfo.addEventListener('click', function() {
                     const sessionId = this.dataset.id;
                     
                     if (window.chatManager && typeof window.chatManager.switchToSession === 'function') {
                         window.chatManager.switchToSession(sessionId);
                         
                         // 更新活跃状态
-                        const sessions = historySessionList.querySelectorAll('.session-item');
-                        sessions.forEach(s => s.classList.remove('active'));
-                        this.classList.add('active');
+                        const sessionItems = historySessionList.querySelectorAll('.session-item');
+                        sessionItems.forEach(item => item.classList.remove('active'));
+                        sessionItem.classList.add('active');
                         
                         // 关闭历史面板
                         historyPanel.style.display = 'none';
                     }
                 });
+                
+                // 删除会话按钮点击事件
+                const deleteBtn = sessionItem.querySelector('.delete-session');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        
+                        if (window.chatManager && typeof window.chatManager.deleteSession === 'function') {
+                            if (confirm(currentLang === 'zh-CN' ? '确定要删除这个会话吗？' : 'Are you sure you want to delete this conversation?')) {
+                                window.chatManager.deleteSession(session.id);
+                                sessionItem.remove();
+                                
+                                // 如果删除后没有会话了，显示空状态
+                                if (historySessionList.children.length === 0) {
+                                    loadHistorySessions();
+                                }
+                            }
+                        }
+                    });
+                }
                 
                 historySessionList.appendChild(sessionItem);
             });
@@ -775,32 +774,208 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // 设置语言函数
+    // 设置语言
     function setLanguage(lang) {
-        // 保存语言设置到本地存储
         localStorage.setItem('interface_language', lang);
-        
-        // 如果需要立即刷新页面应用新语言
-        // window.location.reload();
-        
-        // 或者通过API或其他方式动态加载语言资源
         applyLanguage(lang);
+        
+        // 更新语言选择菜单中的选中状态
+        const languageItems = document.querySelectorAll('.language-option');
+        languageItems.forEach(item => {
+            const itemLang = item.getAttribute('data-lang');
+            const checkIcon = item.querySelector('.language-check');
+            
+            if (itemLang === lang) {
+                checkIcon.style.display = 'inline-block';
+            } else {
+                checkIcon.style.display = 'none';
+            }
+        });
     }
     
+    // 语言资源
+    const translations = {
+        'zh-CN': {
+            welcomeTitle: '你好，欢迎使用AI助手',
+            welcomeText: '我是您的AI助手，可以回答问题、提供信息和帮助您完成各种任务。请输入您的问题开始对话。',
+            userInput: '输入您的问题...',
+            sendBtn: '发送',
+            attachBtn: '上传附件',
+            historyBtn: '历史对话',
+            languageBtn: '语言选择',
+            userBtn: '用户设置',
+            notificationMenuItem: '通知',
+            subscriptionMenuItem: '订阅Pro版',
+            themeToggle: '切换主题',
+            adminEntry: '管理中心',
+            settingsMenuItem: '设置',
+            helpMenuItem: '帮助与反馈',
+            homeMenuItem: '首页',
+            loginBtn: '登录',
+            logoutBtn: '退出',
+            historyTitle: '历史对话',
+            newConversationBtn: '新对话',
+            emptySessionsText: '暂无历史对话',
+            createFirstSession: '开始新对话',
+            morningGreeting: '早上好',
+            afternoonGreeting: '下午好',
+            eveningGreeting: '晚上好',
+            generalChatMode: '通用对话'
+        },
+        'en-US': {
+            welcomeTitle: 'Hello, welcome to AI Assistant',
+            welcomeText: 'I am your AI assistant, ready to answer questions, provide information, and help you with various tasks. Type your question to begin.',
+            userInput: 'Enter your question...',
+            sendBtn: 'Send',
+            attachBtn: 'Upload attachment',
+            historyBtn: 'History',
+            languageBtn: 'Language',
+            userBtn: 'User settings',
+            notificationMenuItem: 'Notifications',
+            subscriptionMenuItem: 'Subscribe Pro',
+            themeToggle: 'Toggle theme',
+            adminEntry: 'Admin center',
+            settingsMenuItem: 'Settings',
+            helpMenuItem: 'Help & feedback',
+            homeMenuItem: 'Home',
+            loginBtn: 'Login',
+            logoutBtn: 'Logout',
+            historyTitle: 'Conversation History',
+            newConversationBtn: 'New conversation',
+            emptySessionsText: 'No history yet',
+            createFirstSession: 'Start a new conversation',
+            morningGreeting: 'Good morning',
+            afternoonGreeting: 'Good afternoon',
+            eveningGreeting: 'Good evening',
+            generalChatMode: 'General conversation'
+        }
+    };
+
     // 应用语言设置
     function applyLanguage(lang) {
-        // 这里可以动态更新界面文本
-        // 例如使用i18n库或自定义的语言资源
-        console.log(`应用语言设置: ${lang}`);
+        if (!translations[lang]) {
+            console.error(`未找到语言资源: ${lang}`);
+            return;
+        }
         
-        // 如果有语言资源文件，可以在这里加载
-        // fetch(`/lang/${lang}.json`)
-        //     .then(response => response.json())
-        //     .then(translations => {
-        //         // 更新界面文本
-        //     });
+        const text = translations[lang];
+        
+        // 更新欢迎消息
+        const welcomeTitle = document.querySelector('.welcome-message h2');
+        const welcomeText = document.querySelector('.welcome-message p');
+        if (welcomeTitle) welcomeTitle.textContent = text.welcomeTitle;
+        if (welcomeText) welcomeText.textContent = text.welcomeText;
+        
+        // 更新输入框占位符
+        const userInput = document.getElementById('userInput');
+        if (userInput) userInput.placeholder = text.userInput;
+        
+        // 更新按钮提示文本
+        document.getElementById('sendButton')?.setAttribute('title', text.sendBtn);
+        document.getElementById('attachButton')?.setAttribute('title', text.attachBtn);
+        document.getElementById('historyBtn')?.setAttribute('title', text.historyBtn);
+        document.getElementById('languageBtn')?.setAttribute('title', text.languageBtn);
+        document.getElementById('userMenuBtn')?.setAttribute('title', text.userBtn);
+        
+        // 更新历史对话面板
+        const historyHeader = document.querySelector('.history-header h3');
+        if (historyHeader) historyHeader.textContent = text.historyTitle;
+        
+        // 更新关闭按钮的title
+        const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+        if (closeHistoryBtn) {
+            closeHistoryBtn.setAttribute('title', lang === 'zh-CN' ? '关闭' : 'Close');
+        }
+        
+        const newConversationBtn = document.getElementById('newConversationBtn');
+        if (newConversationBtn) {
+            // 更新按钮中的文本节点
+            const btnText = newConversationBtn.childNodes[newConversationBtn.childNodes.length - 1];
+            if (btnText && btnText.nodeType === 3) { // 文本节点
+                btnText.nodeValue = text.newConversationBtn;
+            }
+        }
+        
+        // 更新用户菜单项
+        document.getElementById('notification-menu-item')?.setAttribute('title', text.notificationMenuItem);
+        document.getElementById('subscription-menu-item')?.setAttribute('title', text.subscriptionMenuItem);
+        document.getElementById('themeToggle')?.setAttribute('title', text.themeToggle);
+        document.getElementById('admin-entry')?.setAttribute('title', text.adminEntry);
+        document.getElementById('settings-menu-item')?.setAttribute('title', text.settingsMenuItem);
+        document.getElementById('help-menu-item')?.setAttribute('title', text.helpMenuItem);
+        document.getElementById('home-menu-item')?.setAttribute('title', text.homeMenuItem);
+        
+        // 更新登录/退出按钮
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (loginBtn) loginBtn.textContent = text.loginBtn;
+        if (logoutBtn) logoutBtn.textContent = text.logoutBtn;
+        
+        // 更新空历史会话提示
+        updateEmptySessionsText();
+        
+        // 更新当前聊天模式文本
+        const currentChatMode = document.getElementById('currentChatMode');
+        if (currentChatMode && currentChatMode.textContent.trim() === '通用对话') {
+            currentChatMode.textContent = text.generalChatMode;
+        }
+        
+        // 设置页面语言属性
+        document.documentElement.setAttribute('lang', lang);
+        
+        // 更新问候语
+        updateGreeting(lang);
+        
+        console.log(`语言已切换为: ${lang}`);
     }
-    
+
+    // 更新空会话列表文本
+    function updateEmptySessionsText() {
+        const currentLang = localStorage.getItem('interface_language') || 'zh-CN';
+        const text = translations[currentLang];
+        
+        const emptySessionsContainer = document.querySelector('.empty-sessions');
+        if (emptySessionsContainer) {
+            const emptyText = emptySessionsContainer.querySelector('p');
+            const createBtn = emptySessionsContainer.querySelector('button');
+            
+            if (emptyText) emptyText.textContent = text.emptySessionsText;
+            if (createBtn) createBtn.textContent = text.createFirstSession;
+        }
+    }
+
+    // 根据语言更新问候语
+    function updateGreeting(lang) {
+        const hour = new Date().getHours();
+        let greeting;
+        
+        if (lang === 'zh-CN') {
+            if (hour < 12) greeting = translations['zh-CN'].morningGreeting;
+            else if (hour < 18) greeting = translations['zh-CN'].afternoonGreeting;
+            else greeting = translations['zh-CN'].eveningGreeting;
+        } else {
+            if (hour < 12) greeting = translations['en-US'].morningGreeting;
+            else if (hour < 18) greeting = translations['en-US'].afternoonGreeting;
+            else greeting = translations['en-US'].eveningGreeting;
+        }
+        
+        const welcomeTitle = document.querySelector('.welcome-message h2');
+        if (welcomeTitle) {
+            const userName = localStorage.getItem('userName') || 'Kim';
+            welcomeTitle.textContent = `${greeting}, ${userName}`;
+        }
+    }
+
+    // 格式化日期显示，根据语言选择不同格式
+    function formatDate(date, lang) {
+        if (lang === 'zh-CN') {
+            return `${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        } else {
+            const options = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            return date.toLocaleDateString('en-US', options);
+        }
+    }
+
     // 初始化语言设置
     function initLanguage() {
         // 从本地存储获取语言设置，默认为中文
