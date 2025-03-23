@@ -4,7 +4,7 @@
  */
 
 // 始终使用ngrok地址，无论是否在GitHub Pages环境
-window.API_BASE_URL = 'https://901b-2408-8262-1871-4896-5040-722c-bc58-a014.ngrok-free.app/api';
+window.API_BASE_URL = 'https://5e65-2408-8262-1871-4896-4412-5f5c-46fc-3230.ngrok-free.app/api';
 
 // 提供初始化函数
 window.initializeApiConfig = function(url) {

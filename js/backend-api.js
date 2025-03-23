@@ -6,7 +6,7 @@
  */
 
 // 后端API基础URL - 可以动态修改，以支持GitHub Pages环境
-window.API_BASE_URL = 'https://901b-2408-8262-1871-4896-5040-722c-bc58-a014.ngrok-free.app/api';
+window.API_BASE_URL = 'https://5e65-2408-8262-1871-4896-4412-5f5c-46fc-3230.ngrok-free.app/api';
 
 // 本地存储密钥
 const TOKEN_KEY = 'xpat_auth_token';
@@ -307,7 +307,7 @@ async function setUserPermissions(userId, permissions) {
 // 检测是否在GitHub Pages环境，并尝试设置API地址
 (function detectEnvironment() {
   // 强制使用ngrok地址，无论是否在GitHub Pages环境
-  window.API_BASE_URL = 'https://eca4-2408-8262-1871-4896-b109-80c0-d6fb-f89b.ngrok-free.app/api';
+  window.API_BASE_URL = 'https://5e65-2408-8262-1871-4896-4412-5f5c-46fc-3230.ngrok-free.app/api';
   console.log('已强制设置API地址:', window.API_BASE_URL);
   
   // 更新本地存储中的API地址，确保一致性
