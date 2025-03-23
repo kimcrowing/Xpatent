@@ -594,9 +594,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (model.includes('baidu') || model.includes('ernie')) provider = 'baidu';
             
             // 获取用户的API密钥
-            const apiKeyResponse = await fetch(`${window.API_BASE_URL}/api/apikeys/provider/${provider}`, {
+            let apiKeyPath = window.API_BASE_URL.endsWith('/api') 
+                ? `/apikeys/provider/${provider}` 
+                : `/api/apikeys/provider/${provider}`;
+
+            console.log('请求API密钥路径:', apiKeyPath);
+
+            const apiKeyResponse = await fetch(`${window.API_BASE_URL}${apiKeyPath}`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
+                    'ngrok-skip-browser-warning': '1'
                 }
             });
             
@@ -697,11 +704,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const endTime = new Date();
                 const requestDuration = endTime - startTime;
                 
-                await fetch(`${window.API_BASE_URL}/api/chat/log`, {
+                // 修正API路径
+                const logPath = window.API_BASE_URL.endsWith('/api') 
+                    ? '/chat/log' 
+                    : '/api/chat/log';
+                
+                await fetch(`${window.API_BASE_URL}${logPath}`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': '1'
                     },
                     body: JSON.stringify({
                         model,
