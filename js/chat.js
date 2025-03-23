@@ -885,20 +885,27 @@ document.addEventListener('DOMContentLoaded', () => {
             // 优先使用用户自己的API密钥
             try {
                 response = await callModelWithUserApiKey(apiRequest.message, window.CURRENT_MODEL);
-            } catch (directCallError) {
-                console.error('直接调用失败，回退到服务器代理:', directCallError);
+            } catch (error) {
+                console.error('直接调用失败，回退到服务器代理:', error);
                 // 如果直接调用失败，回退到服务器代理
                 response = await callModelViaServer(apiRequest.message, window.CURRENT_MODEL);
             }
             
             // 移除加载指示器
-            loadingIndicator.remove();
+            if (loadingIndicator && typeof loadingIndicator.remove === 'function') {
+                loadingIndicator.remove();
+            }
             
             // 添加AI回复到界面
             addAIMessage(response.text);
         } catch (error) {
             console.error('发送消息时出错:', error);
-            loadingIndicator.remove();
+            // 确保在出错时移除加载指示器
+            if (loadingIndicator && typeof loadingIndicator.remove === 'function') {
+                loadingIndicator.remove();
+            }
+            
+            // 显示错误消息到聊天窗口
             addAIMessage("发生错误，请稍后重试。");
         }
     }
@@ -975,5 +982,19 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 滚动到底部
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    /**
+     * 显示错误消息
+     * @param {string} message - 错误消息
+     */
+    function displayErrorMessage(message) {
+        // 在消息区域显示错误消息
+        addAIMessage(`错误: ${message}`);
+        
+        // 可选：显示一个临时的toast消息
+        if (window.showToast) {
+            window.showToast(message, 'error');
+        }
     }
 }); 
