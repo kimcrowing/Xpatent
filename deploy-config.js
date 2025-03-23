@@ -3,29 +3,8 @@
  * 用于初始化前端与后端的连接配置
  */
 
-// 检测是否在GitHub Pages环境中运行
-const isGitHubPages = window.location.hostname.includes('github.io');
-
-// 后端API基础URL
-let apiBaseUrl = 'https://eca4-2408-8262-1871-4896-b109-80c0-d6fb-f89b.ngrok-free.app/api';
-
-// 如果是在GitHub Pages中运行，尝试从本地存储获取API URL
-if (isGitHubPages) {
-  const savedApiUrl = localStorage.getItem('xpat_api_url');
-  
-  if (savedApiUrl) {
-    apiBaseUrl = savedApiUrl;
-    console.log('从本地存储加载API地址:', apiBaseUrl);
-  } else {
-    // 第一次访问，提示用户设置API地址
-    setTimeout(() => {
-      alert('欢迎使用Xpat！\n\n您需要设置后端API地址才能正常使用所有功能。\n\n点击右上角用户菜单中的"API配置"选项进行设置。');
-    }, 1000);
-  }
-}
-
-// 设置全局API基础URL
-window.API_BASE_URL = apiBaseUrl;
+// 始终使用ngrok地址，无论是否在GitHub Pages环境
+window.API_BASE_URL = 'https://eca4-2408-8262-1871-4896-b109-80c0-d6fb-f89b.ngrok-free.app/api';
 
 // 提供初始化函数
 window.initializeApiConfig = function(url) {
@@ -87,7 +66,7 @@ window.apiConfig = {
 document.addEventListener('DOMContentLoaded', async () => {
   const isConnected = await window.checkApiConnection();
   
-  if (!isConnected && isGitHubPages) {
+  if (!isConnected) {
     console.warn('无法连接到API服务器，部分功能可能无法使用');
   }
 }); 

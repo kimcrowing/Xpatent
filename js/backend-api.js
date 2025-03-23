@@ -1,7 +1,7 @@
 /**
  * 后端API通信模块
  * 这个模块负责与后端API进行通信，包括用户登录、获取和管理提示词等功能
- * 默认管理员账号: admin@example.com
+ * 默认管理员账号: kimcrowing@hotmail.com
  * 默认管理员密码: www
  */
 
@@ -276,24 +276,12 @@ async function deleteUser(userId) {
 
 // 检测是否在GitHub Pages环境，并尝试设置API地址
 (function detectEnvironment() {
-  // 检测是否在GitHub Pages环境
-  const isGitHubPages = window.location.hostname.includes('github.io');
+  // 强制使用ngrok地址，无论是否在GitHub Pages环境
+  window.API_BASE_URL = 'https://eca4-2408-8262-1871-4896-b109-80c0-d6fb-f89b.ngrok-free.app/api';
+  console.log('已强制设置API地址:', window.API_BASE_URL);
   
-  if (isGitHubPages) {
-    // 从本地存储中获取API地址
-    const savedApiUrl = localStorage.getItem('xpat_api_url');
-    
-    if (savedApiUrl) {
-      window.API_BASE_URL = savedApiUrl;
-      console.log('从本地存储加载API地址:', savedApiUrl);
-    } else {
-      // 默认使用本地地址，需要管理员在部署时手动修改
-      const defaultApiUrl = 'http://localhost:3000/api';
-      window.API_BASE_URL = defaultApiUrl;
-      localStorage.setItem('xpat_api_url', defaultApiUrl);
-      console.log('已设置默认API地址:', defaultApiUrl);
-    }
-  }
+  // 更新本地存储中的API地址，确保一致性
+  localStorage.setItem('xpat_api_url', window.API_BASE_URL);
 })();
 
 // 导出API函数
