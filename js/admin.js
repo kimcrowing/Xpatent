@@ -1241,7 +1241,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * 加载订阅统计数据
      */
     function loadSubscriptionStats() {
-        BackendAPI.getSubscriptionStats()
+        window.backendApi.getSubscriptionStats()
             .then(stats => {
                 // 更新统计卡片
                 totalSubscriptionsValue.textContent = stats.totalSubscriptions;
@@ -1394,11 +1394,11 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         // 创建或更新订阅计划
-        const promise = id 
-            ? BackendAPI.updateSubscriptionPlan(id, data)
-            : BackendAPI.createSubscriptionPlan(name, price, duration, apiQuota, features);
+        const savePromise = id 
+            ? window.backendApi.updateSubscriptionPlan(id, data)
+            : window.backendApi.createSubscriptionPlan(name, price, duration, apiQuota, features);
         
-        promise
+        savePromise
             .then(() => {
                 closeSubscriptionModal();
                 loadSubscriptions();
@@ -1445,14 +1445,15 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmDeleteSubscriptionBtn.disabled = true;
         confirmDeleteSubscriptionBtn.textContent = '删除中...';
         
-        BackendAPI.deleteSubscriptionPlan(planId)
+        window.backendApi.deleteSubscriptionPlan(planId)
             .then(() => {
                 closeDeleteSubscriptionModal();
                 loadSubscriptions();
                 loadSubscriptionStats();
             })
             .catch(error => {
-                alert(`删除失败: ${error.message || '未知错误'}`);
+                console.error('删除订阅计划失败:', error);
+                showNotification(`删除失败: ${error.message}`, 'error');
             })
             .finally(() => {
                 confirmDeleteSubscriptionBtn.disabled = false;
@@ -1464,41 +1465,34 @@ document.addEventListener('DOMContentLoaded', function() {
      * 加载API使用统计数据
      */
     function loadApiUsageStats() {
-        // 显示加载状态
-        apiUsageTable.classList.add('hidden');
-        apiUsageEmptyState.classList.add('hidden');
-        apiUsageLoadingState.classList.remove('hidden');
-        
-        BackendAPI.getApiUsageStats()
-            .then(stats => {
-                apiUsageLoadingState.classList.add('hidden');
-                
-                // 更新统计卡片
-                todayApiCallsValue.textContent = stats.todayApiCalls;
-                totalApiCallsValue.textContent = stats.totalApiCalls;
-                activeUsersValue.textContent = stats.activeUsers;
-                
-                // 渲染用户API使用排行
-                if (stats.userRankings && stats.userRankings.length > 0) {
-                    renderApiUsageTable(stats.userRankings);
-                    apiUsageTable.classList.remove('hidden');
-                } else {
+        try {
+            apiUsageTable.classList.add('hidden');
+            apiUsageEmptyState.classList.add('hidden');
+            apiUsageLoadingState.classList.remove('hidden');
+            
+            window.backendApi.getApiUsageStats()
+                .then(stats => {
+                    apiUsageLoadingState.classList.add('hidden');
+                    
+                    if (stats && stats.userRankings && stats.userRankings.length > 0) {
+                        // 渲染表格
+                        renderApiUsageTable(stats.userRankings);
+                        apiUsageTable.classList.remove('hidden');
+                    } else {
+                        apiUsageEmptyState.classList.remove('hidden');
+                    }
+                    
+                    // 渲染图表
+                    renderApiUsageCharts(stats);
+                })
+                .catch(error => {
+                    console.error('获取API使用统计失败:', error);
+                    apiUsageLoadingState.classList.add('hidden');
                     apiUsageEmptyState.classList.remove('hidden');
-                }
-                
-                // 渲染图表
-                renderApiUsageCharts(stats);
-            })
-            .catch(error => {
-                console.error('加载API使用统计失败:', error);
-                apiUsageLoadingState.classList.add('hidden');
-                apiUsageEmptyState.classList.remove('hidden');
-                
-                // 重置统计卡片
-                todayApiCallsValue.textContent = '0';
-                totalApiCallsValue.textContent = '0';
-                activeUsersValue.textContent = '0';
-            });
+                });
+        } catch (error) {
+            console.error('加载API使用统计时出错:', error);
+        }
     }
     
     /**
