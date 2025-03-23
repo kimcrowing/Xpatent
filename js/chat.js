@@ -232,6 +232,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // 如果聊天模式选择器功能可用
         if (window.getChatModeSystemPrompt && typeof window.getChatModeSystemPrompt === 'function') {
             systemPrompt = window.getChatModeSystemPrompt();
+            
+            // 检查当前聊天模式
+            const currentModeId = localStorage.getItem('selected_chat_mode') || 'general';
+            if (currentModeId !== 'general' && (!window.PROMPT_TEMPLATES || !window.PROMPT_TEMPLATES.chatModes)) {
+                // 如果不是通用对话模式，且没有服务器提示词数据，则返回错误信息
+                return { 
+                    error: true, 
+                    message: `当前选择的"${currentModeId}"模式需要连接到服务器才能使用。请确保服务器连接正常，或切换到通用对话模式。` 
+                };
+            }
         } else {
             // fallback到原来的功能
             const activeFeature = localStorage.getItem('activeFeature') || '通用对话';
@@ -548,152 +558,45 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 发送消息
     async function sendMessage() {
-        console.log('准备发送消息');
-        if (!userInput) {
-            console.error('找不到用户输入元素');
-            return;
-        }
-        
         const message = userInput.value.trim();
-        console.log('用户输入:', message);
+        if (!message) return;
         
-        if (!message) {
-            console.log('消息为空，不发送');
-            return;
-        }
-        
-        // 清空输入框
+        // 禁用输入区域
         userInput.value = '';
-        
-        // 获取附件内容（如果有）
-        let fullMessage = message;
-        if (window.getAttachmentText && typeof window.getAttachmentText === 'function') {
-            try {
-                const attachmentText = window.getAttachmentText();
-                console.log('附件内容长度:', attachmentText ? attachmentText.length : 0);
-                
-                if (attachmentText) {
-                    // 在用户消息后添加文档内容
-                    fullMessage += "\n\n===== 附件内容 =====\n" + attachmentText;
-                    
-                    // 获取当前附件文件名
-                    const attachmentFileName = document.getElementById('fileName').textContent;
-                    
-                    // 创建HTML元素直接添加到DOM，而非使用字符串连接
-                    const userMessageText = document.createTextNode(message);
-                    const userMessageDiv = document.createElement('div');
-                    userMessageDiv.className = 'message user-message';
-                    
-                    // 创建头像
-                    const avatarDiv = document.createElement('div');
-                    avatarDiv.className = 'message-avatar user';
-                    const userAvatar = document.createElement('div');
-                    userAvatar.className = 'user-avatar';
-                    userAvatar.textContent = 'KQ';
-                    avatarDiv.appendChild(userAvatar);
-                    
-                    // 创建消息内容
-                    const contentDiv = document.createElement('div');
-                    contentDiv.className = 'message-content';
-                    contentDiv.appendChild(userMessageText);
-                    
-                    // 创建附件徽章
-                    const badgeSpan = document.createElement('span');
-                    badgeSpan.className = 'attachment-badge';
-                    badgeSpan.textContent = `[已上传附件: ${attachmentFileName}]`;
-                    contentDiv.appendChild(document.createTextNode(' '));
-                    contentDiv.appendChild(badgeSpan);
-                    
-                    // 组装消息
-                    userMessageDiv.appendChild(avatarDiv);
-                    userMessageDiv.appendChild(contentDiv);
-                    
-                    // 添加到聊天区域
-                    chatMessages.appendChild(userMessageDiv);
-                    scrollToBottom();
-                    
-                    console.log('附件消息已添加，附件名称:', attachmentFileName);
-                } else {
-                    // 没有附件，正常显示消息
-                    addUserMessage(message);
-                }
-            } catch (e) {
-                console.error('获取附件内容时出错:', e);
-                addUserMessage(message);
-            }
-        } else {
-            // 如果附件功能不可用，正常显示消息
-            console.log('附件功能不可用');
-            addUserMessage(message);
-        }
-        
-        // 显示加载指示器
-        const loadingIndicator = addLoadingIndicator();
+        userInput.disabled = true;
+        sendButton.disabled = true;
         
         try {
-            console.log('准备调用API');
-            // 构建API请求 
-            const request = buildAPIRequest(fullMessage);
+            // 添加用户消息到界面
+            addUserMessage(message);
             
-            // 检查用户是否已登录
-            const token = localStorage.getItem('xpat_auth_token');
+            // 显示加载指示器
+            const loadingIndicator = addLoadingIndicator();
             
-            if (!token) {
-                // 用户未登录，显示错误信息
+            // 准备请求数据
+            const apiRequest = buildAPIRequest(message);
+            
+            // 检查是否有错误信息
+            if (apiRequest && apiRequest.error) {
+                // 如果有错误，显示错误信息
                 loadingIndicator.remove();
-                addAIMessage("请先登录后再使用聊天功能。登录后您将获得API配额并能够跟踪使用情况。");
+                addAIMessage(apiRequest.message);
                 return;
             }
             
-            // 构建消息数组
-            const messages = [];
-            
-            // 添加系统提示
-            if (request.systemPrompt) {
-                messages.push({
-                    role: 'system',
-                    content: request.systemPrompt
-                });
-            }
-            
-            // 添加用户消息
-            messages.push({
+            // 调用API获取回复
+            const response = await callOpenRouterAPI([{
                 role: 'user',
-                content: request.message
-            });
+                content: apiRequest.message
+            }], window.CURRENT_MODEL);
             
-            try {
-                // 直接调用OpenRouter API
-                const content = await callOpenRouterAPI(messages, window.CURRENT_MODEL);
-                
-                // 移除加载指示器
-                loadingIndicator.remove();
-                
-                // 显示AI回复
-                addAIMessage(content);
-            } catch (apiError) {
-                console.error('API调用出错:', apiError);
-                
-                // 移除加载指示器
-                loadingIndicator.remove();
-                
-                // 显示用户友好的错误消息
-                let errorMessage = "抱歉，AI服务暂时不可用。";
-                
-                if (apiError.message.includes('API配置')) {
-                    errorMessage = "AI服务配置错误，请检查API设置或联系管理员。";
-                } else if (apiError.message.includes('过期') || apiError.message.includes('token')) {
-                    errorMessage = "您的登录已过期，请重新登录。";
-                    // 清除过期的令牌
-                    localStorage.removeItem('xpat_auth_token');
-                } else if (apiError.message.includes('配额')) {
-                    errorMessage = "您的API使用配额已用完，请联系管理员增加配额。";
-                }
-                
-                addAIMessage(errorMessage);
-            }
+            // 移除加载指示器
+            loadingIndicator.remove();
+            
+            // 添加AI回复到界面
+            addAIMessage(response);
         } catch (error) {
-            console.error('API调用出错:', error);
+            console.error('发送消息时出错:', error);
             loadingIndicator.remove();
             addAIMessage("发生错误，请稍后重试。");
         }

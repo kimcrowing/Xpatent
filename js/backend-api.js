@@ -274,6 +274,36 @@ async function deleteUser(userId) {
   return apiRequest(`/admin/users/${userId}`, 'DELETE');
 }
 
+/**
+ * 获取用户的权限配置
+ */
+async function getUserPermissions() {
+  try {
+    return await apiRequest('/users/permissions');
+  } catch (error) {
+    console.error('获取用户权限失败:', error);
+    // 出错时返回默认权限
+    return {
+      allowedChatModes: ['general'],
+      allowedModels: ['deepseek/deepseek-r1:free']
+    };
+  }
+}
+
+/**
+ * 获取指定用户的权限配置（管理员用）
+ */
+async function getUserPermissionsByAdmin(userId) {
+  return apiRequest(`/users/${userId}/permissions`);
+}
+
+/**
+ * 设置用户权限（管理员用）
+ */
+async function setUserPermissions(userId, permissions) {
+  return apiRequest(`/users/${userId}/permissions`, 'PUT', permissions);
+}
+
 // 检测是否在GitHub Pages环境，并尝试设置API地址
 (function detectEnvironment() {
   // 强制使用ngrok地址，无论是否在GitHub Pages环境
@@ -312,7 +342,10 @@ window.backendApi = {
   saveApiConfig,
   sendOpenRouterRequest,
   createUser,
-  deleteUser
+  deleteUser,
+  getUserPermissions,
+  getUserPermissionsByAdmin,
+  setUserPermissions
 };
 
 /**

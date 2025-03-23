@@ -16,17 +16,52 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 本地备用的聊天模式列表（如果无法从模拟后端获取）
     const localChatModes = [
-        { id: 'general', name: '通用对话', systemPrompt: '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。' },
-        { id: 'patent-search', name: '专利查询', systemPrompt: '你是Xpat专利查询助手，专注于帮助用户检索、理解和分析专利信息。请解释专利概念、提供检索策略，并分析相关专利文献。' },
-        { id: 'patent-writing', name: '专利撰写', systemPrompt: '你是Xpat专利撰写助手，专注于帮助用户撰写高质量的专利申请文件。请根据用户的技术描述，提供专利申请书的结构、权利要求书的写法、说明书的组织等方面的建议。' },
-        { id: 'patent-response', name: '专利答审', systemPrompt: '你是Xpat专利答审助手，专注于帮助用户应对专利审查意见。请分析审查意见书内容，提供修改建议，解释如何针对审查员的不同意见进行有效答复。' }
+        { id: 'general', name: '通用对话', systemPrompt: '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。' }
     ];
     
-    // 获取聊天模式列表，优先使用模拟后端数据
+    // 存储用户权限
+    let userPermissions = {
+        allowedChatModes: ['general']
+    };
+    
+    // 获取用户权限
+    async function loadUserPermissions() {
+        try {
+            if (window.backendApi && window.backendApi.getUserPermissions) {
+                userPermissions = await window.backendApi.getUserPermissions();
+                console.log('已加载用户权限:', userPermissions);
+                
+                // 重新初始化选择器
+                checkSelectedChatMode();
+            }
+        } catch (error) {
+            console.error('加载用户权限失败:', error);
+        }
+    }
+    
+    // 获取聊天模式列表，优先使用模拟后端数据，并根据用户权限过滤
     function getChatModes() {
-        return window.PROMPT_TEMPLATES && window.PROMPT_TEMPLATES.chatModes 
-            ? window.PROMPT_TEMPLATES.chatModes 
-            : localChatModes;
+        let modes = [];
+        
+        if (window.PROMPT_TEMPLATES && window.PROMPT_TEMPLATES.chatModes) {
+            modes = window.PROMPT_TEMPLATES.chatModes;
+        } else {
+            console.warn('无法从服务器获取提示词模板，只使用通用对话模式');
+            modes = localChatModes;
+        }
+        
+        // 根据用户权限过滤可用模式
+        if (userPermissions && userPermissions.allowedChatModes) {
+            // 管理员可以访问所有模式
+            if (window.backendApi && window.backendApi.isAdmin && window.backendApi.isAdmin()) {
+                return modes;
+            }
+            
+            // 普通用户只能访问被允许的模式
+            return modes.filter(mode => userPermissions.allowedChatModes.includes(mode.id));
+        }
+        
+        return modes;
     }
     
     // 存储用户选择的聊天模式的本地存储键
@@ -144,6 +179,9 @@ document.addEventListener('DOMContentLoaded', function() {
     window.getChatModeSystemPrompt = function() {
         return window.CHAT_MODE_SYSTEM_PROMPT || getChatModes()[0].systemPrompt;
     };
+    
+    // 初始化时加载用户权限
+    loadUserPermissions();
     
     // 初始化时检查
     checkSelectedChatMode();

@@ -1001,7 +1001,7 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * 处理编辑用户
      */
-    function handleEditUser(id, users) {
+    async function handleEditUser(id, users) {
         // 查找用户数据
         const user = users.find(u => u.id.toString() === id.toString());
         
@@ -1022,6 +1022,31 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 设置模态框标题
         userModalTitle.textContent = '编辑用户';
+        
+        // 加载用户权限
+        try {
+            // 获取用户权限数据
+            const permissions = await window.backendApi.getUserPermissionsByAdmin(user.id);
+            
+            // 设置对话模式权限
+            if (permissions && permissions.allowedChatModes) {
+                // 重置所有复选框
+                document.querySelectorAll('#chatModesCheckboxes input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = permissions.allowedChatModes.includes(checkbox.value);
+                });
+            }
+            
+            // 设置模型权限
+            if (permissions && permissions.allowedModels) {
+                // 重置所有复选框
+                document.querySelectorAll('#modelsCheckboxes input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = permissions.allowedModels.includes(checkbox.value);
+                });
+            }
+        } catch (error) {
+            console.error('加载用户权限失败:', error);
+            userFormError.textContent = '加载权限失败: ' + (error.message || '未知错误');
+        }
         
         // 显示模态框
         userModalOverlay.style.display = 'flex';
@@ -1136,6 +1161,34 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             // 更新用户API配额
             await window.backendApi.resetUserApiQuota(id, quota);
+            
+            // 获取权限设置
+            const allowedChatModes = [];
+            document.querySelectorAll('#chatModesCheckboxes input[type="checkbox"]:checked').forEach(checkbox => {
+                allowedChatModes.push(checkbox.value);
+            });
+            
+            const allowedModels = [];
+            document.querySelectorAll('#modelsCheckboxes input[type="checkbox"]:checked').forEach(checkbox => {
+                allowedModels.push(checkbox.value);
+            });
+            
+            // 确保至少选择了一个对话模式和一个模型
+            if (allowedChatModes.length === 0) {
+                userFormError.textContent = '请至少选择一个对话模式';
+                return;
+            }
+            
+            if (allowedModels.length === 0) {
+                userFormError.textContent = '请至少选择一个模型';
+                return;
+            }
+            
+            // 更新用户权限
+            await window.backendApi.setUserPermissions(id, {
+                allowedChatModes,
+                allowedModels
+            });
             
             // 关闭模态框
             closeUserModal();

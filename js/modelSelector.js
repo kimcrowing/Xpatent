@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 模型列表
-    const models = [
+    const allModels = [
         { id: 'deepseek/deepseek-r1:free', name: 'Deepseek' },
         { id: 'anthropic/claude-3-opus:beta', name: 'Claude 3 Opus' },
         { id: 'anthropic/claude-3-sonnet:beta', name: 'Claude 3 Sonnet' },
@@ -25,6 +25,42 @@ document.addEventListener('DOMContentLoaded', function() {
         { id: 'meta-llama/llama-3-70b-instruct:free', name: 'Llama 3 70B' },
         { id: 'meta-llama/llama-3.1-8b-instruct:free', name: 'Llama 3.1 8B' }
     ];
+    
+    // 存储用户权限
+    let userPermissions = {
+        allowedModels: ['deepseek/deepseek-r1:free']
+    };
+    
+    // 获取用户权限
+    async function loadUserPermissions() {
+        try {
+            if (window.backendApi && window.backendApi.getUserPermissions) {
+                userPermissions = await window.backendApi.getUserPermissions();
+                console.log('已加载用户权限:', userPermissions);
+                
+                // 重新初始化选择器
+                checkSelectedModel();
+            }
+        } catch (error) {
+            console.error('加载用户权限失败:', error);
+        }
+    }
+    
+    // 获取可用模型，根据用户权限过滤
+    function getAvailableModels() {
+        // 管理员可以访问所有模型
+        if (window.backendApi && window.backendApi.isAdmin && window.backendApi.isAdmin()) {
+            return allModels;
+        }
+        
+        // 普通用户只能访问被允许的模型
+        if (userPermissions && userPermissions.allowedModels) {
+            return allModels.filter(model => userPermissions.allowedModels.includes(model.id));
+        }
+        
+        // 默认只返回免费模型
+        return allModels.filter(model => model.id.includes(':free'));
+    }
     
     // 存储用户选择的模型的本地存储键
     const SELECTED_MODEL_KEY = 'selected_model';
@@ -40,6 +76,9 @@ document.addEventListener('DOMContentLoaded', function() {
             modelDropdown.className = 'model-dropdown';
             
             const modelList = document.createElement('ul');
+            
+            // 获取用户可用的模型
+            const models = getAvailableModels();
             
             models.forEach(model => {
                 const modelItem = document.createElement('li');
@@ -70,14 +109,28 @@ document.addEventListener('DOMContentLoaded', function() {
     function checkSelectedModel() {
         const savedModel = localStorage.getItem(SELECTED_MODEL_KEY);
         if (savedModel) {
+            // 获取可用模型
+            const availableModels = getAvailableModels();
+            
             // 查找匹配的模型
-            const model = models.find(m => m.id === savedModel);
+            const model = availableModels.find(m => m.id === savedModel);
             
             if (model) {
                 // 更新显示的模型名称
                 currentModelText.textContent = model.name;
                 // 更新API中使用的模型
                 window.CURRENT_MODEL = savedModel;
+            } else {
+                // 如果保存的模型不在可用列表中，使用第一个可用模型
+                if (availableModels.length > 0) {
+                    selectModel(availableModels[0].id, availableModels[0].name);
+                }
+            }
+        } else {
+            // 未保存过模型，使用第一个可用模型
+            const availableModels = getAvailableModels();
+            if (availableModels.length > 0) {
+                selectModel(availableModels[0].id, availableModels[0].name);
             }
         }
     }
@@ -96,8 +149,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`模型已切换为: ${modelName} (${modelId})`);
     }
     
-    // 初始化时检查
-    checkSelectedModel();
+    // 初始化时加载用户权限
+    loadUserPermissions();
     
     // 点击模型选择器按钮时显示/隐藏下拉菜单
     modelSelector.addEventListener('click', function(e) {
