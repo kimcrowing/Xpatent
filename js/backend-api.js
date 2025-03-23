@@ -186,7 +186,7 @@ async function getAllUsers(page = 1, limit = 10) {
  * 更新用户角色 (仅管理员)
  */
 async function updateUserRole(userId, role) {
-  return apiRequest(`/users/${userId}/role`, 'PUT', { role });
+  return apiRequest(`/admin/users/${userId}/role`, 'PUT', { role });
 }
 
 /**
