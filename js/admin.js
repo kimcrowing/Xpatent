@@ -1499,7 +1499,14 @@ document.addEventListener('DOMContentLoaded', function() {
      * 渲染API使用表格
      */
     function renderApiUsageTable(usersData) {
-        const tableBody = document.getElementById('apiUsageTableBody');
+        // 获取正确的表格tbody元素
+        const tableBody = document.querySelector('#apiUsageTable tbody');
+        
+        if (!tableBody) {
+            console.error('找不到API使用统计表格的tbody元素');
+            return;
+        }
+        
         tableBody.innerHTML = '';
         
         usersData.forEach(user => {
