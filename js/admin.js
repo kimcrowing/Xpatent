@@ -1062,6 +1062,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // 显示模态框
+        userModalOverlay.classList.add('show');
         userModalOverlay.style.display = 'flex';
         
         // 监听角色变更
@@ -1218,6 +1219,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * 关闭用户编辑模态框
      */
     function closeUserModal() {
+        userModalOverlay.classList.remove('show');
         userModalOverlay.style.display = 'none';
         userForm.reset();
         userFormError.textContent = '';

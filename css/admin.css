@@ -282,10 +282,15 @@ main {
     right: 0;
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
+    display: none; /* 默认隐藏 */
     justify-content: center;
     align-items: center;
     z-index: 1000;
+}
+
+/* 当模态窗口显示时应用的样式 */
+.modal-overlay.show {
+    display: flex;
 }
 
 .modal {
