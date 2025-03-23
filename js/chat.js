@@ -52,9 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loginPrompt.className = 'login-prompt';
         loginPrompt.innerHTML = `
             <h3>Xpat - 用简单的方式革新世界</h3>
-            <p>请订阅或登录新世界</p>
-            <a href="./subscriptions.html" class="login-button">订阅</a>
-            <a href="./login.html" class="login-button" style="margin-left: 10px;">登录</a>
+            <p>请<a href="./subscriptions.html">订阅</a>或<a href="./login.html">登录</a>新世界</p>
         `;
         
         // 添加到聊天区域

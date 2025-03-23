@@ -20,6 +20,18 @@
     color: var(--text-color);
 }
 
+.login-prompt p a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.login-prompt p a:hover {
+    text-decoration: underline;
+    color: var(--primary-hover-color);
+}
+
 .login-button {
     display: inline-block;
     background-color: var(--primary-color);
