@@ -1973,4 +1973,49 @@ document.addEventListener('DOMContentLoaded', function() {
             toast.classList.remove('show');
         }, 3000);
     }
+
+    /**
+     * 打开提示词编辑模态框
+     * @param {Object} prompt - 提示词数据，如果为空则为新增模式
+     */
+    function openPromptModal(prompt = null) {
+        // 设置模态框标题
+        if (prompt) {
+            modalTitle.textContent = '编辑提示词';
+        } else {
+            modalTitle.textContent = '新增提示词';
+        }
+        
+        // 重置表单
+        promptForm.reset();
+        promptFormError.textContent = '';
+        
+        // 如果是编辑模式，填充表单
+        if (prompt) {
+            document.getElementById('promptId').value = prompt.id;
+            document.getElementById('promptName').value = prompt.name;
+            document.getElementById('promptCategory').value = prompt.category;
+            document.getElementById('promptContent').value = prompt.content;
+            document.getElementById('promptIsPublic').checked = prompt.is_public;
+        } else {
+            document.getElementById('promptId').value = '';
+        }
+        
+        // 显示模态框
+        modalOverlay.classList.add('show');
+        modalOverlay.style.display = 'flex';
+        
+        // 监听表单提交
+        promptForm.addEventListener('submit', handleSavePrompt);
+    }
+
+    /**
+     * 关闭提示词编辑模态框
+     */
+    function closePromptModal() {
+        modalOverlay.classList.remove('show');
+        modalOverlay.style.display = 'none';
+        promptForm.reset();
+        promptFormError.textContent = '';
+    }
 }); 
