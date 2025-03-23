@@ -285,8 +285,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // 历史对话按钮点击事件
-    const historyBtn = document.getElementById('historyBtn');
-    const historyPanel = document.getElementById('historyPanel');
     const closeHistoryBtn = document.getElementById('closeHistoryBtn');
     const newConversationBtn = document.getElementById('newConversationBtn');
     
@@ -298,26 +296,23 @@ document.addEventListener('DOMContentLoaded', () => {
             loadHistorySessions();
             
             // 显示历史对话面板
-            historyPanel.classList.toggle('active');
+            historyPanel.style.display = historyPanel.style.display === 'block' ? 'none' : 'block';
             
             // 如果用户菜单是打开的，则关闭它
-            const userMenu = document.getElementById('userMenu');
-            if (userMenu && userMenu.classList.contains('active')) {
-                userMenu.classList.remove('active');
-            }
+            if (userMenu) userMenu.style.display = 'none';
             
             // 如果通知面板是打开的，则关闭它
-            const notificationPanel = document.getElementById('notificationPanel');
-            if (notificationPanel && notificationPanel.classList.contains('active')) {
-                notificationPanel.classList.remove('active');
-            }
+            if (notificationPanel) notificationPanel.style.display = 'none';
+            
+            // 如果语言菜单是打开的，则关闭它
+            if (languageMenu) languageMenu.style.display = 'none';
         });
     }
     
     // 关闭历史面板按钮
     if (closeHistoryBtn && historyPanel) {
         closeHistoryBtn.addEventListener('click', function() {
-            historyPanel.classList.remove('active');
+            historyPanel.style.display = 'none';
         });
     }
     
@@ -336,10 +331,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 点击页面其他区域关闭历史面板
     document.addEventListener('click', function(e) {
-        if (historyPanel && historyPanel.classList.contains('active') && 
+        if (historyPanel && 
+            historyPanel.style.display === 'block' && 
             !historyPanel.contains(e.target) && 
             !historyBtn.contains(e.target)) {
-            historyPanel.classList.remove('active');
+            historyPanel.style.display = 'none';
         }
     });
     
@@ -368,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (window.chatManager && typeof window.chatManager.createNewSession === 'function') {
                         window.chatManager.createNewSession();
                     }
-                    historyPanel.classList.remove('active');
+                    historyPanel.style.display = 'none';
                 });
             }
         } else {
@@ -428,8 +424,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 否则切换到该会话
                     const sessionId = this.dataset.id;
                     
-                    if (window.chatManager && typeof window.chatManager.switchSession === 'function') {
-                        window.chatManager.switchSession(sessionId);
+                    if (window.chatManager && typeof window.chatManager.switchToSession === 'function') {
+                        window.chatManager.switchToSession(sessionId);
                         
                         // 更新活跃状态
                         const sessions = historySessionList.querySelectorAll('.session-item');
@@ -437,7 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         this.classList.add('active');
                         
                         // 关闭历史面板
-                        historyPanel.classList.remove('active');
+                        historyPanel.style.display = 'none';
                     }
                 });
                 
