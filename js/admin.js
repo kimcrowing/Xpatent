@@ -505,7 +505,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'patent-search': categoryDisplay = '专利检索'; break;
                 case 'patent-writing': categoryDisplay = '专利撰写'; break;
                 case 'patent-analysis': categoryDisplay = '专利分析'; break;
-                default: categoryDisplay = template.category; break;
             }
             
             // 格式化创建时间

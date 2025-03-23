@@ -5,8 +5,8 @@
  * 默认管理员密码: www
  */
 
-// 后端API基础URL - 改为相对路径，支持在不同环境下使用
-window.API_BASE_URL = '/api';
+// 后端API基础URL - 可以动态修改，以支持GitHub Pages环境
+window.API_BASE_URL = 'https://eca4-2408-8262-1871-4896-b109-80c0-d6fb-f89b.ngrok-free.app/api';
 
 // 本地存储密钥
 const TOKEN_KEY = 'xpat_auth_token';
