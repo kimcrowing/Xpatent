@@ -1,5 +1,4 @@
-import { checkAuth, setupAuthUI } from './auth.js';
-import subscriptionManager from './subscription-manager.js';
+// 订阅页面脚本
 
 // DOM元素
 const currentSubscriptionElement = document.getElementById('current-subscription');
@@ -14,20 +13,69 @@ const confirmPlanPriceElement = document.getElementById('confirm-plan-price');
 const confirmPlanQuotaElement = document.getElementById('confirm-plan-quota');
 const confirmSubscriptionButton = document.getElementById('confirm-subscription');
 
-// 设置认证UI
-setupAuthUI();
-
 // 存储计划数据
 let plans = [];
 let selectedPlanId = null;
 let currentSubscription = null;
 
+// 检查用户认证状态
+function checkAuth() {
+  const token = localStorage.getItem('xpat_auth_token');
+  const userInfo = localStorage.getItem('xpat_user_info');
+  
+  if (token && userInfo) {
+    try {
+      // 解析用户信息
+      const user = JSON.parse(userInfo);
+      return { isLoggedIn: true, user };
+    } catch (e) {
+      return { isLoggedIn: false };
+    }
+  }
+  
+  return { isLoggedIn: false };
+}
+
+// 设置用户界面
+function setupAuthUI() {
+  const authButtons = document.getElementById('auth-buttons');
+  const userDropdown = document.getElementById('user-dropdown');
+  const username = document.getElementById('username');
+  const logoutBtn = document.getElementById('logout-btn');
+  
+  const { isLoggedIn, user } = checkAuth();
+  
+  if (isLoggedIn && user) {
+    // 显示用户下拉菜单，隐藏登录/注册按钮
+    authButtons.classList.add('d-none');
+    userDropdown.classList.remove('d-none');
+    username.textContent = user.username || '用户';
+    
+    // 绑定登出事件
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        localStorage.removeItem('xpat_auth_token');
+        localStorage.removeItem('xpat_user_info');
+        window.location.reload();
+      });
+    }
+  } else {
+    // 显示登录/注册按钮，隐藏用户下拉菜单
+    authButtons.classList.remove('d-none');
+    userDropdown.classList.add('d-none');
+  }
+}
+
 /**
  * 初始化页面
  */
 async function initPage() {
+  // 设置认证UI
+  setupAuthUI();
+  
   // 检查用户是否已登录
-  const isLoggedIn = await checkAuth();
+  const { isLoggedIn } = checkAuth();
   
   if (!isLoggedIn) {
     // 显示登录提示
@@ -52,7 +100,19 @@ async function initPage() {
  */
 async function loadCurrentSubscription() {
   try {
-    currentSubscription = await subscriptionManager.checkSubscriptionStatus();
+    // 直接使用fetch请求获取当前订阅
+    const response = await fetch(`${window.API_BASE_URL}/subscriptions/active`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('获取订阅信息失败');
+    }
+    
+    const data = await response.json();
+    currentSubscription = data.subscription;
     
     if (currentSubscription) {
       // 显示当前订阅信息
@@ -108,9 +168,9 @@ async function loadCurrentSubscription() {
  */
 async function loadSubscriptionPlans() {
   try {
-    const response = await fetch('/api/subscriptions', {
+    const response = await fetch(`${window.API_BASE_URL}/subscriptions`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
       }
     });
     
@@ -193,7 +253,7 @@ function createPlanCard(plan) {
  */
 function openSubscriptionModal(plan) {
   // 检查用户是否已登录
-  if (!localStorage.getItem('token')) {
+  if (!localStorage.getItem('xpat_auth_token')) {
     // 打开登录模态框
     const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
     loginModal.show();
@@ -221,10 +281,10 @@ async function subscribePlan() {
     confirmSubscriptionButton.textContent = '处理中...';
     
     // 调用API进行订阅
-    const response = await fetch('/api/subscriptions/purchase', {
+    const response = await fetch(`${window.API_BASE_URL}/subscriptions/purchase`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ planId: selectedPlanId })
@@ -235,16 +295,18 @@ async function subscribePlan() {
       throw new Error(error.message || '订阅失败');
     }
     
-    // 隐藏模态框
+    // 处理成功响应
+    const data = await response.json();
+    
+    // 关闭模态框
     const subscriptionModal = bootstrap.Modal.getInstance(document.getElementById('subscriptionModal'));
     subscriptionModal.hide();
     
     // 显示成功消息
-    alert('订阅成功！');
+    alert('订阅成功！您现在可以享受高级功能了。');
     
-    // 重新加载订阅信息
-    loadCurrentSubscription();
-    loadSubscriptionPlans();
+    // 重新加载页面以显示新的订阅信息
+    window.location.reload();
   } catch (error) {
     console.error('订阅失败:', error);
     alert(`订阅失败: ${error.message}`);
@@ -263,7 +325,21 @@ async function renewCurrentSubscription() {
     renewButton.disabled = true;
     renewButton.textContent = '处理中...';
     
-    const result = await subscriptionManager.renewSubscription();
+    // 直接使用fetch请求续订
+    const response = await fetch(`${window.API_BASE_URL}/subscriptions/renew`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '续订失败');
+    }
+    
+    const result = await response.json();
     
     alert('续订成功！新的到期日期：' + new Date(result.newEndDate).toLocaleDateString('zh-CN'));
     

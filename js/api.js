@@ -11,7 +11,7 @@
     
     // 获取存储的令牌
     const getToken = () => {
-        return localStorage.getItem('authToken');
+        return localStorage.getItem('xpat_auth_token');
     };
     
     // 通用API客户端

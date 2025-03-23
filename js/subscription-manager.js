@@ -62,9 +62,9 @@ class SubscriptionManager {
    */
   async checkSubscriptionStatus() {
     try {
-      const response = await fetch('/api/subscriptions/active', {
+      const response = await fetch(`${window.API_BASE_URL}/subscriptions/active`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
         }
       });
       
@@ -91,13 +91,13 @@ class SubscriptionManager {
     
     try {
       // 只有登录用户才检查
-      if (!localStorage.getItem('token')) {
+      if (!localStorage.getItem('xpat_auth_token')) {
         return;
       }
       
-      const response = await fetch('/api/subscriptions/expiring', {
+      const response = await fetch(`${window.API_BASE_URL}/subscriptions/expiring`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
         }
       });
       
@@ -142,10 +142,10 @@ class SubscriptionManager {
    */
   async renewSubscription() {
     try {
-      const response = await fetch('/api/subscriptions/renew', {
+      const response = await fetch(`${window.API_BASE_URL}/subscriptions/renew`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
           'Content-Type': 'application/json'
         }
       });
