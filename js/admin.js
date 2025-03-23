@@ -1727,25 +1727,41 @@ document.addEventListener('DOMContentLoaded', function() {
      * 渲染日API调用图表
      */
     function renderDailyApiCallsChart(stats) {
-        if (!stats.dailyApiCalls || Object.keys(stats.dailyApiCalls).length === 0) {
-            dailyApiCallsChart.innerHTML = '<div class="placeholder-chart"><p>暂无日调用数据</p></div>';
-            return;
+        // 清除之前的图表实例
+        if (window.dailyApiChart) {
+            window.dailyApiChart.destroy();
         }
         
         try {
-            // 清除之前的图表实例
-            if (window.dailyApiChart) {
-                window.dailyApiChart.destroy();
-            }
-            
             // 准备canvas元素
             dailyApiCallsChart.innerHTML = '<canvas></canvas>';
             const canvas = dailyApiCallsChart.querySelector('canvas');
             const ctx = canvas.getContext('2d');
             
-            // 准备数据
-            const labels = Object.keys(stats.dailyApiCalls);
-            const data = Object.values(stats.dailyApiCalls);
+            // 准备数据 - 如果没有详细数据，则使用简单数据生成图表
+            let labels, data;
+            
+            if (stats.dailyApiCalls && Object.keys(stats.dailyApiCalls).length > 0) {
+                // 使用详细的每日调用数据
+                labels = Object.keys(stats.dailyApiCalls);
+                data = Object.values(stats.dailyApiCalls);
+            } else {
+                // 创建简单的图表数据 - 使用最近7天日期
+                const today = new Date();
+                labels = [];
+                data = [];
+                
+                // 生成最近7天的日期标签
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    const dateStr = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+                    labels.push(dateStr);
+                    
+                    // 最后一天（今天）显示今日调用数，其他天显示0
+                    data.push(i === 0 ? (stats.todayApiCalls || 0) : 0);
+                }
+            }
             
             // 创建新图表
             window.dailyApiChart = new Chart(ctx, {
@@ -1779,25 +1795,29 @@ document.addEventListener('DOMContentLoaded', function() {
      * 渲染模型分布图表
      */
     function renderModelDistributionChart(stats) {
-        if (!stats.modelDistribution || Object.keys(stats.modelDistribution).length === 0) {
-            modelDistributionChart.innerHTML = '<div class="placeholder-chart"><p>暂无模型使用数据</p></div>';
-            return;
+        // 清除之前的图表实例
+        if (window.modelDistChart) {
+            window.modelDistChart.destroy();
         }
         
         try {
-            // 清除之前的图表实例
-            if (window.modelDistChart) {
-                window.modelDistChart.destroy();
-            }
-            
             // 准备canvas元素
             modelDistributionChart.innerHTML = '<canvas></canvas>';
             const canvas = modelDistributionChart.querySelector('canvas');
             const ctx = canvas.getContext('2d');
             
-            // 准备数据
-            const labels = Object.keys(stats.modelDistribution);
-            const data = Object.values(stats.modelDistribution);
+            // 准备数据 - 如果没有详细数据，则使用默认数据
+            let labels, data;
+            
+            if (stats.modelDistribution && Object.keys(stats.modelDistribution).length > 0) {
+                // 使用详细的模型分布数据
+                labels = Object.keys(stats.modelDistribution);
+                data = Object.values(stats.modelDistribution);
+            } else {
+                // 创建默认的图表数据 - 假设所有调用都使用默认模型
+                labels = ['默认模型'];
+                data = [stats.totalApiCalls || 0];
+            }
             
             // 创建背景色数组
             const backgroundColors = [
