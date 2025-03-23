@@ -70,9 +70,25 @@ main {
     box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
 }
 
+/* 复选框组 */
 .checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.permissions-container .checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.checkbox-item {
     display: flex;
     align-items: center;
+    margin-bottom: 3px;
 }
 
 .checkbox-label {
@@ -83,10 +99,16 @@ main {
 
 .checkbox-label input[type="checkbox"] {
     width: auto;
-    margin-right: 8px;
+    margin-right: 6px;
 }
 
-.checkbox-label span {
+.permission-section {
+    margin-bottom: 15px;
+}
+
+.permission-section h4 {
+    margin-bottom: 8px;
+    font-size: 14px;
     color: var(--text-color);
 }
 
@@ -304,6 +326,44 @@ main {
 
 .small-modal {
     max-width: 400px;
+}
+
+.modal-container {
+    max-width: 600px;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.user-modal {
+    max-width: 750px;
+}
+
+.user-modal .modal-body {
+    padding: 15px 20px;
+}
+
+.user-modal .form-group {
+    margin-bottom: 12px;
+}
+
+.user-modal label {
+    margin-bottom: 5px;
+    font-size: 13px;
+}
+
+.user-modal input,
+.user-modal select {
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+.user-modal .form-actions {
+    margin-top: 15px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
 }
 
 .modal-header {
@@ -791,4 +851,33 @@ main {
     font-size: 14px;
     margin-right: 8px;
     vertical-align: middle;
+}
+
+.permissions-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: var(--input-bg);
+    margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+    .permissions-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .checkbox-group,
+    .permissions-container .checkbox-group {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .checkbox-group,
+    .permissions-container .checkbox-group {
+        grid-template-columns: 1fr;
+    }
 } 
