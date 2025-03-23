@@ -12,6 +12,14 @@ const confirmPlanNameElement = document.getElementById('confirm-plan-name');
 const confirmPlanPriceElement = document.getElementById('confirm-plan-price');
 const confirmPlanQuotaElement = document.getElementById('confirm-plan-quota');
 const confirmSubscriptionButton = document.getElementById('confirm-subscription');
+const subscriptionModal = document.getElementById('subscriptionModal');
+const loginModal = document.getElementById('loginModal');
+const closeSubscriptionModal = document.getElementById('closeSubscriptionModal');
+const closeLoginModal = document.getElementById('closeLoginModal');
+const cancelSubscription = document.getElementById('cancelSubscription');
+const cancelLogin = document.getElementById('cancelLogin');
+const loginPromptBtn = document.getElementById('login-prompt-btn');
+const confirmLogin = document.getElementById('confirmLogin');
 
 // 存储计划数据
 let plans = [];
@@ -38,18 +46,21 @@ function checkAuth() {
 
 // 设置用户界面
 function setupAuthUI() {
-  const authButtons = document.getElementById('auth-buttons');
-  const userDropdown = document.getElementById('user-dropdown');
-  const username = document.getElementById('username');
-  const logoutBtn = document.getElementById('logout-btn');
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const adminEntry = document.getElementById('admin-entry');
   
   const { isLoggedIn, user } = checkAuth();
   
   if (isLoggedIn && user) {
-    // 显示用户下拉菜单，隐藏登录/注册按钮
-    authButtons.classList.add('d-none');
-    userDropdown.classList.remove('d-none');
-    username.textContent = user.username || '用户';
+    // 显示退出按钮，隐藏登录按钮
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'list-item';
+    
+    // 如果是管理员，显示管理入口
+    if (adminEntry && user.role === 'admin') {
+      adminEntry.style.display = 'list-item';
+    }
     
     // 绑定登出事件
     if (logoutBtn) {
@@ -61,130 +72,150 @@ function setupAuthUI() {
       });
     }
   } else {
-    // 显示登录/注册按钮，隐藏用户下拉菜单
-    authButtons.classList.remove('d-none');
-    userDropdown.classList.add('d-none');
+    // 显示登录按钮，隐藏退出按钮
+    if (loginBtn) loginBtn.style.display = 'list-item';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    if (adminEntry) adminEntry.style.display = 'none';
+    
+    // 绑定登录按钮事件
+    if (loginBtn) {
+      loginBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        showLoginModal();
+      });
+    }
   }
 }
 
-/**
- * 初始化页面
- */
+// 初始化页面
 async function initPage() {
   // 设置认证UI
   setupAuthUI();
   
-  // 检查用户是否已登录
   const { isLoggedIn } = checkAuth();
   
-  if (!isLoggedIn) {
-    // 显示登录提示
-    loginRequiredElement.classList.remove('d-none');
-    currentSubscriptionElement.classList.add('d-none');
-    noSubscriptionElement.classList.add('d-none');
-    
-    // 仍然加载计划以供查看
-    loadSubscriptionPlans();
-    return;
+  if (isLoggedIn) {
+    // 如果用户已登录，加载当前订阅和可用计划
+    try {
+      await loadCurrentSubscription();
+      await loadSubscriptionPlans();
+    } catch (error) {
+      console.error('初始化页面失败:', error);
+    }
+  } else {
+    // 如果用户未登录，显示登录提示，但仍加载可用计划
+    loginRequiredElement.style.display = 'block';
+    try {
+      await loadSubscriptionPlans();
+    } catch (error) {
+      console.error('加载订阅计划失败:', error);
+    }
   }
   
-  // 加载当前订阅
-  loadCurrentSubscription();
+  // 绑定模态框事件
+  setupModalEvents();
   
-  // 加载可用订阅计划
-  loadSubscriptionPlans();
+  // 绑定登录提示按钮事件
+  if (loginPromptBtn) {
+    loginPromptBtn.addEventListener('click', showLoginModal);
+  }
 }
 
-/**
- * 加载当前订阅信息
- */
+// 加载当前订阅信息
 async function loadCurrentSubscription() {
   try {
-    // 直接使用fetch请求获取当前订阅
-    const response = await fetch(`${window.API_BASE_URL}/subscriptions/active`, {
+    const token = localStorage.getItem('xpat_auth_token');
+    if (!token) return;
+    
+    const response = await fetch(`${window.API_BASE_URL}/api/subscriptions/current`, {
+      method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
     });
     
     if (!response.ok) {
-      throw new Error('获取订阅信息失败');
+      if (response.status === 404) {
+        // 用户没有活跃订阅
+        noSubscriptionElement.style.display = 'block';
+        return;
+      }
+      throw new Error(`获取订阅失败: ${response.statusText}`);
     }
     
-    const data = await response.json();
-    currentSubscription = data.subscription;
+    currentSubscription = await response.json();
     
+    // 如果有活跃的订阅，显示订阅信息
     if (currentSubscription) {
-      // 显示当前订阅信息
-      document.getElementById('current-plan-name').textContent = currentSubscription.plan_name;
+      // 更新DOM
+      document.getElementById('current-plan-name').textContent = currentSubscription.plan_name || 'Unknown Plan';
       
-      // 格式化日期
-      const endDate = new Date(currentSubscription.end_date);
-      document.getElementById('expiration-date').textContent = endDate.toLocaleDateString('zh-CN');
+      // 格式化到期日期
+      const expirationDate = new Date(currentSubscription.expiration_date);
+      document.getElementById('expiration-date').textContent = expirationDate.toLocaleDateString('zh-CN');
       
       // 计算剩余天数
-      const now = new Date();
-      const remainingDays = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
-      document.getElementById('remaining-days').textContent = remainingDays > 0 ? remainingDays : '已过期';
+      const today = new Date();
+      const diffTime = expirationDate - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      document.getElementById('remaining-days').textContent = `${diffDays} 天`;
       
       // API配额
-      document.getElementById('api-quota').textContent = currentSubscription.api_quota;
+      document.getElementById('api-quota').textContent = currentSubscription.api_quota || 'Unlimited';
       
       // 功能列表
       const featuresList = document.getElementById('features-list');
-      featuresList.innerHTML = '';
-      currentSubscription.features.forEach(feature => {
-        const li = document.createElement('li');
-        li.textContent = feature;
-        featuresList.appendChild(li);
-      });
+      if (featuresList && currentSubscription.features && Array.isArray(currentSubscription.features)) {
+        featuresList.innerHTML = '';
+        currentSubscription.features.forEach(feature => {
+          const li = document.createElement('li');
+          li.textContent = feature;
+          featuresList.appendChild(li);
+        });
+      }
       
-      // 显示订阅卡片
-      currentSubscriptionElement.classList.remove('d-none');
-      noSubscriptionElement.classList.add('d-none');
+      // 显示当前订阅区块
+      currentSubscriptionElement.style.display = 'block';
       
-      // 如果已过期，修改显示状态
-      if (remainingDays <= 0) {
-        document.getElementById('current-plan-name').innerHTML = `${currentSubscription.plan_name} <span class="badge bg-danger">已过期</span>`;
+      // 绑定续订按钮事件
+      if (renewButton) {
+        renewButton.addEventListener('click', renewCurrentSubscription);
       }
     } else {
-      // 显示无订阅提示
-      currentSubscriptionElement.classList.add('d-none');
-      noSubscriptionElement.classList.remove('d-none');
+      // 没有活跃订阅
+      noSubscriptionElement.style.display = 'block';
     }
+    
   } catch (error) {
-    console.error('加载订阅信息失败:', error);
-    // 显示错误提示
-    noSubscriptionElement.classList.remove('d-none');
-    noSubscriptionElement.querySelector('.alert').innerHTML = `
-      <h4 class="alert-heading">加载订阅信息失败</h4>
-      <p>无法获取您的订阅信息，请刷新页面重试。</p>
-    `;
+    console.error('加载当前订阅失败:', error);
+    noSubscriptionElement.style.display = 'block';
   }
 }
 
-/**
- * 加载可用订阅计划
- */
+// 加载订阅计划
 async function loadSubscriptionPlans() {
   try {
-    const response = await fetch(`${window.API_BASE_URL}/subscriptions`, {
+    // 清空加载指示器
+    subscriptionPlansElement.innerHTML = '<div class="loading-indicator"><div class="spinner"></div></div>';
+    
+    const response = await fetch(`${window.API_BASE_URL}/api/subscriptions/plans`, {
+      method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`
+        'Content-Type': 'application/json'
       }
     });
     
     if (!response.ok) {
-      throw new Error('获取订阅计划失败');
+      throw new Error(`获取订阅计划失败: ${response.statusText}`);
     }
     
-    const data = await response.json();
-    plans = data.plans;
+    plans = await response.json();
     
-    // 清空加载动画
+    // 清空加载指示器
     subscriptionPlansElement.innerHTML = '';
     
-    // 渲染订阅计划卡片
+    // 创建计划卡片
     plans.forEach(plan => {
       const planCard = createPlanCard(plan);
       subscriptionPlansElement.appendChild(planCard);
@@ -192,11 +223,9 @@ async function loadSubscriptionPlans() {
   } catch (error) {
     console.error('加载订阅计划失败:', error);
     subscriptionPlansElement.innerHTML = `
-      <div class="col-12">
-        <div class="alert alert-danger">
-          <h4 class="alert-heading">加载订阅计划失败</h4>
-          <p>无法获取可用的订阅计划，请刷新页面重试。</p>
-        </div>
+      <div class="alert alert-warning">
+        <h4>加载订阅计划失败</h4>
+        <p>无法获取可用的订阅计划，请刷新页面重试。</p>
       </div>
     `;
   }
@@ -210,41 +239,154 @@ async function loadSubscriptionPlans() {
 function createPlanCard(plan) {
   const isCurrentPlan = currentSubscription && currentSubscription.plan_id === plan.id;
   
-  const colElement = document.createElement('div');
-  colElement.className = 'col-md-4 mb-4';
+  const planCard = document.createElement('div');
+  planCard.className = 'plan-card';
   
-  colElement.innerHTML = `
-    <div class="card h-100 ${isCurrentPlan ? 'border-primary' : ''}">
-      <div class="card-header ${isCurrentPlan ? 'bg-primary text-white' : ''}">
-        <h3 class="card-title text-center mb-0">${plan.name}</h3>
-        ${isCurrentPlan ? '<span class="badge bg-light text-primary float-end">当前</span>' : ''}
+  planCard.innerHTML = `
+    <div class="plan-header">
+      <h3>
+        ${plan.name}
+        ${isCurrentPlan ? '<span class="plan-badge">当前</span>' : ''}
+      </h3>
+    </div>
+    <div class="plan-body">
+      <div class="plan-price">
+        ${plan.price}<span>元 / 月</span>
       </div>
-      <div class="card-body d-flex flex-column">
-        <div class="text-center mb-3">
-          <span class="h2">${plan.price}</span>
-          <span class="text-muted">元 / 月</span>
-        </div>
-        <p class="text-center mb-4">每日API调用: <strong>${plan.api_quota}</strong> 次</p>
-        <ul class="list-group list-group-flush mb-4">
-          ${plan.features.map(feature => `<li class="list-group-item">${feature}</li>`).join('')}
-        </ul>
-        <div class="mt-auto text-center">
-          ${plan.price === 0 ? 
-            `<button class="btn btn-outline-primary w-100 subscribe-btn" data-plan-id="${plan.id}">选择免费方案</button>` : 
-            `<button class="btn ${isCurrentPlan ? 'btn-outline-primary' : 'btn-primary'} w-100 subscribe-btn" data-plan-id="${plan.id}">
-              ${isCurrentPlan ? '续订' : '订阅'}
-            </button>`
-          }
-        </div>
+      <div class="plan-feature">
+        每日API调用: <strong>${plan.api_quota}</strong> 次
       </div>
+      <ul class="features-list">
+        ${plan.features.map(feature => `<li>${feature}</li>`).join('')}
+      </ul>
+      <button class="btn-subscribe ${isCurrentPlan ? 'btn-outline' : ''}" data-plan-id="${plan.id}">
+        ${isCurrentPlan ? '续订' : (plan.price === 0 ? '选择免费方案' : '订阅')}
+      </button>
     </div>
   `;
   
   // 绑定订阅按钮事件
-  const subscribeBtn = colElement.querySelector('.subscribe-btn');
+  const subscribeBtn = planCard.querySelector('.btn-subscribe');
   subscribeBtn.addEventListener('click', () => openSubscriptionModal(plan));
   
-  return colElement;
+  return planCard;
+}
+
+/**
+ * 设置模态框事件
+ */
+function setupModalEvents() {
+  // 关闭订阅确认模态框
+  if (closeSubscriptionModal) {
+    closeSubscriptionModal.addEventListener('click', () => {
+      subscriptionModal.classList.remove('active');
+    });
+  }
+  
+  // 取消订阅按钮
+  if (cancelSubscription) {
+    cancelSubscription.addEventListener('click', () => {
+      subscriptionModal.classList.remove('active');
+    });
+  }
+  
+  // 点击模态框外部关闭
+  window.addEventListener('click', (e) => {
+    if (e.target === subscriptionModal) {
+      subscriptionModal.classList.remove('active');
+    }
+    if (e.target === loginModal) {
+      loginModal.classList.remove('active');
+    }
+  });
+  
+  // 确认订阅按钮
+  if (confirmSubscriptionButton) {
+    confirmSubscriptionButton.addEventListener('click', subscribePlan);
+  }
+  
+  // 关闭登录模态框
+  if (closeLoginModal) {
+    closeLoginModal.addEventListener('click', () => {
+      loginModal.classList.remove('active');
+    });
+  }
+  
+  // 取消登录按钮
+  if (cancelLogin) {
+    cancelLogin.addEventListener('click', () => {
+      loginModal.classList.remove('active');
+    });
+  }
+  
+  // 确认登录按钮
+  if (confirmLogin) {
+    confirmLogin.addEventListener('click', handleLogin);
+  }
+}
+
+/**
+ * 显示登录模态框
+ */
+function showLoginModal() {
+  // 重置表单
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) loginForm.reset();
+  
+  // 清除错误信息
+  const loginError = document.getElementById('loginError');
+  if (loginError) loginError.style.display = 'none';
+  
+  // 显示模态框
+  loginModal.classList.add('active');
+}
+
+/**
+ * 处理登录
+ */
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  const loginError = document.getElementById('loginError');
+  
+  if (!email || !password) {
+    loginError.textContent = '请输入邮箱和密码';
+    loginError.style.display = 'block';
+    return;
+  }
+  
+  try {
+    const response = await fetch(`${window.API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      loginError.textContent = data.message || '登录失败，请检查邮箱和密码';
+      loginError.style.display = 'block';
+      return;
+    }
+    
+    // 保存token和用户信息
+    localStorage.setItem('xpat_auth_token', data.token);
+    localStorage.setItem('xpat_user_info', JSON.stringify(data.user));
+    
+    // 关闭模态框
+    loginModal.classList.remove('active');
+    
+    // 刷新页面
+    window.location.reload();
+    
+  } catch (error) {
+    console.error('登录失败:', error);
+    loginError.textContent = '登录过程中发生错误，请稍后重试';
+    loginError.style.display = 'block';
+  }
 }
 
 /**
@@ -255,8 +397,7 @@ function openSubscriptionModal(plan) {
   // 检查用户是否已登录
   if (!localStorage.getItem('xpat_auth_token')) {
     // 打开登录模态框
-    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-    loginModal.show();
+    showLoginModal();
     return;
   }
   
@@ -267,53 +408,61 @@ function openSubscriptionModal(plan) {
   selectedPlanId = plan.id;
   
   // 显示模态框
-  const subscriptionModal = new bootstrap.Modal(document.getElementById('subscriptionModal'));
-  subscriptionModal.show();
+  subscriptionModal.classList.add('active');
 }
 
 /**
  * 订阅计划
  */
 async function subscribePlan() {
+  if (!selectedPlanId) {
+    console.error('没有选择订阅计划');
+    return;
+  }
+  
+  const token = localStorage.getItem('xpat_auth_token');
+  if (!token) {
+    showLoginModal();
+    return;
+  }
+  
   try {
-    // 禁用按钮，防止重复点击
-    confirmSubscriptionButton.disabled = true;
+    // 开始订阅处理
     confirmSubscriptionButton.textContent = '处理中...';
+    confirmSubscriptionButton.disabled = true;
     
-    // 调用API进行订阅
-    const response = await fetch(`${window.API_BASE_URL}/subscriptions/purchase`, {
+    const response = await fetch(`${window.API_BASE_URL}/api/subscriptions/subscribe`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ planId: selectedPlanId })
+      body: JSON.stringify({ plan_id: selectedPlanId })
     });
     
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '订阅失败');
-    }
-    
-    // 处理成功响应
     const data = await response.json();
     
+    if (!response.ok) {
+      throw new Error(data.message || '订阅失败');
+    }
+    
     // 关闭模态框
-    const subscriptionModal = bootstrap.Modal.getInstance(document.getElementById('subscriptionModal'));
-    subscriptionModal.hide();
+    subscriptionModal.classList.remove('active');
     
     // 显示成功消息
-    alert('订阅成功！您现在可以享受高级功能了。');
+    alert('订阅成功！');
     
-    // 重新加载页面以显示新的订阅信息
-    window.location.reload();
+    // 重新加载订阅信息
+    loadCurrentSubscription();
+    loadSubscriptionPlans();
+    
   } catch (error) {
-    console.error('订阅失败:', error);
+    console.error('订阅计划失败:', error);
     alert(`订阅失败: ${error.message}`);
   } finally {
     // 恢复按钮状态
-    confirmSubscriptionButton.disabled = false;
     confirmSubscriptionButton.textContent = '确认订阅';
+    confirmSubscriptionButton.disabled = false;
   }
 }
 
@@ -321,58 +470,52 @@ async function subscribePlan() {
  * 续订当前订阅
  */
 async function renewCurrentSubscription() {
+  if (!currentSubscription) {
+    console.error('没有当前订阅可续订');
+    return;
+  }
+  
+  const token = localStorage.getItem('xpat_auth_token');
+  if (!token) {
+    showLoginModal();
+    return;
+  }
+  
   try {
-    renewButton.disabled = true;
+    // 开始续订处理
     renewButton.textContent = '处理中...';
+    renewButton.disabled = true;
     
-    // 直接使用fetch请求续订
-    const response = await fetch(`${window.API_BASE_URL}/subscriptions/renew`, {
+    const response = await fetch(`${window.API_BASE_URL}/api/subscriptions/renew`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('xpat_auth_token')}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
-      }
+      },
+      body: JSON.stringify({ subscription_id: currentSubscription.id })
     });
     
+    const data = await response.json();
+    
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '续订失败');
+      throw new Error(data.message || '续订失败');
     }
     
-    const result = await response.json();
-    
-    alert('续订成功！新的到期日期：' + new Date(result.newEndDate).toLocaleDateString('zh-CN'));
+    // 显示成功消息
+    alert('续订成功！');
     
     // 重新加载订阅信息
     loadCurrentSubscription();
+    
   } catch (error) {
     console.error('续订失败:', error);
     alert(`续订失败: ${error.message}`);
   } finally {
-    renewButton.disabled = false;
+    // 恢复按钮状态
     renewButton.textContent = '续订';
+    renewButton.disabled = false;
   }
 }
 
-// 初始化页面
-document.addEventListener('DOMContentLoaded', () => {
-  initPage();
-  
-  // 绑定续订按钮事件
-  renewButton.addEventListener('click', renewCurrentSubscription);
-  
-  // 绑定订阅确认按钮事件
-  confirmSubscriptionButton.addEventListener('click', subscribePlan);
-  
-  // 监听认证状态变化
-  document.addEventListener('userLoggedIn', () => {
-    loginRequiredElement.classList.add('d-none');
-    loadCurrentSubscription();
-  });
-  
-  document.addEventListener('userLoggedOut', () => {
-    currentSubscriptionElement.classList.add('d-none');
-    noSubscriptionElement.classList.add('d-none');
-    loginRequiredElement.classList.remove('d-none');
-  });
-}); 
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', initPage); 

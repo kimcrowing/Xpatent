@@ -1,159 +1,544 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="dark-theme">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>订阅管理 - AI专利系统</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>订阅管理 - Xpat</title>
+  <link rel="stylesheet" href="css/style.css?v=1.3">
+  <link rel="stylesheet" href="css/dark-theme.css?v=1.3">
+  <link rel="stylesheet" href="css/light-theme.css?v=1.3">
+  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjgiIGhlaWdodD0iMjgiIHZpZXdCb3g9IjAgMCAyOCAyOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTQgMkM3LjM3MyAyIDIgNy4zNzMgMiAxNEMyIDIwLjYyNyA3LjM3MyAyNiAxNCAyNkMyMC42MjcgMjYgMjYgMjAuNjI3IDI2IDE0QzI2IDcuMzczIDIwLjYyNyAyIDE0IDJaTTE0IDVDMTguNDE4IDUgMjIgOC41ODIgMjIgMTNDMjIgMTcuNDE4IDE4LjQxOCAyMSAxNCAyMUM5LjU4MiAyMSA2IDE3LjQxOCA2IDEzQzYgOC41ODIgOS41ODIgNSAxNCA1WiIgZmlsbD0iIzU4NjVmMiIvPjwvc3ZnPg==" type="image/svg+xml">
+  <style>
+    /* 订阅页面特定样式 */
+    .subscription-container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    
+    .section-title {
+      margin-bottom: 30px;
+      color: var(--text-color);
+      text-align: center;
+    }
+    
+    .subscription-description {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+    }
+    
+    .plans-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 30px;
+      margin-top: 30px;
+    }
+    
+    .plan-card {
+      background-color: var(--card-bg);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid var(--border-color);
+    }
+    
+    .plan-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    .plan-header {
+      padding: 20px;
+      background-color: var(--menu-bg);
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .plan-header h3 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+    
+    .plan-badge {
+      display: inline-block;
+      background-color: var(--primary-color);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    
+    .plan-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    
+    .plan-price {
+      text-align: center;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--text-color);
+    }
+    
+    .plan-price span {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: normal;
+    }
+    
+    .plan-feature {
+      margin-bottom: 20px;
+      text-align: center;
+      color: var(--text-color);
+    }
+    
+    .features-list {
+      list-style: none;
+      padding: 0;
+      margin: 20px 0;
+    }
+    
+    .features-list li {
+      padding: 10px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-color);
+    }
+    
+    .features-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .btn-subscribe {
+      margin-top: auto;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      width: 100%;
+    }
+    
+    .btn-subscribe:hover {
+      background-color: var(--primary-hover);
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--primary-color);
+      color: var(--primary-color);
+    }
+    
+    .btn-outline:hover {
+      background-color: var(--primary-color-light);
+    }
+    
+    .current-subscription {
+      background-color: var(--card-bg);
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      margin-bottom: 40px;
+    }
+    
+    .current-subscription-header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .current-subscription-header h3 {
+      color: var(--text-color);
+      margin: 0;
+    }
+    
+    .current-subscription-content {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .subscription-info {
+      flex: 1;
+      min-width: 300px;
+    }
+    
+    .subscription-actions {
+      flex: 0 0 auto;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .info-row {
+      margin-bottom: 10px;
+      color: var(--text-color);
+    }
+    
+    .info-row .label {
+      color: var(--text-secondary);
+    }
+    
+    .alert {
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+    }
+    
+    .alert-warning {
+      background-color: rgba(255, 193, 7, 0.1);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      color: #997404;
+    }
+    
+    .alert-info {
+      background-color: rgba(88, 101, 242, 0.1);
+      border: 1px solid rgba(88, 101, 242, 0.3);
+      color: var(--primary-color);
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background-color: var(--bg-color);
+      width: 500px;
+      max-width: 90%;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+    }
+    
+    .modal-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-header h3 {
+      margin: 0;
+      color: var(--text-color);
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    
+    .modal-body {
+      padding: 20px;
+      color: var(--text-color);
+    }
+    
+    .modal-footer {
+      padding: 15px 20px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    
+    .payment-info {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background-color: var(--menu-bg);
+    }
+    
+    .payment-info p {
+      margin: 0 0 10px;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+    
+    .btn-secondary {
+      background-color: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+    }
+    
+    .btn-secondary:hover {
+      background-color: var(--hover-color);
+    }
+    
+    .loading-indicator {
+      display: flex;
+      justify-content: center;
+      padding: 40px;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(88, 101, 242, 0.3);
+      border-radius: 50%;
+      border-top-color: var(--primary-color);
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* 响应式样式 */
+    @media (max-width: 768px) {
+      .plans-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .current-subscription-content {
+        flex-direction: column;
+      }
+      
+      .subscription-info, .subscription-actions {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
-<body>
-  <!-- 导航栏 -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-      <a class="navbar-brand" href="index.html">AI专利系统</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="切换导航">
-        <span class="navbar-toggler-icon"></span>
+<body class="dark-theme">
+  <!-- 顶部导航栏 -->
+  <header class="navbar">
+    <div class="logo">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 2C7.373 2 2 7.373 2 14C2 20.627 7.373 26 14 26C20.627 26 26 20.627 26 14C26 7.373 20.627 2 14 2ZM14 5C18.418 5 22 8.582 22 13C22 17.418 18.418 21 14 21C9.582 21 6 17.418 6 13C6 8.582 9.582 5 14 5Z" fill="white"/>
+      </svg>
+      <span>Xpat</span>
+    </div>
+    <div class="nav-controls">
+      <button class="icon-btn notification-btn" title="通知" id="notificationBtn">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 2C6.68632 2 4 4.68632 4 8V13.5858L3.29289 14.2929C3.10536 14.4804 3 14.7348 3 15V16C3 16.5523 3.44772 17 4 17H16C16.5523 17 17 16.5523 17 16V15C17 14.7348 16.8946 14.4804 16.7071 14.2929L16 13.5858V8C16 4.68632 13.3137 2 10 2ZM10 20C8.89543 20 8 19.1046 8 18H12C12 19.1046 11.1046 20 10 20Z" fill="white"/>
+        </svg>
       </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav me-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="index.html">首页</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="prompt.html">提示词</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link active" href="subscriptions.html">订阅</a>
-          </li>
-        </ul>
-        <div class="d-flex" id="auth-buttons">
-          <button class="btn btn-outline-light me-2" id="login-btn" data-bs-toggle="modal" data-bs-target="#loginModal">登录</button>
-          <button class="btn btn-light" id="register-btn" data-bs-toggle="modal" data-bs-target="#registerModal">注册</button>
+      <button class="icon-btn history-btn" id="historyBtn" title="历史对话">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2ZM10 4C13.3137 4 16 6.68629 16 10C16 13.3137 13.3137 16 10 16C6.68629 16 4 13.3137 4 10C4 6.68629 6.68629 4 10 4Z" fill="white"/>
+          <path d="M10 5.5V10H13.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="icon-btn pro-btn" id="proSubscriptionBtn" title="订阅Pro版">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 2L12.2451 6.90983L17.5 7.58675L13.75 11.1302L14.4903 16.3132L10 13.9L5.50975 16.3132L6.25 11.1302L2.5 7.58675L7.75486 6.90983L10 2Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7 10L9 12L13 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="icon-btn user-btn" id="userMenuBtn" title="用户设置">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2C7.373 2 2 7.373 2 14C2 20.627 7.373 26 14 26C20.627 26 26 20.627 26 14C26 7.373 20.627 2 14 2ZM14 5C18.418 5 22 8.582 22 13C22 17.418 18.418 21 14 21C9.582 21 6 17.418 6 13C6 8.582 9.582 5 14 5Z" fill="white"></path>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- 用户下拉菜单 -->
+    <div class="user-menu" id="userMenu">
+      <ul>
+        <li id="themeToggle">
+          <div class="menu-item-with-icon">
+            <span>切换主题</span>
+            <svg class="theme-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18Z" fill="currentColor"/>
+            </svg>
+          </div>
+        </li>
+        <li id="admin-entry" style="display: none;">
+          <a href="admin.html" target="_blank">
+            <div class="menu-item-with-icon">
+              <span>管理后台</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10.5 18.5C10.5 19.3284 11.1716 20 12 20C12.8284 20 13.5 19.3284 13.5 18.5C13.5 17.6716 12.8284 17 12 17C11.1716 17 10.5 17.6716 10.5 18.5Z" fill="currentColor"/>
+                <path d="M10.5 12C10.5 12.8284 11.1716 13.5 12 13.5C12.8284 13.5 13.5 12.8284 13.5 12C13.5 11.1716 12.8284 10.5 12 10.5C11.1716 10.5 10.5 11.1716 10.5 12Z" fill="currentColor"/>
+                <path d="M10.5 5.5C10.5 6.32843 11.1716 7 12 7C12.8284 7 13.5 6.32843 13.5 5.5C13.5 4.67157 12.8284 4 12 4C11.1716 4 10.5 4.67157 10.5 5.5Z" fill="currentColor"/>
+                <path d="M3 5.5C3 6.32843 3.67157 7 4.5 7C5.32843 7 6 6.32843 6 5.5C6 4.67157 5.32843 4 4.5 4C3.67157 4 3 4.67157 3 5.5Z" fill="currentColor"/>
+                <path d="M3 12C3 12.8284 3.67157 13.5 4.5 13.5C5.32843 13.5 6 12.8284 6 12C6 11.1716 5.32843 10.5 4.5 10.5C3.67157 10.5 3 11.1716 3 12Z" fill="currentColor"/>
+                <path d="M3 18.5C3 19.3284 3.67157 20 4.5 20C5.32843 20 6 19.3284 6 18.5C6 17.6716 5.32843 17 4.5 17C3.67157 17 3 17.6716 3 18.5Z" fill="currentColor"/>
+                <path d="M18 5.5C18 6.32843 18.6716 7 19.5 7C20.3284 7 21 6.32843 21 5.5C21 4.67157 20.3284 4 19.5 4C18.6716 4 18 4.67157 18 5.5Z" fill="currentColor"/>
+                <path d="M18 12C18 12.8284 18.6716 13.5 19.5 13.5C20.3284 13.5 21 12.8284 21 12C21 11.1716 20.3284 10.5 19.5 10.5C18.6716 10.5 18 11.1716 18 12Z" fill="currentColor"/>
+                <path d="M18 18.5C18 19.3284 18.6716 20 19.5 20C20.3284 20 21 19.3284 21 18.5C21 17.6716 20.3284 17 19.5 17C18.6716 17 18 17.6716 18 18.5Z" fill="currentColor"/>
+              </svg>
+            </div>
+          </a>
+        </li>
+        <li><a href="index.html">主页</a></li>
+        <li id="loginBtn">登录</li>
+        <li id="logoutBtn">退出</li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- 主要内容 -->
+  <div class="subscription-container">
+    <h1 class="section-title">订阅管理</h1>
+    <p class="subscription-description">选择合适的订阅计划，提升您的专利生成体验</p>
+
+    <!-- 当前订阅信息 -->
+    <div id="current-subscription" class="current-subscription" style="display: none;">
+      <div class="current-subscription-header">
+        <h3>当前订阅</h3>
+      </div>
+      <div class="current-subscription-content">
+        <div class="subscription-info">
+          <h4 id="current-plan-name">加载中...</h4>
+          <div class="info-row">
+            <span class="label">到期日期:</span> <span id="expiration-date">--</span>
+          </div>
+          <div class="info-row">
+            <span class="label">剩余天数:</span> <span id="remaining-days">--</span>
+          </div>
+          <div class="info-row">
+            <span class="label">每日API配额:</span> <span id="api-quota">--</span>
+          </div>
+          <div class="info-row">
+            <p><strong>包含功能:</strong></p>
+            <ul id="features-list" class="features-list">
+              <li>加载中...</li>
+            </ul>
+          </div>
         </div>
-        <div class="dropdown d-none" id="user-dropdown">
-          <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
-            <span id="username">用户</span>
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="profile.html">个人信息</a></li>
-            <li><a class="dropdown-item" href="api-usage.html">API用量</a></li>
-            <li><a class="dropdown-item" id="logout-btn" href="#">退出</a></li>
-          </ul>
+        <div class="subscription-actions">
+          <button id="renew-button" class="btn-subscribe">续订</button>
         </div>
       </div>
     </div>
-  </nav>
 
-  <!-- 主要内容 -->
-  <div class="container my-5">
-    <div class="row">
-      <div class="col-12 mb-4">
-        <h1 class="text-center">订阅管理</h1>
-        <p class="text-center text-muted">选择合适的订阅计划，提升您的专利生成体验</p>
+    <!-- 无订阅提示 -->
+    <div id="no-subscription" class="alert alert-warning" style="display: none;">
+      <h4>您当前没有活跃的订阅</h4>
+      <p>选择下方的计划开始您的订阅，提升API调用次数和获取更多功能。</p>
+    </div>
+
+    <!-- 登录提示 -->
+    <div id="login-required" class="alert alert-info" style="display: none;">
+      <h4>请先登录</h4>
+      <p>您需要登录后才能查看和管理订阅。</p>
+      <div style="margin-top: 15px;">
+        <button id="login-prompt-btn" class="btn btn-primary">登录</button>
       </div>
+    </div>
 
-      <!-- 当前订阅信息 -->
-      <div id="current-subscription" class="col-12 mb-5 d-none">
-        <div class="card shadow-sm">
-          <div class="card-header bg-primary text-white">
-            <h3 class="mb-0">当前订阅</h3>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-8">
-                <h4 id="current-plan-name">加载中...</h4>
-                <p class="text-muted mb-2">到期日期: <span id="expiration-date">--</span></p>
-                <p class="text-muted mb-2">剩余天数: <span id="remaining-days">--</span></p>
-                <p class="text-muted mb-2">每日API配额: <span id="api-quota">--</span></p>
-                <div class="mt-3" id="plan-features">
-                  <p class="fw-bold">包含功能:</p>
-                  <ul id="features-list">
-                    <li>加载中...</li>
-                  </ul>
-                </div>
-              </div>
-              <div class="col-md-4 d-flex align-items-center justify-content-center">
-                <button id="renew-button" class="btn btn-primary btn-lg">续订</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 无订阅提示 -->
-      <div id="no-subscription" class="col-12 mb-5 d-none">
-        <div class="alert alert-warning">
-          <h4 class="alert-heading">您当前没有活跃的订阅</h4>
-          <p>选择下方的计划开始您的订阅，提升API调用次数和获取更多功能。</p>
-        </div>
-      </div>
-
-      <!-- 登录提示 -->
-      <div id="login-required" class="col-12 mb-5 d-none">
-        <div class="alert alert-info">
-          <h4 class="alert-heading">请先登录</h4>
-          <p>您需要登录后才能查看和管理订阅。</p>
-          <hr>
-          <p class="mb-0">
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">登录</button>
-            <button class="btn btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#registerModal">注册</button>
-          </p>
-        </div>
-      </div>
-
-      <!-- 可用订阅计划 -->
-      <div class="col-12">
-        <h2 class="mb-4">可用订阅计划</h2>
-        <div class="row" id="subscription-plans">
-          <div class="col-12 text-center my-5">
-            <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">加载中...</span>
-            </div>
-          </div>
+    <!-- 可用订阅计划 -->
+    <div>
+      <h2 class="section-title">可用订阅计划</h2>
+      <div id="subscription-plans" class="plans-container">
+        <div class="loading-indicator">
+          <div class="spinner"></div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- 订阅确认模态框 -->
-  <div class="modal fade" id="subscriptionModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">确认订阅</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <div id="subscriptionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>确认订阅</h3>
+        <button class="modal-close" id="closeSubscriptionModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>您确定要订阅 <strong id="confirm-plan-name"></strong> 计划吗？</p>
+        <p>价格: <span id="confirm-plan-price"></span>元 / 月</p>
+        <p>API调用次数: 每日<span id="confirm-plan-quota"></span>次</p>
+        <div class="payment-info">
+          <p><strong>支付信息</strong></p>
+          <p class="small">目前为测试阶段，无需真实支付。在正式版本中，这里将集成支付功能。</p>
         </div>
-        <div class="modal-body">
-          <p>您确定要订阅 <strong id="confirm-plan-name"></strong> 计划吗？</p>
-          <p>价格: <span id="confirm-plan-price"></span>元 / 月</p>
-          <p>API调用次数: 每日<span id="confirm-plan-quota"></span>次</p>
-          <div id="payment-info" class="mt-3 mb-3 p-3 border rounded">
-            <p class="fw-bold">支付信息</p>
-            <p class="text-muted small">目前为测试阶段，无需真实支付。在正式版本中，这里将集成支付功能。</p>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-          <button type="button" class="btn btn-primary" id="confirm-subscription">确认订阅</button>
-        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelSubscription">取消</button>
+        <button class="btn btn-primary" id="confirm-subscription">确认订阅</button>
       </div>
     </div>
   </div>
 
-  <!-- 登录和注册模态框在这里 (与其他页面相同) -->
-
-  <!-- 底部 -->
-  <footer class="footer mt-auto py-3 bg-light">
-    <div class="container text-center">
-      <span class="text-muted">© 2023 AI专利系统 版权所有</span>
+  <!-- 登录模态框 -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>用户登录</h3>
+        <button class="modal-close" id="closeLoginModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="loginForm">
+          <div style="margin-bottom: 15px;">
+            <label for="loginEmail" style="display: block; margin-bottom: 8px;">邮箱</label>
+            <input type="email" id="loginEmail" placeholder="请输入邮箱地址" 
+                   style="width: 100%; padding: 10px; border-radius: 4px; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color);">
+          </div>
+          <div style="margin-bottom: 15px;">
+            <label for="loginPassword" style="display: block; margin-bottom: 8px;">密码</label>
+            <input type="password" id="loginPassword" placeholder="请输入密码" 
+                   style="width: 100%; padding: 10px; border-radius: 4px; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color);">
+          </div>
+          <div id="loginError" style="color: #e74c3c; margin-bottom: 15px; display: none;"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelLogin" class="btn btn-secondary">取消</button>
+        <button id="confirmLogin" class="btn btn-primary">登录</button>
+      </div>
     </div>
-  </footer>
+  </div>
 
   <!-- JavaScript 引用 -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/error-handler.js"></script>
+  <script src="js/auth-manager.js"></script>
+  <script src="js/ui-helper.js"></script>
+  <script src="js/theme.js"></script>
   <script src="deploy-config.js?v=1.0"></script>
   <script src="js/backend-api.js?v=1.0"></script>
-  <script type="module" src="js/subscriptions.js"></script>
+  <script src="js/subscriptions.js"></script>
 </body>
 </html> 

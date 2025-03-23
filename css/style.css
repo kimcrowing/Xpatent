@@ -74,48 +74,109 @@ body {
 }
 
 .user-menu {
-    position: absolute;
-    right: 20px;
-    top: 60px;
-    background-color: var(--menu-bg);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    width: 200px;
-    z-index: 1000;
     display: none;
-    transition: all 0.3s ease;
-    border: 1px solid var(--border-color);
-    opacity: 0;
-    visibility: hidden;
-}
-
-.user-menu.active {
-    display: block !important;
-    opacity: 1;
-    visibility: visible;
-}
-
-.user-menu ul {
-    list-style: none;
+    position: absolute;
+    top: 60px;
+    right: 20px;
+    width: 200px;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    overflow: hidden;
     padding: 8px 0;
 }
 
+.user-menu ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
 .user-menu li {
-    padding: 10px 16px;
     cursor: pointer;
+    transition: background-color 0.2s;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .user-menu li:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--bg-hover);
 }
 
-/* 主题菜单项样式 */
+/* 文本菜单项样式 - 用于登录和退出 */
+.menu-text-item {
+    padding: 10px 16px;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* 图标菜单项样式 */
+.menu-icon-only {
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-icon-only svg {
+    width: 24px;
+    height: 24px;
+    color: var(--text-primary);
+    transition: transform 0.2s ease;
+}
+
+.menu-icon-only:hover svg {
+    transform: scale(1.1);
+}
+
+.user-menu li:not(.menu-text-item) {
+    border-radius: 50%;
+    margin: 6px auto;
+    width: 48px;
+    height: 48px;
+}
+
+.user-menu li:not(.menu-text-item):hover {
+    background-color: var(--bg-hover);
+}
+
+.user-menu a {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* 分隔线 */
+.user-menu li.menu-text-item:first-of-type {
+    border-top: 1px solid var(--border-color);
+    margin-top: 6px;
+}
+
+/* 原有的菜单项和图标样式可以移除或保留 */
 .menu-item-with-icon {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
+.menu-item-with-icon span {
+    flex: 1;
+}
+
+.menu-item-with-icon svg {
+    margin-left: 10px;
+}
+
+/* 主题菜单项样式 */
 .theme-icon {
     margin-left: 8px;
 }
@@ -1807,4 +1868,135 @@ input:checked + .toggle-slider:before {
 .toggle-sessions-btn svg {
     width: 24px;
     height: 24px;
+}
+
+.history-btn {
+    position: relative;
+}
+
+.history-panel {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    width: 350px;
+    max-height: 500px;
+    background-color: var(--bg-color);
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.history-panel.active {
+    display: flex;
+    animation: slideDown 0.3s ease-in-out;
+}
+
+.history-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.history-panel-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.history-panel-header .action-btn {
+    padding: 6px;
+    margin-left: 8px;
+}
+
+.history-panel-content {
+    padding: 0;
+    overflow-y: auto;
+    flex: 1;
+    max-height: 440px;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 480px) {
+    .history-panel {
+        width: calc(100% - 40px);
+        max-height: 80vh;
+        top: 70px;
+    }
+}
+
+/* 语言按钮样式 */
+.language-btn {
+    position: relative;
+}
+
+/* 语言菜单样式 */
+.language-menu {
+    display: none;
+    position: absolute;
+    top: 60px;
+    right: 60px;
+    width: 140px;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    overflow: hidden;
+    padding: 8px 0;
+}
+
+.language-menu.show {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.language-menu ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.language-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    color: var(--text-primary);
+}
+
+.language-item:hover {
+    background-color: var(--bg-hover);
+}
+
+.language-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.language-option span {
+    flex: 1;
+}
+
+.check-icon {
+    display: none;
+    color: var(--primary-color);
+}
+
+.language-item.active .check-icon {
+    display: block;
 } 

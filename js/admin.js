@@ -439,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
-
+    
     /**
      * 初始化仪表板
      */
@@ -609,7 +609,7 @@ document.addEventListener('DOMContentLoaded', function() {
             element.innerHTML = `<span class="growth-arrow">→</span> ${element.textContent}`;
         }
     }
-
+    
     /**
      * 渲染用户统计数据
      */
@@ -922,7 +922,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
+    
     /**
      * 渲染配额使用图
      */
@@ -988,7 +988,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
+    
     /**
      * 渲染订阅统计数据
      */
@@ -1657,7 +1657,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('saveApiProviderBtn').textContent = '保存';
         }
     }
-    
+
     /**
      * 加载API提供商列表
      */
@@ -1772,7 +1772,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    
+
     /**
      * 绑定对话模式管理事件
      */
@@ -2050,7 +2050,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('userConfigEmptyState').style.display = 'flex';
         }
     }
-    
+
     /**
      * 加载用户对话模式配置
      * @param {string} userId - 用户ID
@@ -2127,9 +2127,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!data.prompts || data.prompts.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="3" class="text-center">暂无提示词模板数据</td></tr>';
-                return;
-            }
-            
+            return;
+        }
+        
             // 渲染提示词模板列表
             data.prompts.forEach(prompt => {
                 const isEnabled = userPrompts.some(p => p.id === prompt.id);
@@ -2211,7 +2211,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>
                         <button class="btn btn-sm btn-outline" data-user-id="${userId}" data-provider-id="${provider.id}">
                             配置API密钥
-                        </button>
+                            </button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -2227,9 +2227,9 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('加载用户API供应商配置失败:', error);
             const tbody = document.querySelector('#userProvidersTable tbody');
             tbody.innerHTML = '<tr><td colspan="3" class="text-center">加载失败</td></tr>';
-        }
+      }
     }
-    
+
     /**
      * 加载用户模型配置
      * @param {string} userId - 用户ID
@@ -2255,9 +2255,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!data.models || data.models.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="3" class="text-center">暂无模型数据</td></tr>';
-                return;
-            }
-            
+          return;
+        }
+        
             // 获取所有供应商信息用于显示
             const providersResponse = await fetch('/api/admin/providers', {
                 headers: {
@@ -2309,9 +2309,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const userId = document.getElementById('userConfigSelector').value;
             if (!userId) {
                 showNotification('请先选择用户', 'error');
-                return;
-            }
-            
+          return;
+        }
+        
             // 收集对话模式配置
             const chatModes = [];
             document.querySelectorAll('#userChatModesTable input[type="checkbox"]:checked').forEach(checkbox => {
@@ -2354,14 +2354,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const token = localStorage.getItem('adminToken');
             const response = await fetch(`/api/admin/users/${userId}/features`, {
                 method: 'PUT',
-                headers: {
+          headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(data)
-            });
-            
-            if (!response.ok) {
+        });
+        
+        if (!response.ok) {
                 throw new Error('保存用户功能配置失败');
             }
             
@@ -2371,7 +2371,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 恢复按钮状态
             saveBtn.disabled = false;
             saveBtn.textContent = originalText;
-        } catch (error) {
+      } catch (error) {
             console.error('保存用户功能配置失败:', error);
             showNotification('保存失败: ' + error.message, 'error');
             

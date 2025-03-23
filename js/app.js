@@ -80,8 +80,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // 获取用户菜单元素，在整个DOM加载函数中复用
-    const userMenu = document.getElementById('userMenu');
     const userMenuBtn = document.getElementById('userMenuBtn');
+    const userMenu = document.getElementById('userMenu');
+    const notificationBtn = document.getElementById('notificationBtn');
+    const notificationPanel = document.getElementById('notificationPanel');
+    const historyBtn = document.getElementById('historyBtn');
+    const historyPanel = document.getElementById('historyPanel');
+    const languageBtn = document.getElementById('languageBtn');
+    const languageMenu = document.getElementById('languageMenu');
     
     console.log('用户菜单元素检查:', {
         userMenuBtn: userMenuBtn ? '找到' : '未找到',
@@ -174,20 +180,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 featureMenu.classList.remove('active');
             }
             
-            // 简单地切换active类
-            if (userMenu.classList.contains('active')) {
-                userMenu.classList.remove('active');
+            // 使用style.display切换菜单显示状态
+            if (userMenu.style.display === 'block') {
+                userMenu.style.display = 'none';
                 console.log('用户菜单状态: 隐藏');
             } else {
-                userMenu.classList.add('active');
+                userMenu.style.display = 'block';
                 console.log('用户菜单状态: 显示');
+                
+                // 关闭通知面板
+                const notificationPanel = document.getElementById('notificationPanel');
+                if (notificationPanel) {
+                    notificationPanel.classList.remove('active');
+                }
+                
+                // 关闭历史对话面板
+                const historyPanel = document.getElementById('historyPanel');
+                if (historyPanel) {
+                    historyPanel.classList.remove('active');
+                }
             }
         });
         
         // 点击外部关闭菜单
         document.addEventListener('click', function(e) {
-            if (userMenu.classList.contains('active') && !userMenuBtn.contains(e.target) && !userMenu.contains(e.target)) {
-                userMenu.classList.remove('active');
+            if (userMenu.style.display === 'block' && !userMenuBtn.contains(e.target) && !userMenu.contains(e.target)) {
+                userMenu.style.display = 'none';
                 console.log('用户菜单已通过外部点击关闭');
             }
         });
@@ -197,7 +215,27 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('找不到用户菜单元素', { 按钮: userMenuBtn, 菜单: userMenu });
     }
     
-    // Pro订阅按钮交互
+    // 通知菜单项点击事件
+    const notificationMenuItem = document.getElementById('notification-menu-item');
+    if (notificationMenuItem) {
+        notificationMenuItem.addEventListener('click', function() {
+            // 关闭用户菜单
+            if (userMenu) {
+                userMenu.style.display = 'none';
+            }
+            
+            // 显示通知面板
+            if (window.uiHelper && typeof window.uiHelper.showNotificationPanel === 'function') {
+                window.uiHelper.showNotificationPanel();
+            } else {
+                console.error('UI辅助模块未加载，无法显示通知面板');
+            }
+        });
+    }
+    
+    // 订阅菜单项点击事件已经通过a标签链接实现，无需额外处理
+    
+    // Pro订阅按钮交互 - 可以移除，因为现在订阅按钮已移至用户菜单
     const proSubscriptionBtn = document.getElementById('proSubscriptionBtn');
     
     if (proSubscriptionBtn) {
@@ -206,8 +244,6 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'subscriptions.html';
             console.log('跳转到订阅页面');
         });
-    } else {
-        console.error('找不到Pro订阅按钮');
     }
     
     // 输入框焦点效果
@@ -248,18 +284,166 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // 通知按钮点击事件
-    const notificationBtn = document.getElementById('notificationBtn');
-    if (notificationBtn) {
-        notificationBtn.addEventListener('click', function(e) {
+    // 历史对话按钮点击事件
+    const historyBtn = document.getElementById('historyBtn');
+    const historyPanel = document.getElementById('historyPanel');
+    const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+    const newConversationBtn = document.getElementById('newConversationBtn');
+    
+    if (historyBtn && historyPanel) {
+        historyBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            // 如果uiHelper已加载，调用显示通知面板方法
-            if (window.uiHelper && typeof window.uiHelper.showNotificationPanel === 'function') {
-                window.uiHelper.showNotificationPanel();
-            } else {
-                console.error('UI辅助模块未加载，无法显示通知面板');
+            
+            // 加载历史会话
+            loadHistorySessions();
+            
+            // 显示历史对话面板
+            historyPanel.classList.toggle('active');
+            
+            // 如果用户菜单是打开的，则关闭它
+            const userMenu = document.getElementById('userMenu');
+            if (userMenu && userMenu.classList.contains('active')) {
+                userMenu.classList.remove('active');
+            }
+            
+            // 如果通知面板是打开的，则关闭它
+            const notificationPanel = document.getElementById('notificationPanel');
+            if (notificationPanel && notificationPanel.classList.contains('active')) {
+                notificationPanel.classList.remove('active');
             }
         });
+    }
+    
+    // 关闭历史面板按钮
+    if (closeHistoryBtn && historyPanel) {
+        closeHistoryBtn.addEventListener('click', function() {
+            historyPanel.classList.remove('active');
+        });
+    }
+    
+    // 新建对话按钮
+    if (newConversationBtn) {
+        newConversationBtn.addEventListener('click', function() {
+            // 使用现有的创建新会话功能
+            if (window.chatManager && typeof window.chatManager.createNewSession === 'function') {
+                window.chatManager.createNewSession();
+                
+                // 更新历史会话列表
+                loadHistorySessions();
+            }
+        });
+    }
+    
+    // 点击页面其他区域关闭历史面板
+    document.addEventListener('click', function(e) {
+        if (historyPanel && historyPanel.classList.contains('active') && 
+            !historyPanel.contains(e.target) && 
+            !historyBtn.contains(e.target)) {
+            historyPanel.classList.remove('active');
+        }
+    });
+    
+    // 加载历史会话列表
+    function loadHistorySessions() {
+        const historySessionList = document.getElementById('historySessionList');
+        
+        if (!historySessionList) return;
+        
+        // 获取会话列表
+        const sessions = window.chatManager ? window.chatManager.getSessions() : [];
+        
+        if (sessions.length === 0) {
+            // 没有历史会话
+            historySessionList.innerHTML = `
+                <div class="empty-sessions">
+                    <p>暂无历史对话</p>
+                    <button class="btn" id="createFirstSession">开始新对话</button>
+                </div>
+            `;
+            
+            // 绑定创建第一个会话的按钮事件
+            const createFirstSessionBtn = document.getElementById('createFirstSession');
+            if (createFirstSessionBtn) {
+                createFirstSessionBtn.addEventListener('click', function() {
+                    if (window.chatManager && typeof window.chatManager.createNewSession === 'function') {
+                        window.chatManager.createNewSession();
+                    }
+                    historyPanel.classList.remove('active');
+                });
+            }
+        } else {
+            // 有历史会话，渲染列表
+            historySessionList.innerHTML = '';
+            
+            sessions.forEach(session => {
+                const sessionItem = document.createElement('div');
+                sessionItem.className = `session-item ${session.id === window.chatManager.getCurrentSessionId() ? 'active' : ''}`;
+                sessionItem.dataset.id = session.id;
+                
+                const sessionDate = new Date(session.created);
+                const formattedDate = `${sessionDate.getMonth() + 1}月${sessionDate.getDate()}日`;
+                
+                // 获取第一条消息作为会话标题
+                let sessionTitle = '新对话';
+                if (session.messages && session.messages.length > 0) {
+                    // 如果是用户消息，直接使用内容
+                    if (session.messages[0].role === 'user') {
+                        sessionTitle = session.messages[0].content.substring(0, 25);
+                        if (session.messages[0].content.length > 25) {
+                            sessionTitle += '...';
+                        }
+                    }
+                }
+                
+                sessionItem.innerHTML = `
+                    <div class="session-info">
+                        <div class="session-title">${sessionTitle}</div>
+                        <div class="session-date">${formattedDate}</div>
+                    </div>
+                    <div class="session-actions">
+                        <button class="delete-session" title="删除" data-id="${session.id}">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                
+                // 添加点击事件
+                sessionItem.addEventListener('click', function(e) {
+                    // 如果是点击删除按钮，则删除会话
+                    if (e.target.closest('.delete-session')) {
+                        e.stopPropagation();
+                        const sessionId = e.target.closest('.delete-session').dataset.id;
+                        
+                        if (window.chatManager && typeof window.chatManager.deleteSession === 'function') {
+                            window.chatManager.deleteSession(sessionId);
+                            loadHistorySessions(); // 重新加载会话列表
+                        }
+                        
+                        return;
+                    }
+                    
+                    // 否则切换到该会话
+                    const sessionId = this.dataset.id;
+                    
+                    if (window.chatManager && typeof window.chatManager.switchSession === 'function') {
+                        window.chatManager.switchSession(sessionId);
+                        
+                        // 更新活跃状态
+                        const sessions = historySessionList.querySelectorAll('.session-item');
+                        sessions.forEach(s => s.classList.remove('active'));
+                        this.classList.add('active');
+                        
+                        // 关闭历史面板
+                        historyPanel.classList.remove('active');
+                    }
+                });
+                
+                historySessionList.appendChild(sessionItem);
+            });
+        }
     }
     
     // 模拟添加一些测试通知（仅供开发测试，实际使用时应删除）
@@ -543,4 +727,104 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('重置用户设置失败:', error);
         }
     }
+    
+    // 初始化菜单项点击事件
+    function initializeMenuItems() {
+        // 用户菜单按钮点击事件
+        if (userMenuBtn) {
+            userMenuBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                userMenu.style.display = userMenu.style.display === 'block' ? 'none' : 'block';
+                // 关闭其他面板
+                if (notificationPanel) notificationPanel.style.display = 'none';
+                if (historyPanel) historyPanel.style.display = 'none';
+                if (languageMenu) languageMenu.style.display = 'none';
+            });
+        }
+        
+        // 点击外部区域关闭菜单
+        document.addEventListener('click', function() {
+            if (userMenu) userMenu.style.display = 'none';
+            if (notificationPanel) notificationPanel.style.display = 'none';
+            if (historyPanel) historyPanel.style.display = 'none';
+            if (languageMenu) languageMenu.style.display = 'none';
+        });
+        
+        // 语言切换按钮点击事件
+        if (languageBtn) {
+            languageBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                languageMenu.style.display = languageMenu.style.display === 'block' ? 'none' : 'block';
+                // 关闭其他菜单
+                if (userMenu) userMenu.style.display = 'none';
+                if (notificationPanel) notificationPanel.style.display = 'none';
+                if (historyPanel) historyPanel.style.display = 'none';
+            });
+        }
+        
+        // 语言选项点击事件
+        const languageItems = document.querySelectorAll('.language-item');
+        languageItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const lang = this.getAttribute('data-lang');
+                setLanguage(lang);
+                
+                // 更新选中状态
+                languageItems.forEach(li => li.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 关闭语言菜单
+                if (languageMenu) languageMenu.style.display = 'none';
+            });
+        });
+    }
+    
+    // 设置语言函数
+    function setLanguage(lang) {
+        // 保存语言设置到本地存储
+        localStorage.setItem('interface_language', lang);
+        
+        // 如果需要立即刷新页面应用新语言
+        // window.location.reload();
+        
+        // 或者通过API或其他方式动态加载语言资源
+        applyLanguage(lang);
+    }
+    
+    // 应用语言设置
+    function applyLanguage(lang) {
+        // 这里可以动态更新界面文本
+        // 例如使用i18n库或自定义的语言资源
+        console.log(`应用语言设置: ${lang}`);
+        
+        // 如果有语言资源文件，可以在这里加载
+        // fetch(`/lang/${lang}.json`)
+        //     .then(response => response.json())
+        //     .then(translations => {
+        //         // 更新界面文本
+        //     });
+    }
+    
+    // 初始化语言设置
+    function initLanguage() {
+        // 从本地存储获取语言设置，默认为中文
+        const currentLang = localStorage.getItem('interface_language') || 'zh-CN';
+        
+        // 更新选中状态
+        const languageItems = document.querySelectorAll('.language-item');
+        languageItems.forEach(item => {
+            if (item.getAttribute('data-lang') === currentLang) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+        
+        // 应用语言设置
+        applyLanguage(currentLang);
+    }
+    
+    // 初始化菜单项事件和语言设置
+    initializeMenuItems();
+    initLanguage();
 }); 
