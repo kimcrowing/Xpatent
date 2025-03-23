@@ -2039,4 +2039,399 @@ document.addEventListener('DOMContentLoaded', function() {
         promptForm.reset();
         promptFormError.textContent = '';
     }
+
+    /**
+     * 初始化各部分内容
+     */
+    async function initializeContent() {
+        try {
+            if (isAdmin) {
+                // 初始化提示词管理
+                await initializePromptsManagement();
+                
+                // 初始化领域特定模板管理
+                await initializeDomainTemplatesManagement();
+                
+                // 初始化API配置
+                await initializeApiConfig();
+                
+                // 初始化用户管理
+                await initializeUserManagement();
+                
+                // 初始化订阅管理
+                await initializeSubscriptionManagement();
+                
+                // 初始化API使用统计
+                await initializeApiUsage();
+                
+                // 显示管理员内容
+                adminContent.style.display = 'flex';
+                loginSection.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('初始化内容时出错:', error);
+            showError('加载管理界面失败: ' + (error.message || '未知错误'));
+        }
+    }
+
+    /**
+     * 领域特定模板管理
+     */
+    // 领域特定模板管理相关DOM元素
+    const domainTemplatesTable = document.getElementById('domainTemplatesTable');
+    const addDomainTemplateBtn = document.getElementById('addDomainTemplateBtn');
+    const domainFilter = document.getElementById('domainFilter');
+    const modeFilter = document.getElementById('modeFilter');
+    
+    // 领域特定模板编辑模态框
+    const domainTemplateModalOverlay = document.getElementById('domainTemplateModalOverlay');
+    const domainTemplateModalTitle = document.getElementById('domainTemplateModalTitle');
+    const domainTemplateForm = document.getElementById('domainTemplateForm');
+    const domainTemplateId = document.getElementById('domainTemplateId');
+    const domainTemplateCategory = document.getElementById('domainTemplateCategory');
+    const domainTemplateMode = document.getElementById('domainTemplateMode');
+    const domainTemplateName = document.getElementById('domainTemplateName');
+    const domainTemplateSystemPrompt = document.getElementById('domainTemplateSystemPrompt');
+    const domainTemplatePlaceholder = document.getElementById('domainTemplatePlaceholder');
+    const domainTemplateFormError = document.getElementById('domainTemplateFormError');
+    const closeDomainTemplateModalBtn = document.getElementById('closeDomainTemplateModalBtn');
+    const cancelDomainTemplateBtn = document.getElementById('cancelDomainTemplateBtn');
+    const saveDomainTemplateBtn = document.getElementById('saveDomainTemplateBtn');
+    
+    // 删除领域特定模板确认模态框
+    const deleteDomainTemplateModalOverlay = document.getElementById('deleteDomainTemplateModalOverlay');
+    const deleteDomainTemplateName = document.getElementById('deleteDomainTemplateName');
+    const deleteDomainTemplateId = document.getElementById('deleteDomainTemplateId');
+    const closeDeleteDomainTemplateModalBtn = document.getElementById('closeDeleteDomainTemplateModalBtn');
+    const cancelDeleteDomainTemplateBtn = document.getElementById('cancelDeleteDomainTemplateBtn');
+    const confirmDeleteDomainTemplateBtn = document.getElementById('confirmDeleteDomainTemplateBtn');
+    
+    // 保存技术领域和对话模式的数据
+    let domainsList = [];
+    let modesList = [];
+    
+    /**
+     * 初始化领域特定模板管理
+     */
+    async function initializeDomainTemplatesManagement() {
+        try {
+            // 获取技术领域列表
+            const domainsResponse = await window.backendApi.get('/api/prompts/domains');
+            domainsList = domainsResponse.domains;
+            
+            // 填充技术领域筛选下拉框
+            domainFilter.innerHTML = '<option value="">所有技术领域</option>';
+            domainsList.forEach(domain => {
+                const option = document.createElement('option');
+                option.value = domain;
+                option.textContent = domain;
+                domainFilter.appendChild(option);
+                
+                // 同时填充模板编辑中的技术领域选择器
+                const optionForEditor = document.createElement('option');
+                optionForEditor.value = domain;
+                optionForEditor.textContent = domain;
+                domainTemplateCategory.appendChild(optionForEditor);
+            });
+            
+            // 获取对话模式列表
+            const modesResponse = await window.backendApi.get('/api/prompts/modes');
+            modesList = modesResponse.modes;
+            
+            // 填充对话模式筛选下拉框
+            modeFilter.innerHTML = '<option value="">所有对话模式</option>';
+            modesList.forEach(mode => {
+                const option = document.createElement('option');
+                option.value = mode.id;
+                option.textContent = mode.name;
+                modeFilter.appendChild(option);
+                
+                // 同时填充模板编辑中的对话模式选择器
+                const optionForEditor = document.createElement('option');
+                optionForEditor.value = mode.id;
+                optionForEditor.textContent = mode.name;
+                domainTemplateMode.appendChild(optionForEditor);
+            });
+            
+            // 加载领域特定模板列表
+            await loadDomainTemplates();
+            
+            // 添加事件监听
+            addDomainTemplateBtn.addEventListener('click', () => openDomainTemplateModal());
+            closeDomainTemplateModalBtn.addEventListener('click', () => closeDomainTemplateModal());
+            cancelDomainTemplateBtn.addEventListener('click', () => closeDomainTemplateModal());
+            saveDomainTemplateBtn.addEventListener('click', () => saveDomainTemplate());
+            
+            closeDeleteDomainTemplateModalBtn.addEventListener('click', () => closeDeleteDomainTemplateModal());
+            cancelDeleteDomainTemplateBtn.addEventListener('click', () => closeDeleteDomainTemplateModal());
+            confirmDeleteDomainTemplateBtn.addEventListener('click', () => deleteDomainTemplate());
+            
+            // 筛选器变化事件
+            domainFilter.addEventListener('change', () => loadDomainTemplates());
+            modeFilter.addEventListener('change', () => loadDomainTemplates());
+        } catch (error) {
+            console.error('初始化领域特定模板管理时出错:', error);
+            showError('加载领域特定模板管理失败: ' + (error.message || '未知错误'));
+        }
+    }
+    
+    /**
+     * 加载领域特定模板列表
+     */
+    async function loadDomainTemplates() {
+        try {
+            // 显示加载状态
+            domainTemplatesTable.querySelector('tbody').innerHTML = '<tr><td colspan="7" class="text-center">加载中...</td></tr>';
+            
+            // 获取筛选条件
+            const domain = domainFilter.value;
+            const mode = modeFilter.value;
+            
+            // 获取领域特定模板列表
+            const response = await window.backendApi.get('/api/prompts/domain-templates');
+            let templates = response.templates || [];
+            
+            // 应用筛选
+            if (domain) {
+                templates = templates.filter(template => template.domain === domain);
+            }
+            
+            if (mode) {
+                templates = templates.filter(template => template.mode === mode);
+            }
+            
+            // 渲染表格
+            renderDomainTemplatesTable(templates);
+        } catch (error) {
+            console.error('加载领域特定模板列表时出错:', error);
+            domainTemplatesTable.querySelector('tbody').innerHTML = `<tr><td colspan="7" class="text-center error-text">加载失败: ${error.message || '未知错误'}</td></tr>`;
+        }
+    }
+    
+    /**
+     * 渲染领域特定模板表格
+     */
+    function renderDomainTemplatesTable(templates) {
+        const tbody = domainTemplatesTable.querySelector('tbody');
+        
+        if (!templates || templates.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">暂无数据</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        
+        templates.forEach(template => {
+            const tr = document.createElement('tr');
+            
+            // 格式化日期
+            const createdDate = new Date(template.createdAt);
+            const updatedDate = new Date(template.updatedAt);
+            const formattedCreatedDate = `${createdDate.getFullYear()}-${String(createdDate.getMonth() + 1).padStart(2, '0')}-${String(createdDate.getDate()).padStart(2, '0')}`;
+            const formattedUpdatedDate = `${updatedDate.getFullYear()}-${String(updatedDate.getMonth() + 1).padStart(2, '0')}-${String(updatedDate.getDate()).padStart(2, '0')}`;
+            
+            // 获取对话模式的显示名称
+            const modeDisplay = modesList.find(m => m.id === template.mode)?.name || template.mode;
+            
+            tr.innerHTML = `
+                <td>${template.id}</td>
+                <td>${template.domain}</td>
+                <td>${modeDisplay}</td>
+                <td>${template.name}</td>
+                <td>${formattedCreatedDate}</td>
+                <td>${formattedUpdatedDate}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-button edit-button" data-id="${template.id}" title="编辑">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11 4H4C3.44772 4 3 4.44772 3 5V19C3 19.5523 3.44772 20 4 20H18C18.5523 20 19 19.5523 19 19V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M18.5 2.5C18.7626 2.23735 19.1189 2.07855 19.5 2.07855C19.8811 2.07855 20.2374 2.23735 20.5 2.5C20.7626 2.76265 20.9214 3.11895 20.9214 3.5C20.9214 3.88105 20.7626 4.23735 20.5 4.5L12 13L9 14L10 11L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <button class="action-button delete-button" data-id="${template.id}" data-name="${template.name}" title="删除">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M4 7H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M5 7L6 19C6 19.5304 6.21071 20.0391 6.58579 20.4142C6.96086 20.7893 7.46957 21 8 21H16C16.5304 21 17.0391 20.7893 17.4142 20.4142C17.7893 20.0391 18 19.5304 18 19L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M9 7V4C9 3.73478 9.10536 3.48043 9.29289 3.29289C9.48043 3.10536 9.73478 3 10 3H14C14.2652 3 14.5196 3.10536 14.7071 3.29289C14.8946 3.48043 15 3.73478 15 4V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            `;
+            
+            tbody.appendChild(tr);
+        });
+        
+        // 添加编辑按钮事件监听
+        tbody.querySelectorAll('.edit-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const id = button.getAttribute('data-id');
+                handleEditDomainTemplate(id);
+            });
+        });
+        
+        // 添加删除按钮事件监听
+        tbody.querySelectorAll('.delete-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const id = button.getAttribute('data-id');
+                const name = button.getAttribute('data-name');
+                handleDeleteDomainTemplate(id, name);
+            });
+        });
+    }
+    
+    /**
+     * 打开领域特定模板编辑模态框
+     */
+    function openDomainTemplateModal(isEdit = false) {
+        domainTemplateModalTitle.textContent = isEdit ? '编辑领域特定模板' : '新增领域特定模板';
+        domainTemplateModalOverlay.style.display = 'flex';
+        
+        if (!isEdit) {
+            // 新增时清空表单
+            domainTemplateForm.reset();
+            domainTemplateId.value = '';
+        }
+    }
+    
+    /**
+     * 关闭领域特定模板编辑模态框
+     */
+    function closeDomainTemplateModal() {
+        domainTemplateModalOverlay.style.display = 'none';
+        domainTemplateFormError.textContent = '';
+    }
+    
+    /**
+     * 处理编辑领域特定模板
+     */
+    async function handleEditDomainTemplate(id) {
+        try {
+            // 显示加载状态
+            domainTemplateFormError.textContent = '加载中...';
+            
+            // 打开模态框
+            openDomainTemplateModal(true);
+            
+            // 获取模板详情
+            const templates = await window.backendApi.get('/api/prompts/domain-templates');
+            const template = templates.templates.find(t => t.id === parseInt(id));
+            
+            if (!template) {
+                domainTemplateFormError.textContent = '找不到指定的模板';
+                return;
+            }
+            
+            // 填充表单
+            domainTemplateId.value = template.id;
+            domainTemplateCategory.value = template.domain;
+            domainTemplateMode.value = template.mode;
+            domainTemplateName.value = template.name;
+            domainTemplateSystemPrompt.value = template.systemPrompt;
+            domainTemplatePlaceholder.value = template.placeholder;
+            
+            // 清除错误信息
+            domainTemplateFormError.textContent = '';
+        } catch (error) {
+            console.error('获取领域特定模板详情失败:', error);
+            domainTemplateFormError.textContent = '加载模板详情失败: ' + (error.message || '未知错误');
+        }
+    }
+    
+    /**
+     * 保存领域特定模板
+     */
+    async function saveDomainTemplate() {
+        try {
+            // 基本验证
+            if (!domainTemplateCategory.value || !domainTemplateMode.value || !domainTemplateName.value || !domainTemplateSystemPrompt.value || !domainTemplatePlaceholder.value) {
+                domainTemplateFormError.textContent = '所有字段都是必填的';
+                return;
+            }
+            
+            // 显示保存中状态
+            saveDomainTemplateBtn.disabled = true;
+            saveDomainTemplateBtn.textContent = '保存中...';
+            domainTemplateFormError.textContent = '';
+            
+            // 准备数据
+            const templateData = {
+                id: domainTemplateId.value ? parseInt(domainTemplateId.value) : null,
+                domain: domainTemplateCategory.value,
+                mode: domainTemplateMode.value,
+                name: domainTemplateName.value,
+                systemPrompt: domainTemplateSystemPrompt.value,
+                placeholder: domainTemplatePlaceholder.value
+            };
+            
+            // 发送请求
+            await window.backendApi.post('/api/prompts/domain-template', templateData);
+            
+            // 关闭模态框
+            closeDomainTemplateModal();
+            
+            // 重新加载列表
+            await loadDomainTemplates();
+            
+            // 显示成功提示
+            showSuccess(templateData.id ? '领域特定模板已更新' : '领域特定模板已创建');
+        } catch (error) {
+            console.error('保存领域特定模板失败:', error);
+            domainTemplateFormError.textContent = '保存失败: ' + (error.message || '未知错误');
+        } finally {
+            // 恢复按钮状态
+            saveDomainTemplateBtn.disabled = false;
+            saveDomainTemplateBtn.textContent = '保存';
+        }
+    }
+    
+    /**
+     * 打开删除领域特定模板确认模态框
+     */
+    function handleDeleteDomainTemplate(id, name) {
+        deleteDomainTemplateId.value = id;
+        deleteDomainTemplateName.textContent = name;
+        deleteDomainTemplateModalOverlay.style.display = 'flex';
+    }
+    
+    /**
+     * 关闭删除领域特定模板确认模态框
+     */
+    function closeDeleteDomainTemplateModal() {
+        deleteDomainTemplateModalOverlay.style.display = 'none';
+    }
+    
+    /**
+     * 删除领域特定模板
+     */
+    async function deleteDomainTemplate() {
+        try {
+            const id = deleteDomainTemplateId.value;
+            
+            // 显示删除中状态
+            confirmDeleteDomainTemplateBtn.disabled = true;
+            confirmDeleteDomainTemplateBtn.textContent = '删除中...';
+            
+            // 发送删除请求
+            await window.backendApi.delete(`/api/prompts/domain-template/${id}`);
+            
+            // 关闭模态框
+            closeDeleteDomainTemplateModal();
+            
+            // 重新加载列表
+            await loadDomainTemplates();
+            
+            // 显示成功提示
+            showSuccess('领域特定模板已删除');
+        } catch (error) {
+            console.error('删除领域特定模板失败:', error);
+            showError('删除失败: ' + (error.message || '未知错误'));
+        } finally {
+            // 恢复按钮状态
+            confirmDeleteDomainTemplateBtn.disabled = false;
+            confirmDeleteDomainTemplateBtn.textContent = '删除';
+        }
+    }
 }); 
