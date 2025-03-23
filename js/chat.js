@@ -223,8 +223,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // 根据当前活动功能模式构建API请求
-    function buildAPIRequest(message) {
-        // 使用聊天模式选择器提供的系统提示词
+    function buildAPIRequest(message, specializedPrompt = null) {
+        // 如果提供了专用提示词，直接使用
+        if (specializedPrompt) {
+            console.log('使用专用提示词模板:', specializedPrompt.substring(0, 50) + '...');
+            return {
+                message: message,
+                systemPrompt: specializedPrompt
+            };
+        }
+        
+        // 否则使用聊天模式选择器提供的系统提示词
         let systemPrompt = '';
         
         // 如果聊天模式选择器功能可用
@@ -405,6 +414,17 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             let config;
             
+            // 确保messages包含系统和用户消息
+            if (!messages.some(msg => msg.role === 'system')) {
+                // 如果没有系统消息，添加一个默认的
+                messages.unshift({
+                    role: 'system',
+                    content: '你是Xpat助手，为用户提供专业、准确的回答。'
+                });
+            }
+            
+            console.log('发送API请求，消息数:', messages.length);
+            
             // 尝试从后端获取API配置
             try {
                 // 清除先前缓存的API配置，确保获取最新配置
@@ -566,31 +586,71 @@ document.addEventListener('DOMContentLoaded', () => {
         
         console.log('发送消息:', message);
         
-        // 检查是否有检测到的专利领域，并自动切换适合的聊天模式
+        let detectedDomain = null;
+        let specializedTemplate = null;
+        
+        // 检查是否有检测到的专利领域
         if (window.DETECTED_PATENT_DOMAIN && typeof window.DETECTED_PATENT_DOMAIN === 'string') {
-            const detectedDomain = window.DETECTED_PATENT_DOMAIN;
+            detectedDomain = window.DETECTED_PATENT_DOMAIN;
             console.log('检测到专利领域:', detectedDomain);
             
-            // 根据检测到的领域选择合适的聊天模式
-            let recommendedMode = null;
+            // 获取当前聊天模式
+            const currentMode = window.getCurrentChatModeId ? window.getCurrentChatModeId() : 'general';
             
-            // 判断领域与聊天模式的匹配关系
-            if (['电子信息', '新材料', '能源环保', '化学化工'].includes(detectedDomain)) {
-                recommendedMode = 'patent-writing'; // 专利撰写
-                console.log('根据检测到的领域自动切换到专利撰写模式');
-            } else if (['生物医药', '机械工程', '农业食品', '交通运输'].includes(detectedDomain)) {
-                recommendedMode = 'patent-search'; // 专利检索
-                console.log('根据检测到的领域自动切换到专利检索模式');
-            }
-            
-            // 如果有推荐的模式，并且当前不是该模式，则自动切换
-            if (recommendedMode && window.getCurrentChatModeId && window.getCurrentChatModeId() !== recommendedMode) {
-                const modes = window.PROMPT_TEMPLATES.chatModes;
-                const mode = modes.find(m => m.id === recommendedMode);
-                if (mode && window.selectChatMode) {
-                    window.selectChatMode(mode.id, mode.name, mode.systemPrompt);
-                    // 显示模式切换提示
-                    addSystemMessage(`已根据您的文档内容自动切换到"${mode.name}"模式，这可能更适合处理${detectedDomain}领域的专利问题。`);
+            // 只对专利相关模式应用专业模板
+            if (currentMode.startsWith('patent-')) {
+                try {
+                    // 从后端获取特定领域和模式的专业提示词模板
+                    const token = localStorage.getItem('xpat_auth_token');
+                    if (token) {
+                        const response = await fetch(`${window.API_BASE_URL}/prompts/domain?domain=${encodeURIComponent(detectedDomain)}&mode=${encodeURIComponent(currentMode)}`, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.template) {
+                                specializedTemplate = data.template;
+                                console.log('获取到专业提示词模板:', specializedTemplate.name);
+                                
+                                // 应用专业模板的名称和占位符
+                                if (window.selectChatMode && specializedTemplate.name) {
+                                    window.selectChatMode(currentMode, specializedTemplate.name, specializedTemplate.systemPrompt);
+                                    // 显示领域专业模式切换提示
+                                    addSystemMessage(`已切换到"${specializedTemplate.name}"模式，这将为您提供针对${detectedDomain}领域的专业回答。`);
+                                }
+                            }
+                        } else {
+                            console.error('获取专业提示词模板失败:', response.status);
+                        }
+                    }
+                } catch (error) {
+                    console.error('请求专业提示词模板时出错:', error);
+                }
+            } else {
+                // 如果当前不是专利相关模式，推荐切换到适合的专利模式
+                let recommendedMode = null;
+                
+                // 判断领域与聊天模式的匹配关系
+                if (['电子信息', '新材料', '能源环保', '化学化工'].includes(detectedDomain)) {
+                    recommendedMode = 'patent-writing'; // 专利撰写
+                    console.log('根据检测到的领域推荐专利撰写模式');
+                } else if (['生物医药', '机械工程', '农业食品', '交通运输'].includes(detectedDomain)) {
+                    recommendedMode = 'patent-search'; // 专利检索
+                    console.log('根据检测到的领域推荐专利检索模式');
+                }
+                
+                // 如果有推荐的模式，则提示用户
+                if (recommendedMode && window.PROMPT_TEMPLATES) {
+                    const modes = window.PROMPT_TEMPLATES.chatModes;
+                    const mode = modes.find(m => m.id === recommendedMode);
+                    if (mode) {
+                        addSystemMessage(`检测到您的文档可能与${detectedDomain}领域相关，建议切换到"${mode.name}"模式获取更专业的帮助。`);
+                    }
                 }
             }
             
@@ -611,7 +671,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const loadingIndicator = addLoadingIndicator();
             
             // 准备请求数据
-            const apiRequest = buildAPIRequest(message);
+            const apiRequest = buildAPIRequest(message, specializedTemplate ? specializedTemplate.systemPrompt : null);
             
             // 检查是否有错误信息
             if (apiRequest && apiRequest.error) {
@@ -623,6 +683,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // 调用API获取回复
             const response = await callOpenRouterAPI([{
+                role: 'system',
+                content: apiRequest.systemPrompt
+            }, {
                 role: 'user',
                 content: apiRequest.message
             }], window.CURRENT_MODEL);
