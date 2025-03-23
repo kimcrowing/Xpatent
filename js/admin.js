@@ -1498,35 +1498,61 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * 渲染API使用表格
      */
-    function renderApiUsageTable(users) {
-        const tbody = apiUsageTable.querySelector('tbody');
-        tbody.innerHTML = '';
+    function renderApiUsageTable(usersData) {
+        const tableBody = document.getElementById('apiUsageTableBody');
+        tableBody.innerHTML = '';
         
-        users.forEach(user => {
-            const tr = document.createElement('tr');
+        usersData.forEach(user => {
+            const row = document.createElement('tr');
             
-            // 计算配额使用率
-            const quotaUsage = user.apiQuota > 0 ? (user.apiCalls / user.apiQuota * 100).toFixed(1) : 0;
+            // 配额使用百分比计算
+            const quotaPercent = user.api_quota > 0 
+                ? Math.round((user.api_usage / user.api_quota) * 100) 
+                : 0;
             
-            // 创建用户头像
-            const userInitials = user.username.slice(0, 2).toUpperCase();
-            const userAvatar = `<div class="user-avatar">${userInitials}</div>`;
+            // 格式化API调用次数，确保显示0而非undefined
+            const apiCallsCount = user.api_calls_count !== undefined 
+                ? user.api_calls_count 
+                : 0;
             
-            tr.innerHTML = `
+            // 检查最常用的模型是否存在
+            const commonModel = user.common_model || '无数据';
+            
+            // 格式化最后使用时间
+            let lastUsedTime = user.last_api_call;
+            if (!lastUsedTime || lastUsedTime === 'null' || lastUsedTime === '从未使用') {
+                lastUsedTime = '从未使用';
+            } else {
+                // 尝试格式化日期
+                try {
+                    const date = new Date(lastUsedTime);
+                    if (!isNaN(date.getTime())) {
+                        lastUsedTime = date.toLocaleString('zh-CN');
+                    }
+                } catch (e) {
+                    console.error('日期格式化错误:', e);
+                }
+            }
+            
+            row.innerHTML = `
                 <td>${user.id}</td>
-                <td>${userAvatar} ${user.username}</td>
-                <td>${user.apiCalls}</td>
+                <td>${user.username}</td>
+                <td>${apiCallsCount}</td>
                 <td>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: ${Math.min(quotaUsage, 100)}%"></div>
-                        <span>${quotaUsage}%</span>
+                    <div class="relative pt-1">
+                        <div class="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
+                            <div style="width:${quotaPercent}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${quotaPercent > 90 ? 'bg-red-500' : 'bg-blue-500'}"></div>
+                        </div>
+                        <div class="text-xs font-semibold inline-block text-gray-600 mt-1">
+                            ${quotaPercent}%
+                        </div>
                     </div>
                 </td>
-                <td>${user.commonModels || '无数据'}</td>
-                <td>${user.lastUsage ? new Date(user.lastUsage).toLocaleString() : '从未使用'}</td>
+                <td>${commonModel}</td>
+                <td>${lastUsedTime}</td>
             `;
             
-            tbody.appendChild(tr);
+            tableBody.appendChild(row);
         });
     }
     
