@@ -1,13 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
     const chatMessages = document.getElementById('chatMessages');
     const userInput = document.getElementById('userInput');
-    const sendBtn = document.getElementById('sendBtn');
     const sendButton = document.getElementById('sendButton');
     
     console.log('聊天组件已加载', {
         chatMessages: !!chatMessages,
         userInput: !!userInput,
-        sendBtn: !!sendBtn,
         sendButton: !!sendButton
     });
     
@@ -64,8 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
             userInput.placeholder = '请先登录或订阅后使用';
         }
         
-        if (sendBtn) {
-            sendBtn.disabled = true;
+        if (sendButton) {
+            sendButton.disabled = true;
         }
     }
     
@@ -603,17 +601,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // 发送按钮点击事件
-    if (sendBtn) {
-        sendBtn.addEventListener('click', () => {
-            console.log('发送按钮(sendBtn)点击');
-            sendMessage();
-        });
-    }
-    
-    // 新发送按钮点击事件
     if (sendButton) {
         sendButton.addEventListener('click', () => {
-            console.log('发送按钮(sendButton)点击');
+            console.log('发送按钮点击');
             sendMessage();
         });
     } else {

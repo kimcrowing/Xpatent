@@ -8,20 +8,55 @@ document.addEventListener('DOMContentLoaded', function() {
         currentChatModeText: !!currentChatModeText
     });
     
-    // 检查元素是否存在
+    // 检查必要元素是否存在
     if (!chatModeSelector || !currentChatModeText) {
         console.error('ChatModeSelector: 找不到必要的DOM元素');
         return; // 如果必要元素不存在，退出初始化
     }
     
-    // 本地备用的聊天模式列表（如果无法从模拟后端获取）
+    // 添加默认的提示词模板数据
+    window.PROMPT_TEMPLATES = {
+        chatModes: [
+            {
+                id: 'general',
+                name: '通用对话',
+                systemPrompt: '你是一个全能助手，请帮助用户解答各种问题。',
+                placeholder: '您想了解什么?'
+            },
+            {
+                id: 'patent-search',
+                name: '专利检索',
+                systemPrompt: '你是一个专利检索专家，请帮助用户查找相关专利信息。',
+                placeholder: '请输入您想检索的专利关键词或技术领域...'
+            },
+            {
+                id: 'patent-writing',
+                name: '专利撰写',
+                systemPrompt: '你是一个专利撰写专家，请帮助用户撰写高质量的专利申请文档。',
+                placeholder: '请描述您的发明或者您需要什么样的专利撰写帮助...'
+            },
+            {
+                id: 'patent-analysis',
+                name: '专利分析',
+                systemPrompt: '你是一个专利分析专家，请帮助用户分析专利文件和专利战略。',
+                placeholder: '请输入您需要分析的专利信息或问题...'
+            }
+        ]
+    };
+    
+    // 默认本地聊天模式数据 (备用)
     const localChatModes = [
-        { id: 'general', name: '通用对话', systemPrompt: '你是Xpat助手，为用户提供各种问题的回答和帮助。请提供准确、有用的信息。' }
+        {
+            id: 'general',
+            name: '通用对话',
+            systemPrompt: '你是一个全能助手，请帮助用户解答各种问题。',
+            placeholder: '您想了解什么?'
+        }
     ];
     
     // 存储用户权限
     let userPermissions = {
-        allowedChatModes: ['general']
+        allowedChatModes: ['general', 'patent-search', 'patent-writing', 'patent-analysis']
     };
     
     // 获取用户权限
@@ -39,6 +74,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // 检查当前用户是否为管理员
+    function checkIsAdmin() {
+        // 直接从localStorage获取用户信息检查角色
+        try {
+            const userInfoStr = localStorage.getItem('xpat_user_info');
+            if (userInfoStr) {
+                const userInfo = JSON.parse(userInfoStr);
+                console.log('用户信息:', userInfo);
+                return userInfo && userInfo.role === 'admin';
+            }
+        } catch (error) {
+            console.error('检查管理员状态时出错:', error);
+        }
+        
+        // 如果window.backendApi存在，也尝试使用它
+        if (window.backendApi && typeof window.backendApi.isAdmin === 'function') {
+            const isAdminResult = window.backendApi.isAdmin();
+            console.log('backendApi.isAdmin()返回:', isAdminResult);
+            return isAdminResult;
+        }
+        
+        return false;
+    }
+    
     // 获取聊天模式列表，优先使用模拟后端数据，并根据用户权限过滤
     function getChatModes() {
         let modes = [];
@@ -50,14 +109,19 @@ document.addEventListener('DOMContentLoaded', function() {
             modes = localChatModes;
         }
         
+        // 检查用户是否为管理员
+        const isAdmin = checkIsAdmin();
+        console.log('当前用户是否为管理员:', isAdmin);
+        
+        // 管理员可以访问所有模式
+        if (isAdmin) {
+            console.log('管理员用户，显示所有聊天模式');
+            return modes;
+        }
+        
         // 根据用户权限过滤可用模式
         if (userPermissions && userPermissions.allowedChatModes) {
-            // 管理员可以访问所有模式
-            if (window.backendApi && window.backendApi.isAdmin && window.backendApi.isAdmin()) {
-                return modes;
-            }
-            
-            // 普通用户只能访问被允许的模式
+            console.log('根据用户权限过滤聊天模式:', userPermissions.allowedChatModes);
             return modes.filter(mode => userPermissions.allowedChatModes.includes(mode.id));
         }
         
