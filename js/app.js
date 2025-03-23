@@ -749,12 +749,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const languageItems = document.querySelectorAll('.language-option');
         languageItems.forEach(item => {
             const itemLang = item.getAttribute('data-lang');
-            const checkIcon = item.querySelector('.language-check');
+            const checkIcon = item.querySelector('.check-icon');
             
-            if (itemLang === lang) {
-                checkIcon.style.display = 'inline-block';
-            } else {
-                checkIcon.style.display = 'none';
+            if (checkIcon) {
+                if (itemLang === lang) {
+                    checkIcon.style.display = 'inline-block';
+                } else {
+                    checkIcon.style.display = 'none';
+                }
             }
         });
     }
