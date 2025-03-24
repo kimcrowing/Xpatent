@@ -141,6 +141,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // 使用已有的菜单元素，不再动态创建
         if (modelDropdown) {
             modelDropdown.classList.toggle('show');
+            
+            // 计算位置，确保下拉菜单紧贴按钮
+            const rect = modelSelector.getBoundingClientRect();
+            modelDropdown.style.position = 'fixed';
+            modelDropdown.style.top = `${rect.bottom + 5}px`;
+            modelDropdown.style.right = `${window.innerWidth - rect.right}px`;
         }
     });
     
