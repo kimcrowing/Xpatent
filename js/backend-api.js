@@ -244,14 +244,14 @@ async function getSubscriptionStats() {
  * 获取API配置 (从后端)
  */
 async function getApiConfig() {
-  return apiRequest('/config');
+  return apiRequest('/chat/config');
 }
 
 /**
  * 保存API配置 (到后端)
  */
 async function saveApiConfig(config) {
-  return apiRequest('/config', 'PUT', config);
+  return apiRequest('/admin/config', 'POST', config);
 }
 
 /**
