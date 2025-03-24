@@ -353,22 +353,25 @@ async function verifyAdminPassword(password) {
 
 // 检测是否在GitHub Pages环境，并尝试设置API地址
 (function detectEnvironment() {
-  // 尝试从本地存储获取之前保存的API地址
+  // API配置版本，每次更新API地址时更新此版本号
+  const API_CONFIG_VERSION = '1.1';
+  const savedVersion = localStorage.getItem('xpat_api_version');
   const savedApiUrl = localStorage.getItem('xpat_api_url');
   
-  if (savedApiUrl && savedApiUrl.trim() !== '') {
+  // 如果版本不匹配或API地址为空，则使用代码中的最新值
+  const defaultApiUrl = 'https://4df8-2408-8262-1871-4903-4d7-3ec-d97-db30.ngrok-free.app/api';
+  
+  if (!savedVersion || savedVersion !== API_CONFIG_VERSION || !savedApiUrl || savedApiUrl.trim() === '') {
+    // 更新为最新版本的API地址
+    window.API_BASE_URL = defaultApiUrl;
+    localStorage.setItem('xpat_api_url', window.API_BASE_URL);
+    localStorage.setItem('xpat_api_version', API_CONFIG_VERSION);
+    console.log('已更新API地址配置版本:', API_CONFIG_VERSION);
+    console.log('设置最新API地址:', window.API_BASE_URL);
+  } else {
+    // 使用本地存储的API地址
     window.API_BASE_URL = savedApiUrl;
     console.log('从本地存储加载API地址:', window.API_BASE_URL);
-  } else {
-    // 确保API地址不为空
-    if (!window.API_BASE_URL || window.API_BASE_URL.trim() === '') {
-      window.API_BASE_URL = 'https://4df8-2408-8262-1871-4903-4d7-3ec-d97-db30.ngrok-free.app/api';
-      console.log('API地址为空，设置为默认值:', window.API_BASE_URL);
-    }
-    
-    // 保存当前API地址到本地存储
-    localStorage.setItem('xpat_api_url', window.API_BASE_URL);
-    console.log('初始化API地址:', window.API_BASE_URL);
   }
 })();
 
@@ -385,6 +388,14 @@ window.backendApi = {
         return true;
       }
       return false;
+    },
+    resetApiUrl: () => {
+      // 重置API地址为代码中的默认值
+      localStorage.removeItem('xpat_api_url');
+      localStorage.removeItem('xpat_api_version');
+      console.log('API地址配置已重置，页面将刷新');
+      // 延迟刷新页面，使用户能看到提示
+      setTimeout(() => location.reload(), 1000);
     },
     checkConnection: async () => {
       try {
