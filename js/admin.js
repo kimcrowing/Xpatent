@@ -1532,31 +1532,19 @@ document.addEventListener('DOMContentLoaded', function() {
             emptyState.style.display = 'none';
             
             // 发送请求
-            const token = localStorage.getItem('adminToken');
-            const response = await fetch('/api/admin/providers', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error?.message || '加载失败');
-            }
-            
-            const data = await response.json();
+            const response = await apiRequest('/admin/providers');
             
             // 隐藏加载状态
             loadingState.style.display = 'none';
             
             // 如果没有数据，显示空状态
-            if (!data.providers || data.providers.length === 0) {
+            if (!response.providers || response.providers.length === 0) {
                 emptyState.style.display = 'block';
                 return;
             }
             
             // 渲染数据
-            data.providers.forEach(provider => {
+            response.providers.forEach(provider => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${provider.name}</td>
@@ -1593,11 +1581,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             // 加载全局API配置下拉框数据
-            updateProviderDropdowns(data.providers);
+            updateProviderDropdowns(response.providers);
         } catch (error) {
             console.error('加载API提供商失败:', error);
             loadingState.style.display = 'none';
-            showNotification(`加载API提供商失败: ${error.message}`, 'error');
+            showToast(`加载API提供商失败: ${error.message}`, 'error');
         }
     }
     
@@ -3373,8 +3361,8 @@ document.addEventListener('DOMContentLoaded', function() {
             loadingState.style.display = 'block';
             emptyState.style.display = 'none';
             
-            // 发送请求 - 修正API路径
-            const response = await apiRequest('/admin/models');
+            // 发送请求 - 使用有效的API路径
+            const response = await apiRequest('/chat/models');
             
             // 隐藏加载状态
             loadingState.style.display = 'none';
@@ -3488,7 +3476,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function deleteApiModel(modelId) {
         try {
-            await apiRequest(`/admin/models/${modelId}`, 'DELETE');
+            await apiRequest(`/chat/models/${modelId}`, 'DELETE');
             showToast('删除模型成功', 'success');
             loadApiModels(); // 重新加载模型列表
         } catch (error) {
@@ -4118,6 +4106,319 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             showToast('加载API密钥失败: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * 加载对话模式列表
+     */
+    async function loadChatModes() {
+        const tableBody = document.getElementById('chatModeTableBody');
+        const loadingState = document.getElementById('chatModeLoadingState');
+        const emptyState = document.getElementById('chatModeEmptyState');
+        
+        if (!tableBody || !loadingState || !emptyState) {
+            console.error('对话模式表格元素未找到');
+            return;
+        }
+        
+        try {
+            // 显示加载状态
+            tableBody.innerHTML = '';
+            loadingState.style.display = 'block';
+            emptyState.style.display = 'none';
+            
+            // 获取筛选条件
+            const searchInput = document.getElementById('chatModeSearchInput');
+            const statusFilter = document.getElementById('chatModeStatusFilter');
+            
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            const status = statusFilter ? statusFilter.value : 'all';
+            
+            // 构建API请求路径
+            let endpoint = '/chat/modes';
+            const params = [];
+            
+            if (searchTerm) {
+                params.push(`q=${encodeURIComponent(searchTerm)}`);
+            }
+            
+            if (status && status !== 'all') {
+                params.push(`status=${encodeURIComponent(status)}`);
+            }
+            
+            if (params.length > 0) {
+                endpoint += `?${params.join('&')}`;
+            }
+            
+            // 发送请求
+            const response = await apiRequest(endpoint);
+            
+            // 隐藏加载状态
+            loadingState.style.display = 'none';
+            
+            // 如果没有数据，显示空状态
+            if (!response.modes || response.modes.length === 0) {
+                tableBody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            // 渲染数据
+            tableBody.innerHTML = '';
+            response.modes.forEach(mode => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${mode.id}</td>
+                    <td>${mode.name}</td>
+                    <td>${mode.description || '无描述'}</td>
+                    <td>${formatRequiredPermission(mode.requiredPermission)}</td>
+                    <td>
+                        <span class="badge ${mode.isActive ? 'badge-success' : 'badge-danger'}">
+                            ${mode.isActive ? '启用' : '禁用'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-button edit-button" data-id="${mode.id}" title="编辑">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="action-button delete-button" data-id="${mode.id}" title="删除">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+                
+                // 绑定编辑和删除按钮事件
+                row.querySelector('.edit-button').addEventListener('click', () => {
+                    showChatModeModal(mode);
+                });
+                
+                row.querySelector('.delete-button').addEventListener('click', () => {
+                    if (confirm(`确定要删除 "${mode.name}" 对话模式吗？`)) {
+                        deleteChatMode(mode.id);
+                    }
+                });
+            });
+        } catch (error) {
+            console.error('加载对话模式失败:', error);
+            loadingState.style.display = 'none';
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载对话模式失败，请重试</td></tr>';
+            showToast('加载对话模式失败: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * 格式化权限要求
+     * @param {string} permission - 权限代码
+     * @returns {string} 格式化后的文本
+     */
+    function formatRequiredPermission(permission) {
+        if (!permission) return '无限制';
+        
+        const permissionMap = {
+            'basic': '基础用户',
+            'premium': '高级用户',
+            'pro': '专业用户',
+            'admin': '管理员'
+        };
+        
+        return permissionMap[permission] || permission;
+    }
+
+    /**
+     * 搜索对话模式
+     */
+    function searchChatModes() {
+        loadChatModes();
+    }
+
+    /**
+     * 加载用户列表到权限下拉框
+     */
+    async function loadUsersForPermissions() {
+        try {
+            const response = await apiRequest('/admin/users');
+            
+            if (!response.users || response.users.length === 0) {
+                return;
+            }
+            
+            const select = document.getElementById('userPermissionChatModeFilter');
+            if (!select) return;
+            
+            // 清空选项（保留第一个"请选择用户"选项）
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+            
+            // 添加用户选项
+            response.users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.username || '无名称'} (${user.email})`;
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error('加载用户列表失败:', error);
+            showToast('加载用户列表失败: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * 加载用户对话模式权限
+     * @param {string} userId - 用户ID
+     */
+    async function loadUserChatModePermissions(userId) {
+        const tableBody = document.querySelector('#userChatModeTable tbody');
+        const emptyState = document.getElementById('userChatModeEmptyState');
+        
+        if (!tableBody || !emptyState) return;
+        
+        try {
+            // 显示加载状态
+            tableBody.innerHTML = '<tr><td colspan="3" class="text-center">加载中...</td></tr>';
+            emptyState.style.display = 'none';
+            
+            // 发送请求
+            const response = await apiRequest(`/admin/users/${userId}/permissions`);
+            
+            // 如果没有数据或没有对话模式权限
+            if (!response || !response.allowedChatModes || response.allowedChatModes.length === 0) {
+                tableBody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            // 获取全部对话模式列表
+            const modesResponse = await apiRequest('/chat/modes');
+            const allModes = modesResponse.modes || [];
+            
+            // 渲染数据
+            tableBody.innerHTML = '';
+            if (allModes.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            allModes.forEach(mode => {
+                const isAllowed = response.allowedChatModes.includes(mode.id);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${mode.name}</td>
+                    <td>${mode.description || '无描述'}</td>
+                    <td>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" data-mode-id="${mode.id}" 
+                                ${isAllowed ? 'checked' : ''}>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // 显示编辑按钮
+            document.getElementById('editPermissionBtn').style.display = 'block';
+            
+            // 保存当前用户ID
+            document.getElementById('permissionUserId').value = userId;
+        } catch (error) {
+            console.error('加载用户权限失败:', error);
+            tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">加载失败，请重试</td></tr>';
+            showToast('加载用户权限失败: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * 保存用户对话模式权限
+     */
+    async function saveUserChatModePermission() {
+        const userId = document.getElementById('permissionUserId').value;
+        
+        if (!userId) {
+            showToast('请先选择用户', 'error');
+            return;
+        }
+        
+        try {
+            // 获取所有选中的模式
+            const allowedModes = [];
+            document.querySelectorAll('#userChatModeTable input[type="checkbox"]:checked').forEach(checkbox => {
+                allowedModes.push(checkbox.getAttribute('data-mode-id'));
+            });
+            
+            // 发送请求
+            await apiRequest(`/admin/users/${userId}/permissions`, 'PUT', {
+                allowedChatModes: allowedModes
+            });
+            
+            showToast('用户权限保存成功', 'success');
+        } catch (error) {
+            console.error('保存用户权限失败:', error);
+            showToast('保存用户权限失败: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * 显示对话模式编辑模态框
+     * @param {Object} mode - 对话模式对象（编辑时传入）
+     */
+    function showChatModeModal(mode = null) {
+        // 获取模态框元素
+        const modal = document.getElementById('chatModeModalOverlay');
+        if (!modal) {
+            console.error('未找到对话模式模态框');
+            return;
+        }
+        
+        // 获取表单元素
+        const modeIdInput = document.getElementById('chatModeId');
+        const modeNameInput = document.getElementById('chatModeName');
+        const modeDescInput = document.getElementById('chatModeDescription');
+        const modeSystemPromptInput = document.getElementById('chatModeSystemPrompt');
+        const modeRequiredPermissionSelect = document.getElementById('chatModeRequiredPermission');
+        const modeStatusSelect = document.getElementById('chatModeStatus');
+        const modalTitle = document.getElementById('chatModeModalTitle');
+        
+        // 如果是编辑模式
+        if (mode) {
+            modalTitle.textContent = '编辑对话模式';
+            modeIdInput.value = mode.id;
+            modeNameInput.value = mode.name;
+            modeDescInput.value = mode.description || '';
+            modeSystemPromptInput.value = mode.systemPrompt || '';
+            modeRequiredPermissionSelect.value = mode.requiredPermission || 'none';
+            modeStatusSelect.value = mode.isActive ? 'active' : 'inactive';
+        } else {
+            // 新增模式
+            modalTitle.textContent = '添加对话模式';
+            modeIdInput.value = '';
+            modeNameInput.value = '';
+            modeDescInput.value = '';
+            modeSystemPromptInput.value = '';
+            modeRequiredPermissionSelect.value = 'none';
+            modeStatusSelect.value = 'active';
+        }
+        
+        // 显示模态框
+        modal.style.display = 'block';
+    }
+
+    /**
+     * 删除对话模式
+     * @param {string} modeId - 对话模式ID
+     */
+    async function deleteChatMode(modeId) {
+        try {
+            await apiRequest(`/chat/modes/${modeId}`, 'DELETE');
+            showToast('删除对话模式成功', 'success');
+            loadChatModes();
+        } catch (error) {
+            console.error('删除对话模式失败:', error);
+            showToast('删除对话模式失败: ' + error.message, 'error');
         }
     }
 });
