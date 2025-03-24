@@ -354,7 +354,7 @@ async function verifyAdminPassword(password) {
 // 检测是否在GitHub Pages环境，并尝试设置API地址
 (function detectEnvironment() {
   // API配置版本，每次更新API地址时更新此版本号
-  const API_CONFIG_VERSION = '1.1';
+  const API_CONFIG_VERSION = '1.2';
   const savedVersion = localStorage.getItem('xpat_api_version');
   const savedApiUrl = localStorage.getItem('xpat_api_url');
   
@@ -388,14 +388,6 @@ window.backendApi = {
         return true;
       }
       return false;
-    },
-    resetApiUrl: () => {
-      // 重置API地址为代码中的默认值
-      localStorage.removeItem('xpat_api_url');
-      localStorage.removeItem('xpat_api_version');
-      console.log('API地址配置已重置，页面将刷新');
-      // 延迟刷新页面，使用户能看到提示
-      setTimeout(() => location.reload(), 1000);
     },
     checkConnection: async () => {
       try {
