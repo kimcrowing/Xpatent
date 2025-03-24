@@ -6,7 +6,7 @@
  */
 
 // 后端API基础URL - 可以动态修改，以支持GitHub Pages环境
-window.API_BASE_URL = 'https://5e65-2408-8262-1871-4896-4412-5f5c-46fc-3230.ngrok-free.app/api';
+window.API_BASE_URL = 'https://4df8-2408-8262-1871-4903-4d7-3ec-d97-db30.ngrok-free.app/api';
 
 // 本地存储密钥
 const TOKEN_KEY = 'xpat_auth_token';
