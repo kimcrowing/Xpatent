@@ -130,6 +130,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // 绑定Tab切换事件
         bindTabSwitchEvents();
         
+        // 绑定移动端菜单切换事件
+        bindMobileMenuEvents();
+        
         // 仪表盘事件
         bindDashboardEvents();
         
@@ -159,6 +162,38 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 绑定用户功能配置事件
         bindUserFeaturesConfigEvents();
+    }
+    
+    /**
+     * 绑定移动端菜单切换事件
+     */
+    function bindMobileMenuEvents() {
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.querySelector('.sidebar');
+        
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+            });
+            
+            // 点击菜单项时自动关闭侧边栏（在移动设备上）
+            const menuItems = sidebar.querySelectorAll('li[data-tab]');
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.remove('show');
+                    }
+                });
+            });
+            
+            // 点击内容区域时关闭侧边栏
+            document.addEventListener('click', function(event) {
+                if (window.innerWidth <= 768 && sidebar.classList.contains('show') && 
+                    !sidebar.contains(event.target) && event.target !== menuToggle) {
+                    sidebar.classList.remove('show');
+                }
+            });
+        }
     }
 
     /**
@@ -1891,10 +1926,97 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('userConfigContent').style.display = 'block';
         } catch (error) {
             console.error('加载用户功能配置失败:', error);
-            showNotification('加载用户功能配置失败: ' + error.message, 'error');
+            showToast('加载用户功能配置失败: ' + error.message, 'error');
             
             // 显示空状态
             document.getElementById('userConfigEmptyState').style.display = 'flex';
+        }
+    }
+
+    /**
+     * 保存用户功能配置
+     */
+    async function saveUserFeatureConfig() {
+        try {
+            // 获取当前选中的用户ID
+            const userId = document.getElementById('userConfigSelector').value;
+            if (!userId) {
+                showToast('请先选择用户', 'error');
+                return;
+            }
+            
+            // 显示加载状态
+            document.getElementById('saveUserConfigBtn').disabled = true;
+            document.getElementById('saveUserConfigBtn').textContent = '保存中...';
+            
+            // 收集对话模式配置
+            const chatModes = [];
+            document.querySelectorAll('#userChatModesTable input[type="checkbox"]').forEach(checkbox => {
+                if (checkbox.checked) {
+                    chatModes.push(checkbox.getAttribute('data-id'));
+                }
+            });
+            
+            // 收集提示词模板配置
+            const promptTemplates = [];
+            document.querySelectorAll('#userPromptsTable input[type="checkbox"]').forEach(checkbox => {
+                if (checkbox.checked) {
+                    promptTemplates.push(checkbox.getAttribute('data-id'));
+                }
+            });
+            
+            // 收集API供应商配置
+            const apiProviders = [];
+            document.querySelectorAll('#userProvidersTable input[type="checkbox"]').forEach(checkbox => {
+                if (checkbox.checked) {
+                    apiProviders.push(checkbox.getAttribute('data-id'));
+                }
+            });
+            
+            // 收集模型配置
+            const models = [];
+            document.querySelectorAll('#userModelsTable input[type="checkbox"]').forEach(checkbox => {
+                if (checkbox.checked) {
+                    models.push(checkbox.getAttribute('data-id'));
+                }
+            });
+            
+            // 构建配置数据
+            const configData = {
+                chatModes,
+                promptTemplates,
+                apiProviders,
+                models
+            };
+            
+            // 发送保存请求
+            const token = localStorage.getItem('adminToken');
+            const response = await fetch(`/api/admin/users/${userId}/features`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(configData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || '保存配置失败');
+            }
+            
+            // 显示成功消息
+            showToast('用户功能配置保存成功', 'success');
+            
+            // 重新加载配置
+            await loadUserFeatureConfig(userId);
+        } catch (error) {
+            console.error('保存用户功能配置失败:', error);
+            showToast('保存用户功能配置失败: ' + error.message, 'error');
+        } finally {
+            // 恢复按钮状态
+            document.getElementById('saveUserConfigBtn').disabled = false;
+            document.getElementById('saveUserConfigBtn').textContent = '保存配置';
         }
     }
 
@@ -4113,9 +4235,9 @@ document.addEventListener('DOMContentLoaded', function() {
      * 加载对话模式列表
      */
     async function loadChatModes() {
-        const tableBody = document.getElementById('chatModeTableBody');
-        const loadingState = document.getElementById('chatModeLoadingState');
-        const emptyState = document.getElementById('chatModeEmptyState');
+        const tableBody = document.querySelector('#chatModesTable tbody');
+        const loadingState = document.getElementById('chatModesLoadingState');
+        const emptyState = document.getElementById('chatModesEmptyState');
         
         if (!tableBody || !loadingState || !emptyState) {
             console.error('对话模式表格元素未找到');

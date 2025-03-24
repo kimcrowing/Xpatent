@@ -1,5 +1,49 @@
 /* 管理后台样式 */
 
+:root {
+    /* 共用颜色变量 */
+    --primary-color: #5865f2;
+    --primary-color-transparent: rgba(88, 101, 242, 0.1);
+    --primary-dark: #4752c4;
+    --secondary-color: #e9ecef;
+    --secondary-dark: #dee2e6;
+    --error-color: #e53935;
+    --warning-color: #ffa726;
+    --success-color: #43a047;
+    --admin-badge-bg: #7b1fa2;
+    --user-badge-bg: #388e3c;
+}
+
+/* 暗色主题变量 */
+.dark-theme {
+    --background-color: #121212;
+    --card-bg: #1e1e1e;
+    --input-bg: #2a2a2a;
+    --sidebar-bg: #1a1a1a;
+    --border-color: #333;
+    --text-color: #f5f5f5;
+    --text-secondary: #aaa;
+    --text-tertiary: #888;
+    --hover-bg: rgba(255, 255, 255, 0.05);
+    --active-bg: rgba(88, 101, 242, 0.15);
+    --table-header-bg: #252525;
+}
+
+/* 亮色主题变量 */
+.light-theme {
+    --background-color: #f8f9fa;
+    --card-bg: #ffffff;
+    --input-bg: #ffffff;
+    --sidebar-bg: #f8f9fa;
+    --border-color: #e0e0e0;
+    --text-color: #212529;
+    --text-secondary: #6c757d;
+    --text-tertiary: #888;
+    --hover-bg: rgba(0, 0, 0, 0.03);
+    --active-bg: rgba(88, 101, 242, 0.1);
+    --table-header-bg: #f8f9fa;
+}
+
 /* 主要布局 */
 main {
     display: flex;
@@ -164,35 +208,200 @@ main {
 
 /* 侧边栏样式 */
 .sidebar {
-    width: 220px;
+    width: 240px;
     background-color: var(--sidebar-bg);
     border-right: 1px solid var(--border-color);
     height: 100%;
     overflow-y: auto;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
 
-.menu {
+.sidebar .brand {
+    padding: 20px 16px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar .brand img {
+    width: 32px;
+    height: 32px;
+    margin-right: 12px;
+}
+
+.sidebar .brand h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar nav {
+    flex: 1;
+    padding: 16px 0;
+}
+
+.sidebar nav ul {
     list-style: none;
     padding: 0;
-    margin: 16px 0;
+    margin: 0;
 }
 
-.menu-item {
-    padding: 12px 16px;
+.sidebar nav ul li {
+    margin: 2px 0;
+    padding: 0 16px;
+}
+
+.sidebar nav ul li a,
+.sidebar nav ul li[data-tab] {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 6px;
     color: var(--text-secondary);
+    text-decoration: none;
     cursor: pointer;
-    transition: background-color 0.2s;
-    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
 }
 
-.menu-item:hover {
+.sidebar nav ul li a:hover,
+.sidebar nav ul li[data-tab]:hover {
     background-color: var(--hover-bg);
+    color: var(--text-color);
 }
 
-.menu-item.active {
-    background-color: var(--active-bg);
+.sidebar nav ul li.active a,
+.sidebar nav ul li.active[data-tab] {
+    background-color: var(--primary-color-transparent, rgba(88, 101, 242, 0.1));
     color: var(--primary-color);
-    border-left-color: var(--primary-color);
+}
+
+.sidebar nav ul li .icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.8;
+}
+
+.sidebar nav ul li .icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.sidebar nav ul li.active .icon {
+    opacity: 1;
+}
+
+/* 分类标题 */
+.sidebar nav .nav-category {
+    padding: 0 28px;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    color: var(--text-tertiary, #888);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+/* 用户信息 */
+.sidebar .user-info {
+    padding: 16px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+}
+
+.sidebar .user-info .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    font-size: 14px;
+}
+
+.sidebar .user-info .user-details {
+    overflow: hidden;
+}
+
+.sidebar .user-info .username {
+    font-weight: 500;
+    color: var(--text-color);
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar .user-info .role {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+/* 移动端菜单切换按钮 */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 8px;
+}
+
+/* 响应式样式 */
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: block;
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        z-index: 100;
+        background-color: var(--card-bg);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    #adminContent {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        position: fixed;
+        left: -240px;
+        top: 0;
+        bottom: 0;
+        z-index: 99;
+        width: 240px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .sidebar.show {
+        left: 0;
+    }
+    
+    .content-area {
+        width: 100%;
+        padding: 60px 16px 16px;
+    }
 }
 
 /* 内容区域样式 */
@@ -453,49 +662,6 @@ main {
 
 .nav-link:hover {
     background-color: var(--hover-bg);
-}
-
-/* 响应式样式 */
-@media (max-width: 768px) {
-    #adminContent {
-        flex-direction: column;
-    }
-    
-    .sidebar {
-        width: 100%;
-        height: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-    }
-    
-    .menu {
-        display: flex;
-        overflow-x: auto;
-        margin: 0;
-    }
-    
-    .menu-item {
-        border-left: none;
-        border-bottom: 3px solid transparent;
-        white-space: nowrap;
-    }
-    
-    .menu-item.active {
-        border-left-color: transparent;
-        border-bottom-color: var(--primary-color);
-    }
-    
-    .content-area {
-        padding: 16px;
-    }
-    
-    .filters {
-        flex-direction: column;
-    }
-    
-    .data-table-container {
-        overflow-x: auto;
-    }
 }
 
 /* API配置表单样式 */
