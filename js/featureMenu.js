@@ -1,35 +1,29 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // 使用订阅按钮替代原来的功能菜单按钮
-    const proSubscriptionBtn = document.getElementById('proSubscriptionBtn');
+    // 使用订阅菜单项替代不存在的订阅按钮
+    const subscriptionMenuItem = document.getElementById('subscription-menu-item');
     
     // 调试代码，帮助排除问题
     console.log('功能/订阅按钮初始化:', {
-        proSubscriptionBtn: !!proSubscriptionBtn
+        subscriptionMenuItem: !!subscriptionMenuItem
     });
     
-    // 检查订阅按钮是否存在
-    if (!proSubscriptionBtn) {
-        console.warn('订阅按钮未找到，可能界面已更新');
-        return; // 如果订阅按钮不存在，退出初始化
+    // 检查订阅菜单项是否存在
+    if (!subscriptionMenuItem) {
+        console.warn('订阅菜单项未找到，可能界面已更新');
+        // 不需要立即退出，因为其他功能还可以继续执行
+        // 只是订阅相关功能无法使用
+    } else {
+        // 给订阅菜单项添加点击事件（如果需要额外处理）
+        // 注意：菜单项内部已经有链接，可能不需要再添加点击事件
+        // 但如果需要额外的处理逻辑，可以添加
+        subscriptionMenuItem.addEventListener('click', function(e) {
+            console.log('订阅菜单项点击');
+            // 这里不需要阻止事件传播，因为我们希望链接正常工作
+            // 不需要重定向，因为a标签已经有链接
+        });
     }
     
-    // 给订阅按钮添加点击事件
-    proSubscriptionBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        console.log('订阅按钮点击');
-        
-        // 关闭用户菜单
-        const userMenu = document.getElementById('userMenu');
-        if (userMenu && userMenu.classList.contains('active')) {
-            userMenu.classList.remove('active');
-        }
-        
-        // 重定向到订阅页面
-        window.location.href = 'subscriptions.html';
-    });
-    
-    // 保留一些原有功能，如果需要的话
+    // 保留原有功能
     const userInput = document.getElementById('userInput');
     if (userInput) {
         // 默认设置输入框提示为通用对话

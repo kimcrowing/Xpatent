@@ -393,7 +393,7 @@
               <path d="M12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18Z" fill="currentColor"/>
             </svg>
           </div>
-        </li>
+          </li>
         <li id="admin-entry" style="display: none;">
           <a href="admin.html" target="_blank">
             <div class="menu-item-with-icon">
@@ -411,11 +411,11 @@
               </svg>
             </div>
           </a>
-        </li>
+          </li>
         <li><a href="index.html">主页</a></li>
         <li id="loginBtn">登录</li>
         <li id="logoutBtn">退出</li>
-      </ul>
+          </ul>
     </div>
   </header>
 
@@ -444,32 +444,32 @@
           <div class="info-row">
             <p><strong>包含功能:</strong></p>
             <ul id="features-list" class="features-list">
-              <li>加载中...</li>
-            </ul>
-          </div>
-        </div>
+                    <li>加载中...</li>
+                  </ul>
+                </div>
+              </div>
         <div class="subscription-actions">
           <button id="renew-button" class="btn-subscribe">续订</button>
         </div>
+        </div>
       </div>
-    </div>
 
-    <!-- 无订阅提示 -->
+      <!-- 无订阅提示 -->
     <div id="no-subscription" class="alert alert-warning" style="display: none;">
       <h4>您当前没有活跃的订阅</h4>
-      <p>选择下方的计划开始您的订阅，提升API调用次数和获取更多功能。</p>
-    </div>
+          <p>选择下方的计划开始您的订阅，提升API调用次数和获取更多功能。</p>
+      </div>
 
-    <!-- 登录提示 -->
+      <!-- 登录提示 -->
     <div id="login-required" class="alert alert-info" style="display: none;">
       <h4>请先登录</h4>
-      <p>您需要登录后才能查看和管理订阅。</p>
+          <p>您需要登录后才能查看和管理订阅。</p>
       <div style="margin-top: 15px;">
         <button id="login-prompt-btn" class="btn btn-primary">登录</button>
       </div>
-    </div>
+      </div>
 
-    <!-- 可用订阅计划 -->
+      <!-- 可用订阅计划 -->
     <div>
       <h2 class="section-title">可用订阅计划</h2>
       <div id="subscription-plans" class="plans-container">
@@ -482,15 +482,15 @@
 
   <!-- 订阅确认模态框 -->
   <div id="subscriptionModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-content">
+        <div class="modal-header">
         <h3>确认订阅</h3>
         <button class="modal-close" id="closeSubscriptionModal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p>您确定要订阅 <strong id="confirm-plan-name"></strong> 计划吗？</p>
-        <p>价格: <span id="confirm-plan-price"></span>元 / 月</p>
-        <p>API调用次数: 每日<span id="confirm-plan-quota"></span>次</p>
+        </div>
+        <div class="modal-body">
+          <p>您确定要订阅 <strong id="confirm-plan-name"></strong> 计划吗？</p>
+          <p>价格: <span id="confirm-plan-price"></span>元 / 月</p>
+          <p>API调用次数: 每日<span id="confirm-plan-quota"></span>次</p>
         <div class="payment-info">
           <p><strong>支付信息</strong></p>
           <p class="small">目前为测试阶段，无需真实支付。在正式版本中，这里将集成支付功能。</p>
@@ -524,8 +524,8 @@
           </div>
           <div id="loginError" style="color: #e74c3c; margin-bottom: 15px; display: none;"></div>
         </form>
-      </div>
-      <div class="modal-footer">
+        </div>
+        <div class="modal-footer">
         <button id="cancelLogin" class="btn btn-secondary">取消</button>
         <button id="confirmLogin" class="btn btn-primary">登录</button>
       </div>

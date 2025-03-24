@@ -1,12 +1,21 @@
+// 声明全局变量
+let chatMessages = null;
+let isDomLoaded = false; // 添加DOM加载状态标志
+
 document.addEventListener('DOMContentLoaded', () => {
-    const chatMessages = document.getElementById('chatMessages');
+    // 初始化全局变量而不是创建新的局部变量
+    chatMessages = document.getElementById('messages');
     const userInput = document.getElementById('userInput');
     const sendButton = document.getElementById('sendButton');
+    
+    // 设置DOM加载完成标志
+    isDomLoaded = true;
     
     console.log('聊天组件已加载', {
         chatMessages: !!chatMessages,
         userInput: !!userInput,
-        sendButton: !!sendButton
+        sendButton: !!sendButton,
+        isDomLoaded: isDomLoaded
     });
     
     // 应用版本检查
@@ -79,6 +88,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 添加用户消息到聊天界面
     function addUserMessage(content) {
+        // 检查chatMessages是否存在
+        if (!chatMessages) {
+            console.error('聊天消息容器不存在，无法添加用户消息');
+            return;
+        }
+        
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message user-message';
         messageDiv.innerHTML = `
@@ -102,6 +117,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 添加AI回复到聊天界面
     function addAIMessage(content) {
+        // 检查chatMessages是否存在
+        if (!chatMessages) {
+            console.error('聊天消息容器不存在，无法添加AI消息');
+            return;
+        }
+        
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message ai-message';
         messageDiv.innerHTML = `
@@ -157,6 +178,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 添加加载指示器
     function addLoadingIndicator() {
+        if (!chatMessages) {
+            console.error('聊天消息容器不存在，无法添加加载指示器');
+            return null;
+        }
+        
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'message ai-message loading';
         loadingDiv.innerHTML = `
@@ -226,6 +252,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 滚动到底部
     function scrollToBottom() {
+        if (!chatMessages) {
+            console.error('聊天消息容器不存在，无法滚动到底部');
+            return;
+        }
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
     
@@ -821,7 +851,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 当发送按钮点击时发送消息
+    // 添加appendMessage函数，确保它在DOMContentLoaded内部定义
+    function appendMessage(role, content) {
+        if (role === 'user') {
+            addUserMessage(content);
+        } else if (role === 'ai' || role === 'assistant') {
+            addAIMessage(content);
+        } else {
+            console.error('未知的消息角色:', role);
+        }
+    }
+    
+    // 暴露appendMessage到全局作用域，以便其他脚本可以调用
+    window.appendMessage = function(role, content) {
+        // 检查DOM是否已加载
+        if (!isDomLoaded) {
+            console.error('DOM尚未加载完成，无法添加消息');
+            return;
+        }
+        
+        // 调用内部函数
+        appendMessage(role, content);
+    };
+    
+    // 发送按钮点击事件
     if (sendButton) {
         sendButton.addEventListener('click', () => {
             // 初始化会话（如果需要）
@@ -848,147 +901,213 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-});
-
-// 发送消息函数
-function sendMessage() {
-    const userInput = document.getElementById('userInput');
-    const userMessage = userInput.value.trim();
     
-    if (!userMessage) return;
+    // 发送消息函数 - 移入DOM加载事件内部
+    function sendMessage() {
+        // 检查DOM是否已加载
+        if (!isDomLoaded) {
+            console.error('DOM尚未加载完成，无法发送消息');
+            return;
+        }
+        
+        // 检查必要元素是否存在
+        if (!chatMessages) {
+            console.error('聊天消息容器不存在，无法发送消息');
+            return;
+        }
+        
+        const userInput = document.getElementById('userInput');
+        if (!userInput) {
+            console.error('用户输入框不存在，无法发送消息');
+            return;
+        }
+        
+        const userMessage = userInput.value.trim();
+        
+        if (!userMessage) return;
         
         // 清空输入框
         userInput.value = '';
         
-    // 添加用户消息到聊天界面
-    appendMessage('user', userMessage);
-    
-    // 保存消息到当前会话
-    const userMessageObj = {
-        role: 'user',
-        content: userMessage,
-        timestamp: new Date().toISOString()
-    };
-    
-    // 使用会话管理器保存消息
-    if (window.sessionManager) {
-        window.sessionManager.addMessageToCurrentSession(userMessageObj);
-    }
-    
-    // 显示加载动画
-    const loadingIndicator = addLoadingIndicator();
-    
-    // 检查是否有附件
-    const extractedText = window.extractedText || '';
-    
-    // 获取当前聊天模式的系统提示词
-    const systemPrompt = window.getChatModeSystemPrompt?.() || 
-        '你是一个全能助手，请帮助用户解答各种问题。';
-    
-    // 获取当前选择的模型
-    const model = window.CURRENT_MODEL || 'deepseek/deepseek-r1:free';
-    
-    // 构建请求数据
-    const requestData = {
-        model,
-        messages: [
-            {
-                role: 'system',
-                content: systemPrompt
-            },
-            {
-                role: 'user',
-                content: extractedText ? 
-                    `我上传了一个文档，内容如下:\n\n${extractedText}\n\n我的问题是: ${userMessage}` :
-                    userMessage
+        // 添加用户消息到聊天界面
+        appendMessage('user', userMessage);
+        
+        // 保存消息到当前会话
+        const userMessageObj = {
+            role: 'user',
+            content: userMessage,
+            timestamp: new Date().toISOString()
+        };
+        
+        // 使用会话管理器保存消息
+        if (window.sessionManager) {
+            window.sessionManager.addMessageToCurrentSession(userMessageObj);
+        }
+        
+        // 显示加载动画
+        const loadingIndicator = addLoadingIndicator();
+        
+        // 检查是否有附件
+        const extractedText = window.extractedText || '';
+        
+        // 获取当前聊天模式的系统提示词
+        const systemPrompt = window.getChatModeSystemPrompt?.() || 
+            '你是一个全能助手，请帮助用户解答各种问题。';
+        
+        // 获取当前选择的模型
+        const model = window.CURRENT_MODEL || 'deepseek/deepseek-r1:free';
+        
+        // 构建请求数据
+        const requestData = {
+            model,
+            messages: [
+                {
+                    role: 'system',
+                    content: systemPrompt
+                },
+                {
+                    role: 'user',
+                    content: extractedText ? 
+                        `我上传了一个文档，内容如下:\n\n${extractedText}\n\n我的问题是: ${userMessage}` :
+                        userMessage
+                }
+            ]
+        };
+        
+        // 从会话管理器获取历史消息并加入请求
+        if (window.sessionManager) {
+            const currentSession = window.sessionManager.getCurrentSession();
+            
+            // 获取最近的消息（最多10条，以保持请求大小合理）
+            const recentMessages = currentSession.messages
+                .slice(0, -1) // 排除刚刚添加的当前用户消息
+                .slice(-10) // 最近10条消息
+                .filter(msg => msg.role === 'user' || msg.role === 'assistant') // 只包含用户和助手消息
+                .map(msg => ({ role: msg.role, content: msg.content })); // 只保留角色和内容
+            
+            // 如果有历史消息，插入到系统消息和当前用户消息之间
+            if (recentMessages.length > 0) {
+                requestData.messages.splice(1, 0, ...recentMessages);
             }
-        ]
-    };
-    
-    // 从会话管理器获取历史消息并加入请求
-    if (window.sessionManager) {
-        const currentSession = window.sessionManager.getCurrentSession();
+        }
         
-        // 获取最近的消息（最多10条，以保持请求大小合理）
-        const recentMessages = currentSession.messages
-            .slice(0, -1) // 排除刚刚添加的当前用户消息
-            .slice(-10) // 最近10条消息
-            .filter(msg => msg.role === 'user' || msg.role === 'assistant') // 只包含用户和助手消息
-            .map(msg => ({ role: msg.role, content: msg.content })); // 只保留角色和内容
+        // 发送请求到API
+        sendToBackend(requestData)
+            .then(response => {
+                // 移除加载指示器
+                if (loadingIndicator && loadingIndicator.parentNode) {
+                    loadingIndicator.parentNode.removeChild(loadingIndicator);
+                }
+                
+                if (response && response.choices && response.choices.length > 0) {
+                    const assistantMessage = response.choices[0].message.content;
+                    
+                    // 添加助手回复到聊天界面
+                    appendMessage('assistant', assistantMessage);
+                    
+                    // 保存助手回复到当前会话
+                    const assistantMessageObj = {
+                        role: 'assistant',
+                        content: assistantMessage,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    if (window.sessionManager) {
+                        window.sessionManager.addMessageToCurrentSession(assistantMessageObj);
+                    }
+                } else {
+                    appendMessage('assistant', '抱歉，我无法处理您的请求，请稍后再试。');
+                }
+            })
+            .catch(error => {
+                console.error('发送消息时出错:', error);
+                
+                // 移除加载指示器
+                if (loadingIndicator && loadingIndicator.parentNode) {
+                    loadingIndicator.parentNode.removeChild(loadingIndicator);
+                }
+                
+                // 显示错误消息
+                const errorMessage = error.message || '发送消息时出错，请稍后再试';
+                appendMessage('assistant', `抱歉，出现了问题：${errorMessage}`);
+            });
         
-        // 如果有历史消息，插入到系统消息和当前用户消息之间
-        if (recentMessages.length > 0) {
-            requestData.messages.splice(1, 0, ...recentMessages);
+        // 清除已提取的文本
+        window.extractedText = '';
+        
+        // 隐藏附件信息
+        const attachmentInfo = document.getElementById('attachmentInfo');
+        if (attachmentInfo) {
+            attachmentInfo.style.display = 'none';
+        }
+        const fileName = document.getElementById('fileName');
+        if (fileName) {
+            fileName.textContent = '';
         }
     }
     
-    // 发送请求到API
-    sendToBackend(requestData)
-        .then(response => {
-            // 移除加载指示器
-            if (loadingIndicator && loadingIndicator.parentNode) {
-                loadingIndicator.parentNode.removeChild(loadingIndicator);
-            }
-            
-            if (response && response.choices && response.choices.length > 0) {
-                const assistantMessage = response.choices[0].message.content;
-                
-                // 添加助手回复到聊天界面
-                appendMessage('assistant', assistantMessage);
-                
-                // 保存助手回复到当前会话
-                const assistantMessageObj = {
-                    role: 'assistant',
-                    content: assistantMessage,
-                    timestamp: new Date().toISOString()
-                };
-                
-                if (window.sessionManager) {
-                    window.sessionManager.addMessageToCurrentSession(assistantMessageObj);
-                            }
-                        } else {
-                appendMessage('assistant', '抱歉，我无法处理您的请求，请稍后再试。');
-            }
-        })
-        .catch(error => {
-            console.error('发送消息时出错:', error);
-            
-            // 移除加载指示器
-            if (loadingIndicator && loadingIndicator.parentNode) {
-                loadingIndicator.parentNode.removeChild(loadingIndicator);
-            }
-            
-            // 显示错误消息
-            const errorMessage = error.message || '发送消息时出错，请稍后再试';
-            appendMessage('assistant', `抱歉，出现了问题：${errorMessage}`);
-        });
+    // 将sendMessage暴露到全局作用域，以便app.js可以调用
+    window.sendMessage = function() {
+        // 检查DOM是否已加载
+        if (!isDomLoaded) {
+            console.error('DOM尚未加载完成，无法发送消息');
+            return;
+        }
         
-    // 清除已提取的文本
-    window.extractedText = '';
+        // 调用内部函数
+        sendMessage();
+    };
     
-    // 隐藏附件信息
-    const attachmentInfo = document.getElementById('attachmentInfo');
-    if (attachmentInfo) {
-        attachmentInfo.style.display = 'none';
+    // 显示加载指示器
+    function showTypingIndicator() {
+        // 检查DOM是否已加载
+        if (!isDomLoaded) {
+            console.error('DOM尚未加载完成，无法显示打字指示器');
+            return null;
+        }
+        
+        // 调用内部函数
+        return addLoadingIndicator();
     }
-    const fileName = document.getElementById('fileName');
-    if (fileName) {
-        fileName.textContent = '';
+    
+    // 移除加载指示器
+    function removeTypingIndicator() {
+        // 检查DOM是否已加载
+        if (!isDomLoaded) {
+            console.error('DOM尚未加载完成，无法移除打字指示器');
+            return;
+        }
+        
+        // 调用内部函数
+        const loadingIndicator = document.querySelector('.message.ai-message.loading');
+        if (loadingIndicator && loadingIndicator.parentNode) {
+            loadingIndicator.parentNode.removeChild(loadingIndicator);
+        }
     }
-}
-
-// 显示加载指示器
-function showTypingIndicator() {
-    return addLoadingIndicator();
-}
-
-// 移除加载指示器
-function removeTypingIndicator() {
-    const loadingIndicator = document.querySelector('.message.ai-message.loading');
-    if (loadingIndicator && loadingIndicator.parentNode) {
-        loadingIndicator.parentNode.removeChild(loadingIndicator);
-    }
-}
+    
+    // 暴露打字指示器函数到全局作用域
+    window.showTypingIndicator = function() {
+        // 检查DOM是否已加载
+        if (!isDomLoaded) {
+            console.error('DOM尚未加载完成，无法显示打字指示器');
+            return null;
+        }
+        
+        // 调用内部函数
+        return showTypingIndicator();
+    };
+    
+    window.removeTypingIndicator = function() {
+        // 检查DOM是否已加载
+        if (!isDomLoaded) {
+            console.error('DOM尚未加载完成，无法移除打字指示器');
+            return;
+        }
+        
+        // 调用内部函数
+        removeTypingIndicator();
+    };
+});
 
 // 会话管理相关功能
 const sessionManager = {

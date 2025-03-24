@@ -4,7 +4,23 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // 获取DOM元素
+    // 初始化API基础URL（如果没有设置）
+    if (!window.API_BASE_URL) {
+        // 从localStorage中获取
+        const savedApiUrl = localStorage.getItem('xpat_api_url');
+        if (savedApiUrl) {
+            window.API_BASE_URL = savedApiUrl;
+            console.log('从本地存储加载API地址:', savedApiUrl);
+        } else {
+            // 设置默认API地址
+            const defaultApiUrl = 'http://localhost:3000/api';
+            window.API_BASE_URL = defaultApiUrl;
+            localStorage.setItem('xpat_api_url', defaultApiUrl);
+            console.log('未找到API地址配置，设置默认地址:', defaultApiUrl);
+        }
+    }
+
+    // DOM元素引用
     const loginContainer = document.getElementById('loginContainer');
     const adminContent = document.getElementById('adminContent');
     const loginForm = document.getElementById('loginForm');
@@ -2379,6 +2395,417 @@ document.addEventListener('DOMContentLoaded', function() {
             const saveBtn = document.getElementById('saveUserConfigBtn');
             saveBtn.disabled = false;
             saveBtn.textContent = '保存配置';
+        }
+    }
+
+    /**
+     * 加载API配置
+     */
+    async function loadApiConfig() {
+        try {
+            const token = localStorage.getItem('xpat_auth_token');
+            if (!token) {
+                console.error('未登录，无法加载API配置');
+                return;
+            }
+            
+            const response = await fetch(`${window.API_BASE_URL}/admin/config`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            // 检查响应类型，确保是JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error(`API返回了非JSON响应: ${contentType}`);
+            }
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                try {
+                    const errorData = JSON.parse(errorText);
+                    throw new Error(errorData.error?.message || '加载API配置失败');
+                } catch (e) {
+                    throw new Error(`加载API配置失败: HTTP ${response.status} - ${errorText.substring(0, 100)}`);
+                }
+            }
+            
+            const config = await response.json();
+            console.log('已加载API配置:', config);
+            
+            // 在此处更新页面上的API配置
+            updateApiConfigUI(config);
+        } catch (error) {
+            console.error('加载API配置失败:', error);
+            // 可以考虑显示错误提示
+            if (typeof showNotification === 'function') {
+                showNotification(`加载API配置失败: ${error.message}`, 'error');
+            }
+        }
+    }
+
+    /**
+     * 更新API配置UI
+     */
+    function updateApiConfigUI(config) {
+        // 根据返回的配置更新UI
+        if (!config) return;
+        
+        // 这里根据实际UI元素更新页面
+        // 例如：
+        const openaiApiKeyInput = document.getElementById('openaiApiKey');
+        if (openaiApiKeyInput && config.openaiApiKey) {
+            openaiApiKeyInput.value = config.openaiApiKey;
+        }
+        
+        const anthropicApiKeyInput = document.getElementById('anthropicApiKey');
+        if (anthropicApiKeyInput && config.anthropicApiKey) {
+            anthropicApiKeyInput.value = config.anthropicApiKey;
+        }
+        
+        // 其他配置项...
+    }
+
+    /**
+     * 加载提示词模板列表
+     */
+    async function loadPrompts() {
+        try {
+            const token = localStorage.getItem('xpat_auth_token');
+            if (!token) {
+                console.error('未登录，无法加载提示词模板');
+                return;
+            }
+            
+            const promptsTableBody = document.querySelector('#promptsTable tbody');
+            if (!promptsTableBody) {
+                console.warn('未找到提示词表格，跳过加载');
+                return;
+            }
+            
+            // 显示加载状态
+            promptsTableBody.innerHTML = '<tr><td colspan="5" class="text-center">加载中...</td></tr>';
+            
+            const response = await fetch(`${window.API_BASE_URL}/admin/prompts`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            // 检查响应类型，确保是JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error(`API返回了非JSON响应: ${contentType}`);
+            }
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                try {
+                    const errorData = JSON.parse(errorText);
+                    throw new Error(errorData.error?.message || '加载提示词模板失败');
+                } catch (e) {
+                    throw new Error(`加载提示词模板失败: HTTP ${response.status} - ${errorText.substring(0, 100)}`);
+                }
+            }
+            
+            const data = await response.json();
+            console.log('已加载提示词模板:', data);
+            
+            // 清空表格
+            promptsTableBody.innerHTML = '';
+            
+            // 如果没有数据
+            if (!data.prompts || data.prompts.length === 0) {
+                promptsTableBody.innerHTML = '<tr><td colspan="5" class="text-center">暂无提示词模板</td></tr>';
+                return;
+            }
+            
+            // 渲染数据
+            data.prompts.forEach(prompt => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${prompt.title}</td>
+                    <td>${prompt.category || '未分类'}</td>
+                    <td>${truncateText(prompt.content, 50)}</td>
+                    <td>
+                        <span class="badge ${prompt.status === 'active' ? 'badge-success' : 'badge-danger'}">
+                            ${prompt.status === 'active' ? '启用' : '禁用'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-button edit-button" data-id="${prompt.id}" title="编辑">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="action-button delete-button" data-id="${prompt.id}" title="删除">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                promptsTableBody.appendChild(row);
+                
+                // 绑定编辑和删除按钮事件
+                row.querySelector('.edit-button').addEventListener('click', () => {
+                    editPrompt(prompt);
+                });
+                
+                row.querySelector('.delete-button').addEventListener('click', () => {
+                    deletePrompt(prompt.id);
+                });
+            });
+        } catch (error) {
+            console.error('加载提示词模板失败:', error);
+            // 可以考虑显示错误提示
+            if (typeof showNotification === 'function') {
+                showNotification(`加载提示词模板失败: ${error.message}`, 'error');
+            }
+            
+            const promptsTableBody = document.querySelector('#promptsTable tbody');
+            if (promptsTableBody) {
+                promptsTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">加载失败</td></tr>';
+            }
+        }
+    }
+
+    /**
+     * 编辑提示词模板
+     * @param {Object} prompt - 提示词模板对象
+     */
+    function editPrompt(prompt) {
+        // 获取表单元素
+        const promptIdInput = document.getElementById('promptId');
+        const promptTitleInput = document.getElementById('promptTitle');
+        const promptCategoryInput = document.getElementById('promptCategory');
+        const promptContentTextarea = document.getElementById('promptContent');
+        const promptStatusSelect = document.getElementById('promptStatus');
+        
+        if (!promptIdInput || !promptTitleInput || !promptCategoryInput || !promptContentTextarea || !promptStatusSelect) {
+            console.error('未找到提示词表单元素');
+            return;
+        }
+        
+        // 填充表单数据
+        promptIdInput.value = prompt.id;
+        promptTitleInput.value = prompt.title;
+        promptCategoryInput.value = prompt.category || '';
+        promptContentTextarea.value = prompt.content;
+        promptStatusSelect.value = prompt.status || 'active';
+        
+        // 显示模态框
+        const promptModal = document.getElementById('promptModal');
+        const promptModalTitle = document.getElementById('promptModalTitle');
+        
+        if (promptModal && promptModalTitle) {
+            promptModalTitle.textContent = '编辑提示词模板';
+            promptModal.style.display = 'block';
+        }
+    }
+
+    /**
+     * 删除提示词模板
+     * @param {string} promptId - 提示词模板ID
+     */
+    async function deletePrompt(promptId) {
+        if (!confirm('确定要删除这个提示词模板吗？此操作无法撤销。')) {
+            return;
+        }
+        
+        try {
+            const token = localStorage.getItem('xpat_auth_token');
+            if (!token) {
+                throw new Error('未登录，无法删除提示词模板');
+            }
+            
+            const response = await fetch(`${window.API_BASE_URL}/admin/prompts/${promptId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || '删除失败');
+            }
+            
+            // 刷新提示词列表
+            loadPrompts();
+            
+            // 显示成功消息
+            if (typeof showNotification === 'function') {
+                showNotification('提示词模板已成功删除', 'success');
+            }
+        } catch (error) {
+            console.error('删除提示词模板失败:', error);
+            
+            // 显示错误消息
+            if (typeof showNotification === 'function') {
+                showNotification(`删除提示词模板失败: ${error.message}`, 'error');
+            }
+        }
+    }
+
+    /**
+     * 显示通知消息
+     * @param {string} message - 消息内容
+     * @param {string} type - 消息类型：success, error, warning, info
+     */
+    function showNotification(message, type = 'info') {
+        // 创建通知元素
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <div class="notification-icon">
+                ${getNotificationIcon(type)}
+            </div>
+            <div class="notification-content">
+                <div class="notification-message">${message}</div>
+            </div>
+            <button class="notification-close">&times;</button>
+        `;
+        
+        // 添加到页面
+        const container = document.querySelector('.notification-container') || createNotificationContainer();
+        container.appendChild(notification);
+        
+        // 添加关闭按钮事件
+        const closeBtn = notification.querySelector('.notification-close');
+        closeBtn.addEventListener('click', () => {
+            notification.classList.add('hiding');
+            setTimeout(() => {
+                notification.remove();
+                
+                // 如果容器为空，移除容器
+                if (container.children.length === 0) {
+                    container.remove();
+                }
+            }, 300);
+        });
+        
+        // 自动关闭（3秒后）
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.classList.add('hiding');
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 3000);
+        
+        return notification;
+    }
+
+    /**
+     * 创建通知容器
+     * @returns {HTMLElement} 通知容器元素
+     */
+    function createNotificationContainer() {
+        const container = document.createElement('div');
+        container.className = 'notification-container';
+        document.body.appendChild(container);
+        return container;
+    }
+
+    /**
+     * 获取通知图标
+     * @param {string} type - 通知类型
+     * @returns {string} 图标HTML
+     */
+    function getNotificationIcon(type) {
+        switch (type) {
+            case 'success':
+                return '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.709 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.7649 14.1003 1.98232 16.07 2.85999" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 4L12 14.01L9 11.01" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+            case 'error':
+                return '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 9L9 15" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 9L15 15" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+            case 'warning':
+                return '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.29 3.86L1.82 18C1.64537 18.3024 1.55296 18.6453 1.55197 18.9945C1.55098 19.3437 1.64144 19.6871 1.81442 19.9905C1.98741 20.2939 2.23675 20.5467 2.53773 20.7239C2.83871 20.901 3.18083 20.9962 3.53 21H20.47C20.8192 20.9962 21.1613 20.901 21.4623 20.7239C21.7632 20.5467 22.0126 20.2939 22.1856 19.9905C22.3586 19.6871 22.449 19.3437 22.448 18.9945C22.447 18.6453 22.3546 18.3024 22.18 18L13.71 3.86C13.5317 3.56611 13.2807 3.32312 12.9812 3.15448C12.6817 2.98585 12.3437 2.89725 12 2.89725C11.6563 2.89725 11.3183 2.98585 11.0188 3.15448C10.7193 3.32312 10.4683 3.56611 10.29 3.86Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 9V13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 17H12.01" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+            default:
+                return '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 16V12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8H12.01" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        }
+    }
+
+    /**
+     * 登录表单提交处理
+     * @param {Event} event - 提交事件对象
+     */
+    async function handleLoginSubmit(event) {
+        event.preventDefault();
+        
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const loginErrorMsg = document.getElementById('loginErrorMsg');
+        
+        if (!email || !password) {
+            if (loginErrorMsg) {
+                loginErrorMsg.textContent = '请填写所有必填字段';
+                loginErrorMsg.style.display = 'block';
+            }
+            return;
+        }
+        
+        try {
+            // 显示加载状态
+            const loginBtn = document.querySelector('#loginForm button[type="submit"]');
+            if (loginBtn) {
+                loginBtn.disabled = true;
+                loginBtn.innerHTML = '登录中...';
+            }
+            
+            // 发送登录请求
+            const response = await fetch(`${window.API_BASE_URL}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error?.message || '登录失败');
+            }
+            
+            // 保存令牌和用户信息
+            localStorage.setItem('xpat_auth_token', data.token);
+            localStorage.setItem('xpat_user_info', JSON.stringify(data.user));
+            
+            // 检查是否为管理员
+            if (data.user.role !== 'admin') {
+                throw new Error('您没有管理员权限');
+            }
+            
+            // 重新加载页面或显示管理员界面
+            showAdminInterface();
+            
+            // 初始化管理员内容
+            loadApiConfig();
+            loadPrompts();
+            
+            // 显示成功消息
+            if (typeof showNotification === 'function') {
+                showNotification('登录成功', 'success');
+            }
+        } catch (error) {
+            console.error('登录失败:', error);
+            
+            // 显示错误消息
+            if (loginErrorMsg) {
+                loginErrorMsg.textContent = error.message || '登录失败，请检查您的凭据';
+                loginErrorMsg.style.display = 'block';
+            }
+            
+            // 可以使用通知
+            if (typeof showNotification === 'function') {
+                showNotification(`登录失败: ${error.message}`, 'error');
+            }
+        } finally {
+            // 恢复按钮状态
+            const loginBtn = document.querySelector('#loginForm button[type="submit"]');
+            if (loginBtn) {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '登录';
+            }
         }
     }
 });

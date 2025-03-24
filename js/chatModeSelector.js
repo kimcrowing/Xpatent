@@ -98,9 +98,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const itemMode = chatModes.find(m => m.id === itemModeId);
             
             if (itemMode) {
-                item.addEventListener('click', function() {
+                item.addEventListener('click', function(e) {
+                    // 阻止事件冒泡，防止触发dropdown的toggle事件
+                    e.stopPropagation();
+                    
                     selectChatMode(itemMode.id, itemMode.name, itemMode.systemPrompt);
+                    // 强制隐藏下拉菜单
                     chatModeDropdown.classList.remove('show');
+                    chatModeDropdown.style.display = 'none';
                 });
                 
                 // 标记当前选中的项
@@ -124,9 +129,42 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 计算位置，确保下拉菜单紧贴按钮
             const rect = chatModeSelector.getBoundingClientRect();
+            const dropdownWidth = 180; // 菜单宽度与CSS中保持一致
+            
+            // 获取下拉菜单的高度（先显示它才能获取高度）
+            chatModeDropdown.style.visibility = 'hidden';
+            chatModeDropdown.style.display = 'block';
+            const dropdownHeight = chatModeDropdown.offsetHeight;
+            
+            // 设置为固定定位，相对于视口
             chatModeDropdown.style.position = 'fixed';
-            chatModeDropdown.style.top = `${rect.bottom + 5}px`;
-            chatModeDropdown.style.right = `${window.innerWidth - rect.right}px`;
+            
+            // 检查是否会超出底部边界
+            const spaceBelow = window.innerHeight - rect.bottom - 5;
+            const spaceAbove = rect.top - 5;
+            
+            // 垂直位置：优先显示在按钮下方，如果下方空间不足则显示在按钮上方
+            if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
+                // 上方显示
+                chatModeDropdown.style.top = `${rect.top - dropdownHeight - 5}px`;
+            } else {
+                // 下方显示（默认）或者上方空间也不足时强制下方显示
+                chatModeDropdown.style.top = `${rect.bottom + 5}px`;
+            }
+            
+            // 水平位置：优先保持右对齐，但确保不超出左侧边界
+            const rightPosition = window.innerWidth - rect.right;
+            // 如果右对齐会导致超出左侧边界，则使用左对齐
+            if (rect.right - dropdownWidth < 0) {
+                chatModeDropdown.style.left = `${rect.left}px`;
+                chatModeDropdown.style.right = 'auto';
+            } else {
+                chatModeDropdown.style.right = `${rightPosition}px`;
+                chatModeDropdown.style.left = 'auto';
+            }
+            
+            // 恢复可见性
+            chatModeDropdown.style.visibility = 'visible';
         }
     });
     

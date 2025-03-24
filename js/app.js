@@ -261,25 +261,28 @@ document.addEventListener('DOMContentLoaded', () => {
     userInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            // 修改为使用sendButton而不是sendBtn
-            const sendButton = document.getElementById('sendButton');
-            if (sendButton) {
-                sendButton.click();
+            // 使用window.sendMessage，确保引用全局函数
+            if (window.sendMessage && typeof window.sendMessage === 'function') {
+                window.sendMessage();
+            } else {
+                console.error('sendMessage函数未定义');
+                // 尝试使用sendButton点击作为备选方案
+                const sendButton = document.getElementById('sendButton');
+                if (sendButton) {
+                    sendButton.click();
+                }
             }
         }
     });
     
     // 根据输入内容启用/禁用发送按钮
     userInput.addEventListener('input', () => {
-        const sendBtn = document.getElementById('sendBtn');
         const sendButton = document.getElementById('sendButton');
         
         if (userInput.value.trim()) {
-            if (sendBtn) sendBtn.removeAttribute('disabled');
             if (sendButton) sendButton.removeAttribute('disabled');
         } else {
-            if (sendBtn) sendBtn.setAttribute('disabled', true);
-            if (sendButton) sendButton.setAttribute('disabled', true);
+            if (sendButton) sendButton.setAttribute('disabled', 'disabled');
         }
     });
     
