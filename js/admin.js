@@ -2620,4 +2620,146 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.addEventListener('click', togglePasswordVisibility);
         });
     }
+
+    /**
+     * 显示提示词编辑模态框
+     * @param {Object} prompt - 提示词对象（如果是编辑现有提示词）
+     */
+    function showPromptModal(prompt = null) {
+        // 获取模态框元素
+        const modal = document.getElementById('promptModal');
+        if (!modal) {
+            console.error('未找到提示词模态框');
+            return;
+        }
+        
+        // 获取表单元素
+        const promptIdInput = document.getElementById('promptId');
+        const promptNameInput = document.getElementById('promptName');
+        const promptCategoryInput = document.getElementById('promptCategory');
+        const promptContentTextarea = document.getElementById('promptContent');
+        const promptIsPublicCheckbox = document.getElementById('promptIsPublic');
+        const modalTitle = document.getElementById('promptModalTitle');
+        
+        // 重置表单
+        promptIdInput.value = '';
+        promptNameInput.value = '';
+        promptCategoryInput.value = '';
+        promptContentTextarea.value = '';
+        promptIsPublicCheckbox.checked = false;
+        
+        // 如果是编辑现有提示词
+        if (prompt) {
+            modalTitle.textContent = '编辑提示词';
+            promptIdInput.value = prompt.id;
+            promptNameInput.value = prompt.name;
+            promptCategoryInput.value = prompt.category || '';
+            promptContentTextarea.value = prompt.content;
+            promptIsPublicCheckbox.checked = prompt.isPublic;
+        } else {
+            modalTitle.textContent = '添加提示词';
+        }
+        
+        // 显示模态框
+        modal.style.display = 'block';
+    }
+
+    /**
+     * 隐藏提示词编辑模态框
+     */
+    function hidePromptModal() {
+        const modal = document.getElementById('promptModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    /**
+     * 保存提示词
+     */
+    async function savePrompt() {
+        // 获取表单数据
+        const promptId = document.getElementById('promptId').value;
+        const name = document.getElementById('promptName').value;
+        const category = document.getElementById('promptCategory').value;
+        const content = document.getElementById('promptContent').value;
+        const isPublic = document.getElementById('promptIsPublic').checked;
+        
+        // 验证表单
+        if (!name) {
+            showToast('提示词名称不能为空', 'error');
+            return;
+        }
+        
+        if (!content) {
+            showToast('提示词内容不能为空', 'error');
+            return;
+        }
+        
+        try {
+            let response;
+            
+            // 显示加载状态
+            const saveBtn = document.getElementById('savePromptBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '保存中...';
+            
+            // 根据是否有ID决定是新增还是更新
+            if (promptId) {
+                // 更新现有提示词
+                response = await updatePrompt(promptId, {
+                    name,
+                    category,
+                    content,
+                    isPublic
+                });
+            } else {
+                // 创建新提示词
+                response = await createPrompt(name, category, content, isPublic);
+            }
+            
+            // 隐藏模态框
+            hidePromptModal();
+            
+            // 重新加载提示词列表
+            loadPrompts();
+            
+            // 显示成功消息
+            showToast(promptId ? '提示词更新成功' : '提示词创建成功', 'success');
+        } catch (error) {
+            console.error('保存提示词失败:', error);
+            showToast('保存提示词失败: ' + error.message, 'error');
+        } finally {
+            // 恢复按钮状态
+            const saveBtn = document.getElementById('savePromptBtn');
+            saveBtn.disabled = false;
+            saveBtn.textContent = '保存';
+        }
+    }
+
+    /**
+     * 按分类筛选提示词
+     */
+    function filterPromptsByCategory() {
+        const category = document.getElementById('promptCategoryFilter').value;
+        const promptCards = document.querySelectorAll('.prompt-card');
+        
+        // 如果选择了"全部"，显示所有提示词
+        if (!category || category === 'all') {
+            promptCards.forEach(card => {
+                card.style.display = 'block';
+            });
+            return;
+        }
+        
+        // 否则，只显示所选分类的提示词
+        promptCards.forEach(card => {
+            const cardCategory = card.querySelector('.prompt-category').textContent;
+            if (cardCategory === category) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
 });
