@@ -353,16 +353,21 @@ async function verifyAdminPassword(password) {
 
 // 检测是否在GitHub Pages环境，并尝试设置API地址
 (function detectEnvironment() {
-  // 强制使用ngrok地址，无论是否在GitHub Pages环境
-  window.API_BASE_URL = 'https://5e65-2408-8262-1871-4896-4412-5f5c-46fc-3230.ngrok-free.app/api';
-  console.log('已强制设置API地址:', window.API_BASE_URL);
+  // 尝试从本地存储获取之前保存的API地址
+  const savedApiUrl = localStorage.getItem('xpat_api_url');
   
-  // 更新本地存储中的API地址，确保一致性
-  localStorage.setItem('xpat_api_url', window.API_BASE_URL);
+  if (savedApiUrl && savedApiUrl.trim() !== '') {
+    window.API_BASE_URL = savedApiUrl;
+    console.log('从本地存储加载API地址:', window.API_BASE_URL);
+  } else {
+    // 保存当前API地址到本地存储
+    localStorage.setItem('xpat_api_url', window.API_BASE_URL);
+    console.log('初始化API地址:', window.API_BASE_URL);
+  }
 })();
 
 // 导出API函数
-window.backendApi = {
+window.backendApi = {\r\n  // 添加API配置接口\r\n  apiConfig: {\r\n    getApiUrl: () => window.API_BASE_URL,\r\n    setApiUrl: (url) => {\r\n      if (url && url.trim() !== \ \) {\r\n        window.API_BASE_URL = url.trim();\r\n        localStorage.setItem(\xpat_api_url\, window.API_BASE_URL);\r\n        console.log(\API地址已更新:\, window.API_BASE_URL);\r\n        return true;\r\n      }\r\n      return false;\r\n    },\r\n    checkConnection: async () => {\r\n      try {\r\n        const response = await fetch(${window.API_BASE_URL}/health, {\r\n          method: \GET\,\r\n          headers: {\r\n            \Content-Type\: \application/json\,\r\n            \Accept\: \application/json\,\r\n            \ngrok-skip-browser-warning\: \1\\r\n          },\r\n          mode: \no-cors\\r\n        });\r\n        return response.type === \opaque\ || response.ok;\r\n      } catch (error) {\r\n        console.error(\API连接检查错误:\, error);\r\n        return false;\r\n      }\r\n    }\r\n  },
   login,
   register,
   getUserProfile,
@@ -458,3 +463,4 @@ async function sendOpenRouterRequest(input, options = {}) {
 
 // 将新函数添加到导出对象中
 window.backendApi.sendOpenRouterRequest = sendOpenRouterRequest; 
+
