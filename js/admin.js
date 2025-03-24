@@ -3095,7 +3095,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // 构建API请求路径
-            let endpoint = `/users?page=${page}&limit=${limit}`;
+            let endpoint = `/admin/users?page=${page}&limit=${limit}`;
             if (keyword) {
                 endpoint += `&keyword=${encodeURIComponent(keyword)}`;
             }
@@ -3293,7 +3293,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function showUserEditModal(userId) {
         try {
             // 获取用户信息
-            const user = await apiRequest(`/users/${userId}`);
+            const user = await apiRequest(`/admin/users/${userId}`);
             
             // 获取模态框元素
             const modal = document.getElementById('userEditModal');
@@ -3327,7 +3327,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         try {
-            await apiRequest(`/users/${userId}`, 'DELETE');
+            await apiRequest(`/admin/users/${userId}`, 'DELETE');
             
             // 重新加载用户列表
             await loadUsers(currentUserPage, userPageSize);
@@ -3373,8 +3373,8 @@ document.addEventListener('DOMContentLoaded', function() {
             loadingState.style.display = 'block';
             emptyState.style.display = 'none';
             
-            // 发送请求
-            const response = await apiRequest('/chat/models');
+            // 发送请求 - 修正API路径
+            const response = await apiRequest('/admin/models');
             
             // 隐藏加载状态
             loadingState.style.display = 'none';
@@ -3488,7 +3488,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function deleteApiModel(modelId) {
         try {
-            await apiRequest(`/chat/models/${modelId}`, 'DELETE');
+            await apiRequest(`/admin/models/${modelId}`, 'DELETE');
             showToast('删除模型成功', 'success');
             loadApiModels(); // 重新加载模型列表
         } catch (error) {
@@ -3657,7 +3657,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // 构建API请求路径
-            let endpoint = `/admin/logs/api?page=${page}&limit=${limit}`;
+            let endpoint = `/admin/api-logs?page=${page}&limit=${limit}`;
             
             if (searchTerm) {
                 endpoint += `&q=${encodeURIComponent(searchTerm)}`;
