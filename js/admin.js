@@ -3353,4 +3353,771 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return roleMap[role] || role;
     }
+
+    /**
+     * 加载API模型列表
+     */
+    async function loadApiModels() {
+        const tableBody = document.querySelector('#apiModelsTable tbody');
+        const loadingState = document.getElementById('apiModelsLoadingState');
+        const emptyState = document.getElementById('apiModelsEmptyState');
+        
+        if (!tableBody || !loadingState || !emptyState) {
+            console.error('API模型表格元素未找到');
+            return;
+        }
+        
+        try {
+            // 显示加载状态
+            tableBody.innerHTML = '';
+            loadingState.style.display = 'block';
+            emptyState.style.display = 'none';
+            
+            // 发送请求
+            const response = await apiRequest('/chat/models');
+            
+            // 隐藏加载状态
+            loadingState.style.display = 'none';
+            
+            // 如果没有数据，显示空状态
+            if (!response.models || response.models.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            // 渲染数据
+            response.models.forEach(model => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${model.name}</td>
+                    <td>${model.provider}</td>
+                    <td>${model.maxContext || 'N/A'}</td>
+                    <td>${model.maxTokens || 'N/A'}</td>
+                    <td>
+                        <span class="badge ${model.isActive ? 'badge-success' : 'badge-danger'}">
+                            ${model.isActive ? '启用' : '禁用'}
+                        </span>
+                    </td>
+                    <td class="price-column">
+                        <div class="price-tooltip" title="输入价格: ¥${model.inputPrice}/1K tokens，输出价格: ¥${model.outputPrice}/1K tokens">
+                            ¥${model.inputPrice}/¥${model.outputPrice}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-button edit-button" data-id="${model.id}" title="编辑">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="action-button delete-button" data-id="${model.id}" title="删除">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+                
+                // 绑定编辑和删除按钮事件
+                row.querySelector('.edit-button').addEventListener('click', () => {
+                    showModelEditModal(model);
+                });
+                
+                row.querySelector('.delete-button').addEventListener('click', () => {
+                    if (confirm(`确定要删除 ${model.name} 模型吗？`)) {
+                        deleteApiModel(model.id);
+                    }
+                });
+            });
+        } catch (error) {
+            console.error('加载API模型失败:', error);
+            loadingState.style.display = 'none';
+            showToast(`加载API模型失败: ${error.message}`, 'error');
+        }
+    }
+
+    /**
+     * 显示模型编辑模态框
+     * @param {Object} model - 模型对象
+     */
+    function showModelEditModal(model) {
+        // 获取模态框元素
+        const modal = document.getElementById('modelEditModal');
+        if (!modal) {
+            console.error('未找到模型编辑模态框');
+            return;
+        }
+        
+        // 获取表单元素
+        const modelIdInput = document.getElementById('editModelId');
+        const modelNameInput = document.getElementById('editModelName');
+        const modelProviderSelect = document.getElementById('editModelProvider');
+        const modelMaxContextInput = document.getElementById('editModelMaxContext');
+        const modelMaxTokensInput = document.getElementById('editModelMaxTokens');
+        const modelInputPriceInput = document.getElementById('editModelInputPrice');
+        const modelOutputPriceInput = document.getElementById('editModelOutputPrice');
+        const modelStatusSelect = document.getElementById('editModelStatus');
+        
+        // 填充表单
+        if (model) {
+            modelIdInput.value = model.id;
+            modelNameInput.value = model.name;
+            modelProviderSelect.value = model.provider;
+            modelMaxContextInput.value = model.maxContext || '';
+            modelMaxTokensInput.value = model.maxTokens || '';
+            modelInputPriceInput.value = model.inputPrice || '';
+            modelOutputPriceInput.value = model.outputPrice || '';
+            modelStatusSelect.value = model.isActive ? 'active' : 'inactive';
+        } else {
+            // 清空表单（新增模式）
+            modelIdInput.value = '';
+            modelNameInput.value = '';
+            modelProviderSelect.value = '';
+            modelMaxContextInput.value = '';
+            modelMaxTokensInput.value = '';
+            modelInputPriceInput.value = '';
+            modelOutputPriceInput.value = '';
+            modelStatusSelect.value = 'active';
+        }
+        
+        // 显示模态框
+        modal.style.display = 'block';
+    }
+
+    /**
+     * 删除API模型
+     * @param {string} modelId - 模型ID
+     */
+    async function deleteApiModel(modelId) {
+        try {
+            await apiRequest(`/chat/models/${modelId}`, 'DELETE');
+            showToast('删除模型成功', 'success');
+            loadApiModels(); // 重新加载模型列表
+        } catch (error) {
+            console.error('删除模型失败:', error);
+            showToast(`删除模型失败: ${error.message}`, 'error');
+        }
+    }
+
+    /**
+     * 隐藏模态框
+     * @param {string} modalId - 模态框ID
+     */
+    function hideModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    /**
+     * 保存全局API配置
+     */
+    async function saveGlobalApiConfig() {
+        try {
+            // 获取表单数据
+            const defaultProvider = document.getElementById('defaultApiProvider').value;
+            const defaultModel = document.getElementById('defaultApiModel').value;
+            const defaultTemperature = parseFloat(document.getElementById('defaultTemperature').value);
+            const systemPrompt = document.getElementById('systemPrompt').value;
+            const apiRequestTimeout = parseInt(document.getElementById('apiRequestTimeout').value);
+            
+            // 验证数据
+            if (!defaultProvider) {
+                showToast('请选择默认API提供商', 'error');
+                return;
+            }
+            
+            if (!defaultModel) {
+                showToast('请选择默认模型', 'error');
+                return;
+            }
+            
+            if (isNaN(defaultTemperature) || defaultTemperature < 0 || defaultTemperature > 1) {
+                showToast('默认温度必须是0-1之间的数值', 'error');
+                return;
+            }
+            
+            if (isNaN(apiRequestTimeout) || apiRequestTimeout < 1000) {
+                showToast('API请求超时必须是大于1000的整数', 'error');
+                return;
+            }
+            
+            // 构建配置数据
+            const configData = {
+                defaultProvider,
+                defaultModel,
+                defaultTemperature,
+                systemPrompt,
+                apiRequestTimeout
+            };
+            
+            // 发送请求
+            await apiRequest('/chat/config', 'PUT', configData);
+            
+            // 显示成功消息
+            showToast('全局API配置保存成功', 'success');
+        } catch (error) {
+            console.error('保存全局API配置失败:', error);
+            showToast(`保存全局API配置失败: ${error.message}`, 'error');
+        }
+    }
+
+    // API日志全局变量
+    let currentApiLogPage = 1;
+    let apiLogPageSize = 20;
+    let apiLogDateFilter = '';
+    let apiLogUserFilter = '';
+    let isApiLogLastPage = false;
+
+    /**
+     * 搜索API日志
+     */
+    async function searchApiLogs() {
+        // 获取搜索条件
+        const searchInput = document.getElementById('apiLogSearchInput');
+        if (searchInput) {
+            const searchTerm = searchInput.value.trim();
+            
+            // 重置页码并加载
+            currentApiLogPage = 1;
+            await loadApiLogs(currentApiLogPage, apiLogPageSize, searchTerm, apiLogDateFilter, apiLogUserFilter);
+        }
+    }
+
+    /**
+     * 按日期筛选API日志
+     */
+    async function filterApiLogsByDate() {
+        const dateFilter = document.getElementById('apiLogDateFilter');
+        if (dateFilter) {
+            apiLogDateFilter = dateFilter.value;
+            
+            // 重置页码并加载
+            currentApiLogPage = 1;
+            
+            const searchInput = document.getElementById('apiLogSearchInput');
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            
+            await loadApiLogs(currentApiLogPage, apiLogPageSize, searchTerm, apiLogDateFilter, apiLogUserFilter);
+        }
+    }
+
+    /**
+     * 按用户筛选API日志
+     */
+    async function filterApiLogsByUser() {
+        const userFilter = document.getElementById('apiLogUserFilter');
+        if (userFilter) {
+            apiLogUserFilter = userFilter.value;
+            
+            // 重置页码并加载
+            currentApiLogPage = 1;
+            
+            const searchInput = document.getElementById('apiLogSearchInput');
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            
+            await loadApiLogs(currentApiLogPage, apiLogPageSize, searchTerm, apiLogDateFilter, apiLogUserFilter);
+        }
+    }
+
+    /**
+     * 导航API日志分页
+     * @param {string} direction - 分页方向，'prev'或'next'
+     */
+    async function navigateApiLogPage(direction) {
+        if (direction === 'prev' && currentApiLogPage > 1) {
+            currentApiLogPage--;
+        } else if (direction === 'next' && !isApiLogLastPage) {
+            currentApiLogPage++;
+        } else {
+            return; // 不进行操作
+        }
+        
+        // 获取搜索条件
+        const searchInput = document.getElementById('apiLogSearchInput');
+        const searchTerm = searchInput ? searchInput.value.trim() : '';
+        
+        // 加载日志
+        await loadApiLogs(currentApiLogPage, apiLogPageSize, searchTerm, apiLogDateFilter, apiLogUserFilter);
+    }
+
+    /**
+     * 加载API日志
+     * @param {number} page - 页码
+     * @param {number} limit - 每页数量
+     * @param {string} searchTerm - 搜索关键词
+     * @param {string} dateFilter - 日期筛选
+     * @param {string} userFilter - 用户筛选
+     */
+    async function loadApiLogs(page = 1, limit = 20, searchTerm = '', dateFilter = '', userFilter = '') {
+        try {
+            // 显示加载状态
+            const tableBody = document.getElementById('apiLogsTableBody');
+            if (tableBody) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">加载中...</td></tr>';
+            }
+            
+            // 构建API请求路径
+            let endpoint = `/admin/logs/api?page=${page}&limit=${limit}`;
+            
+            if (searchTerm) {
+                endpoint += `&q=${encodeURIComponent(searchTerm)}`;
+            }
+            
+            if (dateFilter) {
+                endpoint += `&date=${encodeURIComponent(dateFilter)}`;
+            }
+            
+            if (userFilter) {
+                endpoint += `&user=${encodeURIComponent(userFilter)}`;
+            }
+            
+            // 发送请求
+            const response = await apiRequest(endpoint);
+            
+            // 更新全局变量
+            currentApiLogPage = page;
+            isApiLogLastPage = response.logs.length < limit;
+            
+            // 更新分页信息
+            updateApiLogPagination();
+            
+            // 渲染日志表格
+            renderApiLogs(response.logs);
+            
+            // 更新用户筛选下拉框
+            if (response.users && response.users.length > 0) {
+                updateApiLogUserFilter(response.users);
+            }
+        } catch (error) {
+            console.error('加载API日志失败:', error);
+            
+            // 显示错误状态
+            const tableBody = document.getElementById('apiLogsTableBody');
+            if (tableBody) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载日志失败，请重试</td></tr>';
+            }
+            
+            showToast('加载API日志失败: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * 渲染API日志
+     * @param {Array} logs - 日志数组
+     */
+    function renderApiLogs(logs) {
+        const tableBody = document.getElementById('apiLogsTableBody');
+        if (!tableBody) {
+            return;
+        }
+        
+        // 清空表格
+        tableBody.innerHTML = '';
+        
+        // 如果没有数据，显示空状态
+        if (!logs || logs.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center">暂无日志</td></tr>';
+            return;
+        }
+        
+        // 遍历日志数据
+        logs.forEach(log => {
+            const row = document.createElement('tr');
+            
+            // 格式化时间
+            const timestamp = new Date(log.timestamp);
+            const formattedTime = timestamp.toLocaleString('zh-CN');
+            
+            // 截断请求和响应数据
+            const requestData = log.request ? JSON.stringify(log.request).substring(0, 50) + '...' : 'N/A';
+            const responseData = log.response ? JSON.stringify(log.response).substring(0, 50) + '...' : 'N/A';
+            
+            // 生成表格行
+            row.innerHTML = `
+                <td>${log.id}</td>
+                <td>${log.userId || 'N/A'}</td>
+                <td>${log.endpoint || 'N/A'}</td>
+                <td>${formattedTime}</td>
+                <td>${log.status || 'N/A'}</td>
+                <td>
+                    <button class="btn btn-sm view-api-log" data-id="${log.id}">
+                        查看详情
+                    </button>
+                </td>
+            `;
+            
+            // 添加到表格
+            tableBody.appendChild(row);
+            
+            // 绑定查看详情按钮事件
+            row.querySelector('.view-api-log').addEventListener('click', () => {
+                showApiLogDetails(log);
+            });
+        });
+    }
+
+    /**
+     * 更新API日志分页信息
+     */
+    function updateApiLogPagination() {
+        const pageInfo = document.getElementById('apiLogPageInfo');
+        const prevBtn = document.getElementById('apiLogPrevPageBtn');
+        const nextBtn = document.getElementById('apiLogNextPageBtn');
+        
+        if (pageInfo) {
+            pageInfo.textContent = `第 ${currentApiLogPage} 页`;
+        }
+        
+        if (prevBtn) {
+            prevBtn.disabled = currentApiLogPage <= 1;
+        }
+        
+        if (nextBtn) {
+            nextBtn.disabled = isApiLogLastPage;
+        }
+    }
+
+    /**
+     * 更新API日志用户筛选下拉框
+     * @param {Array} users - 用户数组
+     */
+    function updateApiLogUserFilter(users) {
+        const userFilter = document.getElementById('apiLogUserFilter');
+        if (!userFilter) {
+            return;
+        }
+        
+        // 保留当前选中的值
+        const currentValue = userFilter.value;
+        
+        // 清空现有选项，保留"全部"选项
+        while (userFilter.options.length > 1) {
+            userFilter.remove(1);
+        }
+        
+        // 添加用户选项
+        users.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = user.username || user.email || user.id;
+            userFilter.appendChild(option);
+        });
+        
+        // 恢复之前选中的值
+        if (currentValue) {
+            userFilter.value = currentValue;
+        }
+    }
+
+    /**
+     * 显示API日志详情
+     * @param {Object} log - 日志对象
+     */
+    function showApiLogDetails(log) {
+        // 获取模态框元素
+        const modal = document.getElementById('apiLogDetailsModal');
+        if (!modal) {
+            console.error('未找到API日志详情模态框');
+            return;
+        }
+        
+        // 填充日志详情
+        document.getElementById('logDetailsId').textContent = log.id;
+        document.getElementById('logDetailsUser').textContent = log.userId || 'N/A';
+        document.getElementById('logDetailsEndpoint').textContent = log.endpoint || 'N/A';
+        document.getElementById('logDetailsTimestamp').textContent = new Date(log.timestamp).toLocaleString('zh-CN');
+        document.getElementById('logDetailsStatus').textContent = log.status || 'N/A';
+        
+        // 格式化请求和响应数据
+        const requestJson = log.request ? JSON.stringify(log.request, null, 2) : 'N/A';
+        const responseJson = log.response ? JSON.stringify(log.response, null, 2) : 'N/A';
+        
+        document.getElementById('logDetailsRequest').textContent = requestJson;
+        document.getElementById('logDetailsResponse').textContent = responseJson;
+        
+        // 显示模态框
+        modal.style.display = 'block';
+    }
+
+    /**
+     * 显示API密钥模态框
+     * @param {Object} apiKey - API密钥对象（编辑时传入）
+     */
+    function showApiKeyModal(apiKey = null) {
+        // 获取模态框元素
+        const modal = document.getElementById('apiKeyModal');
+        if (!modal) {
+            console.error('未找到API密钥模态框');
+            return;
+        }
+        
+        // 获取表单元素
+        const keyIdInput = document.getElementById('apiKeyId');
+        const providerSelect = document.getElementById('apiKeyProvider');
+        const keyInput = document.getElementById('apiKeyValue');
+        const userSelect = document.getElementById('apiKeyUser');
+        const isGlobalCheckbox = document.getElementById('apiKeyIsGlobal');
+        const modalTitle = document.getElementById('apiKeyModalTitle');
+        
+        // 重置表单
+        keyIdInput.value = '';
+        keyInput.value = '';
+        isGlobalCheckbox.checked = false;
+        
+        // 根据是否有API密钥对象，决定是编辑还是新增
+        if (apiKey) {
+            modalTitle.textContent = '编辑API密钥';
+            keyIdInput.value = apiKey.id;
+            keyInput.value = apiKey.key || '';
+            
+            // 设置提供商
+            if (providerSelect && apiKey.provider) {
+                providerSelect.value = apiKey.provider;
+            }
+            
+            // 设置用户
+            if (userSelect && apiKey.userId) {
+                userSelect.value = apiKey.userId;
+                isGlobalCheckbox.checked = false;
+            } else {
+                isGlobalCheckbox.checked = true;
+            }
+        } else {
+            modalTitle.textContent = '添加API密钥';
+        }
+        
+        // 显示模态框
+        modal.style.display = 'block';
+    }
+
+    /**
+     * 隐藏API密钥模态框
+     */
+    function hideApiKeyModal() {
+        const modal = document.getElementById('apiKeyModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    /**
+     * 保存API密钥
+     */
+    async function saveApiKey() {
+        // 获取表单数据
+        const keyId = document.getElementById('apiKeyId').value;
+        const provider = document.getElementById('apiKeyProvider').value;
+        const key = document.getElementById('apiKeyValue').value;
+        const userId = document.getElementById('apiKeyUser').value;
+        const isGlobal = document.getElementById('apiKeyIsGlobal').checked;
+        
+        // 验证表单
+        if (!provider) {
+            showToast('请选择API提供商', 'error');
+            return;
+        }
+        
+        if (!key) {
+            showToast('API密钥不能为空', 'error');
+            return;
+        }
+        
+        if (!isGlobal && !userId) {
+            showToast('请选择用户或勾选"全局密钥"', 'error');
+            return;
+        }
+        
+        try {
+            // 准备数据
+            const data = {
+                provider,
+                key,
+                userId: isGlobal ? null : userId
+            };
+            
+            let response;
+            
+            // 根据是否有ID决定是新增还是更新
+            if (keyId) {
+                response = await apiRequest(`/admin/api-keys/${keyId}`, 'PUT', data);
+            } else {
+                response = await apiRequest('/admin/api-keys', 'POST', data);
+            }
+            
+            // 隐藏模态框
+            hideApiKeyModal();
+            
+            // 重新加载API密钥列表
+            loadApiKeys();
+            
+            // 显示成功消息
+            showToast(keyId ? 'API密钥更新成功' : 'API密钥添加成功', 'success');
+        } catch (error) {
+            console.error('保存API密钥失败:', error);
+            showToast('保存API密钥失败: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * 复制API密钥
+     * @param {Event} event - 点击事件
+     */
+    function copyApiKey(event) {
+        const button = event.target.closest('.copy-api-key');
+        if (!button) return;
+        
+        // 获取要复制的密钥
+        const keyElement = button.closest('tr').querySelector('.api-key-value');
+        const key = keyElement.textContent;
+        
+        // 复制到剪贴板
+        navigator.clipboard.writeText(key)
+            .then(() => {
+                showToast('API密钥已复制到剪贴板', 'success');
+                
+                // 临时改变按钮文本
+                const originalText = button.textContent;
+                button.textContent = '已复制!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            })
+            .catch(err => {
+                console.error('复制失败:', err);
+                showToast('复制失败，请手动复制', 'error');
+            });
+    }
+
+    /**
+     * 切换密码可见性
+     * @param {Event} event - 点击事件
+     */
+    function togglePasswordVisibility(event) {
+        const button = event.target.closest('.toggle-password');
+        if (!button) return;
+        
+        // 获取相关的密码输入框
+        const passwordInput = button.previousElementSibling;
+        if (!passwordInput) return;
+        
+        // 切换密码可见性
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            button.textContent = '🙈';
+        } else {
+            passwordInput.type = 'password';
+            button.textContent = '👁️';
+        }
+    }
+
+    /**
+     * 加载API密钥列表
+     */
+    async function loadApiKeys() {
+        try {
+            // 显示加载状态
+            const tableBody = document.getElementById('apiKeysTableBody');
+            if (tableBody) {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center">加载中...</td></tr>';
+            }
+            
+            // 获取API密钥列表
+            const response = await apiRequest('/admin/api-keys');
+            
+            // 清空表格
+            if (tableBody) {
+                tableBody.innerHTML = '';
+            }
+            
+            // 如果没有数据，显示空状态
+            if (!response || !response.keys || response.keys.length === 0) {
+                if (tableBody) {
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center">暂无API密钥</td></tr>';
+                }
+                return;
+            }
+            
+            // 渲染API密钥表格
+            response.keys.forEach(key => {
+                const row = document.createElement('tr');
+                
+                // 生成表格行
+                row.innerHTML = `
+                    <td>${key.provider || 'N/A'}</td>
+                    <td class="api-key-value">
+                        <div class="password-field">
+                            <input type="password" value="${key.key}" readonly class="form-control" />
+                            <button class="toggle-password">👁️</button>
+                        </div>
+                    </td>
+                    <td>${key.userId || '全局'}</td>
+                    <td>${new Date(key.createdAt).toLocaleDateString('zh-CN')}</td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm copy-api-key" title="复制">
+                                复制
+                            </button>
+                            <button class="btn btn-sm edit-api-key" data-id="${key.id}">
+                                编辑
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-api-key" data-id="${key.id}">
+                                删除
+                            </button>
+                        </div>
+                    </td>
+                `;
+                
+                // 添加到表格
+                if (tableBody) {
+                    tableBody.appendChild(row);
+                }
+                
+                // 绑定事件
+                const editBtn = row.querySelector('.edit-api-key');
+                if (editBtn) {
+                    editBtn.addEventListener('click', () => {
+                        showApiKeyModal(key);
+                    });
+                }
+                
+                const deleteBtn = row.querySelector('.delete-api-key');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', async () => {
+                        if (confirm(`确定要删除此API密钥吗？`)) {
+                            try {
+                                await apiRequest(`/admin/api-keys/${key.id}`, 'DELETE');
+                                loadApiKeys();
+                                showToast('API密钥删除成功', 'success');
+                            } catch (error) {
+                                console.error('删除API密钥失败:', error);
+                                showToast('删除API密钥失败: ' + error.message, 'error');
+                            }
+                        }
+                    });
+                }
+                
+                // 绑定密码可见性切换
+                const toggleBtn = row.querySelector('.toggle-password');
+                if (toggleBtn) {
+                    toggleBtn.addEventListener('click', togglePasswordVisibility);
+                }
+                
+                // 绑定复制按钮
+                const copyBtn = row.querySelector('.copy-api-key');
+                if (copyBtn) {
+                    copyBtn.addEventListener('click', copyApiKey);
+                }
+            });
+        } catch (error) {
+            console.error('加载API密钥失败:', error);
+            
+            // 显示错误状态
+            const tableBody = document.getElementById('apiKeysTableBody');
+            if (tableBody) {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">加载API密钥失败，请重试</td></tr>';
+            }
+            
+            showToast('加载API密钥失败: ' + error.message, 'error');
+        }
+    }
 });
