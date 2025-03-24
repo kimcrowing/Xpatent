@@ -2177,4 +2177,447 @@ document.addEventListener('DOMContentLoaded', function() {
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength) + '...';
     }
+
+    /**
+     * 加载提示词列表
+     */
+    async function loadPrompts() {
+        try {
+            const response = await getAllPrompts();
+            if (response && response.prompts) {
+                const promptsContainer = document.getElementById('promptsContainer');
+                if (promptsContainer) {
+                    promptsContainer.innerHTML = '';
+                    
+                    // 如果没有提示词，显示空状态
+                    if (response.prompts.length === 0) {
+                        promptsContainer.innerHTML = '<div class="empty-state">暂无提示词模板，请添加新模板</div>';
+                        return;
+                    }
+                    
+                    // 渲染提示词列表
+                    response.prompts.forEach(prompt => {
+                        const promptCard = createPromptCard(prompt);
+                        promptsContainer.appendChild(promptCard);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('加载提示词失败:', error);
+            showToast('加载提示词失败: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * 加载API配置
+     */
+    async function loadApiConfig() {
+        try {
+            const response = await getApiConfig();
+            if (response && response.config) {
+                // 填充API配置表单
+                const config = response.config;
+                
+                // 更新界面中的API配置
+                const modelConfigContainer = document.getElementById('modelConfigContainer');
+                if (modelConfigContainer) {
+                    modelConfigContainer.innerHTML = '';
+                    
+                    // 遍历API提供商和模型配置
+                    if (config.providers && config.providers.length > 0) {
+                        config.providers.forEach(provider => {
+                            const providerCard = createProviderCard(provider);
+                            modelConfigContainer.appendChild(providerCard);
+                        });
+                    } else {
+                        modelConfigContainer.innerHTML = '<div class="empty-state">暂无API配置，请添加配置</div>';
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('加载API配置失败:', error);
+            showToast('加载API配置失败: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * 创建提示词卡片元素
+     */
+    function createPromptCard(prompt) {
+        const card = document.createElement('div');
+        card.className = 'card prompt-card';
+        card.dataset.id = prompt.id;
+        
+        card.innerHTML = `
+            <div class="card-header">
+                <h3 class="card-title">${prompt.name}</h3>
+                <div class="card-actions">
+                    <button class="btn btn-icon edit-prompt" data-id="${prompt.id}">✏️</button>
+                    <button class="btn btn-icon delete-prompt" data-id="${prompt.id}">🗑️</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="badge badge-${prompt.isPublic ? 'success' : 'secondary'} prompt-status">
+                    ${prompt.isPublic ? '公开' : '私有'}
+                </div>
+                <div class="badge badge-primary prompt-category">${prompt.category || '未分类'}</div>
+                <p class="prompt-content">${truncateText(prompt.content, 150)}</p>
+            </div>
+        `;
+        
+        // 绑定编辑和删除事件
+        card.querySelector('.edit-prompt').addEventListener('click', () => {
+            editPrompt(prompt);
+        });
+        
+        card.querySelector('.delete-prompt').addEventListener('click', () => {
+            deletePrompt(prompt.id);
+        });
+        
+        return card;
+    }
+
+    /**
+     * 创建API提供商卡片
+     */
+    function createProviderCard(provider) {
+        const card = document.createElement('div');
+        card.className = 'card provider-card';
+        card.dataset.id = provider.id;
+        
+        // 模型列表HTML
+        let modelsHtml = '';
+        if (provider.models && provider.models.length > 0) {
+            modelsHtml = provider.models.map(model => `
+                <div class="model-item">
+                    <span class="model-name">${model.name}</span>
+                    <span class="model-info">最大上下文: ${model.maxContext || 'N/A'}</span>
+                </div>
+            `).join('');
+        } else {
+            modelsHtml = '<div class="empty-state">未配置模型</div>';
+        }
+        
+        card.innerHTML = `
+            <div class="card-header">
+                <h3 class="card-title">${provider.name}</h3>
+                <div class="card-actions">
+                    <button class="btn btn-icon edit-provider" data-id="${provider.id}">✏️</button>
+                    <button class="btn btn-icon delete-provider" data-id="${provider.id}">🗑️</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="provider-status ${provider.isActive ? 'active' : 'inactive'}">
+                    ${provider.isActive ? '已启用' : '已禁用'}
+                </div>
+                <div class="provider-endpoint">
+                    <strong>基础URL:</strong> ${provider.baseUrl || 'N/A'}
+                </div>
+                <div class="provider-models">
+                    <strong>模型:</strong>
+                    <div class="models-list">
+                        ${modelsHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // 绑定编辑和删除事件
+        card.querySelector('.edit-provider').addEventListener('click', () => {
+            showApiProviderModal(provider);
+        });
+        
+        card.querySelector('.delete-provider').addEventListener('click', async () => {
+            if (confirm(`确定要删除提供商 "${provider.name}" 吗？`)) {
+                try {
+                    await deleteApiProvider(provider.id);
+                    card.remove();
+                    showToast('删除提供商成功', 'success');
+                } catch (error) {
+                    console.error('删除提供商失败:', error);
+                    showToast('删除提供商失败: ' + error.message, 'error');
+                }
+            }
+        });
+        
+        return card;
+    }
+
+    /**
+     * 显示Toast通知
+     */
+    function showToast(message, type = 'info') {
+        // 创建或获取toast容器
+        let toastContainer = document.getElementById('toastContainer');
+        
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // 创建toast元素
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        
+        // 添加到容器
+        toastContainer.appendChild(toast);
+        
+        // 自动关闭
+        setTimeout(() => {
+            toast.classList.add('toast-hide');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 3000);
+    }
+
+    /**
+     * 删除API提供商
+     */
+    async function deleteApiProvider(providerId) {
+        return apiRequest(`/admin/api-config/providers/${providerId}`, 'DELETE');
+    }
+
+    /**
+     * 处理登录表单提交
+     * @param {Event} event - 表单提交事件
+     */
+    async function handleLoginSubmit(event) {
+        event.preventDefault();
+        
+        const emailInput = document.getElementById('loginEmail');
+        const passwordInput = document.getElementById('loginPassword');
+        const errorMsg = document.getElementById('loginError');
+        
+        // 清除之前的错误信息
+        errorMsg.textContent = '';
+        errorMsg.style.display = 'none';
+        
+        // 获取表单值
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        
+        // 表单验证
+        if (!email || !password) {
+            errorMsg.textContent = '请输入邮箱和密码';
+            errorMsg.style.display = 'block';
+            return;
+        }
+        
+        try {
+            // 调用登录API
+            const response = await login(email, password);
+            
+            // 检查是否是管理员
+            const userInfo = getUserInfo();
+            if (userInfo && userInfo.role === 'admin') {
+                // 显示管理界面
+                showAdminInterface();
+                
+                // 加载管理员数据
+                loadPrompts();
+                
+                // 显示成功消息
+                showToast('登录成功', 'success');
+            } else {
+                // 不是管理员，清除认证信息
+                clearAuth();
+                errorMsg.textContent = '您不是管理员，无法访问此页面';
+                errorMsg.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('登录失败:', error);
+            errorMsg.textContent = error.message || '登录失败，请检查邮箱和密码';
+            errorMsg.style.display = 'block';
+        }
+    }
+
+    /**
+     * 处理退出登录
+     */
+    function handleLogout() {
+        // 清除认证信息
+        clearAuth();
+        
+        // 显示登录界面
+        showLoginInterface();
+        
+        // 显示消息
+        showToast('已退出登录', 'info');
+    }
+
+    /**
+     * 绑定提示词管理事件
+     */
+    function bindPromptsEvents() {
+        // 添加提示词按钮
+        const addPromptBtn = document.getElementById('addPromptBtn');
+        if (addPromptBtn) {
+            addPromptBtn.addEventListener('click', () => {
+                showPromptModal();
+            });
+        }
+        
+        // 保存提示词按钮
+        const savePromptBtn = document.getElementById('savePromptBtn');
+        if (savePromptBtn) {
+            savePromptBtn.addEventListener('click', savePrompt);
+        }
+        
+        // 取消提示词编辑按钮
+        const cancelPromptBtn = document.getElementById('cancelPromptBtn');
+        if (cancelPromptBtn) {
+            cancelPromptBtn.addEventListener('click', () => {
+                hidePromptModal();
+            });
+        }
+        
+        // 提示词类别过滤器
+        const promptCategoryFilter = document.getElementById('promptCategoryFilter');
+        if (promptCategoryFilter) {
+            promptCategoryFilter.addEventListener('change', filterPromptsByCategory);
+        }
+    }
+
+    /**
+     * 绑定订阅管理事件
+     */
+    function bindSubscriptionEvents() {
+        // 添加订阅计划按钮
+        const addSubscriptionBtn = document.getElementById('addSubscriptionBtn');
+        if (addSubscriptionBtn) {
+            addSubscriptionBtn.addEventListener('click', () => {
+                showSubscriptionModal();
+            });
+        }
+        
+        // 保存订阅计划按钮
+        const saveSubscriptionBtn = document.getElementById('saveSubscriptionBtn');
+        if (saveSubscriptionBtn) {
+            saveSubscriptionBtn.addEventListener('click', saveSubscriptionPlan);
+        }
+        
+        // 取消订阅计划编辑按钮
+        const cancelSubscriptionBtn = document.getElementById('cancelSubscriptionBtn');
+        if (cancelSubscriptionBtn) {
+            cancelSubscriptionBtn.addEventListener('click', () => {
+                hideSubscriptionModal();
+            });
+        }
+    }
+
+    /**
+     * 绑定用户管理事件
+     */
+    function bindUserEvents() {
+        // 用户搜索按钮
+        const userSearchBtn = document.getElementById('userSearchBtn');
+        if (userSearchBtn) {
+            userSearchBtn.addEventListener('click', searchUsers);
+        }
+        
+        // 用户搜索框回车事件
+        const userSearchInput = document.getElementById('userSearchInput');
+        if (userSearchInput) {
+            userSearchInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    searchUsers();
+                }
+            });
+        }
+        
+        // 用户分页按钮
+        const userPrevPageBtn = document.getElementById('userPrevPageBtn');
+        const userNextPageBtn = document.getElementById('userNextPageBtn');
+        
+        if (userPrevPageBtn) {
+            userPrevPageBtn.addEventListener('click', () => {
+                navigateUserPage('prev');
+            });
+        }
+        
+        if (userNextPageBtn) {
+            userNextPageBtn.addEventListener('click', () => {
+                navigateUserPage('next');
+            });
+        }
+    }
+
+    /**
+     * 绑定API日志事件
+     */
+    function bindApiLogsEvents() {
+        // API日志搜索按钮
+        const apiLogSearchBtn = document.getElementById('apiLogSearchBtn');
+        if (apiLogSearchBtn) {
+            apiLogSearchBtn.addEventListener('click', searchApiLogs);
+        }
+        
+        // 日期过滤器
+        const apiLogDateFilter = document.getElementById('apiLogDateFilter');
+        if (apiLogDateFilter) {
+            apiLogDateFilter.addEventListener('change', filterApiLogsByDate);
+        }
+        
+        // 用户过滤器
+        const apiLogUserFilter = document.getElementById('apiLogUserFilter');
+        if (apiLogUserFilter) {
+            apiLogUserFilter.addEventListener('change', filterApiLogsByUser);
+        }
+        
+        // API日志分页按钮
+        const apiLogPrevPageBtn = document.getElementById('apiLogPrevPageBtn');
+        const apiLogNextPageBtn = document.getElementById('apiLogNextPageBtn');
+        
+        if (apiLogPrevPageBtn) {
+            apiLogPrevPageBtn.addEventListener('click', () => {
+                navigateApiLogPage('prev');
+            });
+        }
+        
+        if (apiLogNextPageBtn) {
+            apiLogNextPageBtn.addEventListener('click', () => {
+                navigateApiLogPage('next');
+            });
+        }
+    }
+
+    /**
+     * 绑定API密钥管理事件
+     */
+    function bindApiKeysEvents() {
+        // 添加API密钥按钮
+        const addApiKeyBtn = document.getElementById('addApiKeyBtn');
+        if (addApiKeyBtn) {
+            addApiKeyBtn.addEventListener('click', () => {
+                showApiKeyModal();
+            });
+        }
+        
+        // 保存API密钥按钮
+        const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+        if (saveApiKeyBtn) {
+            saveApiKeyBtn.addEventListener('click', saveApiKey);
+        }
+        
+        // 取消API密钥编辑按钮
+        const cancelApiKeyBtn = document.getElementById('cancelApiKeyBtn');
+        if (cancelApiKeyBtn) {
+            cancelApiKeyBtn.addEventListener('click', () => {
+                hideApiKeyModal();
+            });
+        }
+        
+        // 复制API密钥按钮
+        document.querySelectorAll('.copy-api-key').forEach(btn => {
+            btn.addEventListener('click', copyApiKey);
+        });
+        
+        // 显示/隐藏API密钥密码
+        document.querySelectorAll('.toggle-password').forEach(btn => {
+            btn.addEventListener('click', togglePasswordVisibility);
+        });
+    }
 });
