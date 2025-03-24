@@ -1,0 +1,7 @@
+.light-theme .send-btn svg path {
+    stroke: var(--text-color);
+}
+.dark-theme .send-btn svg path {
+    stroke: currentColor;
+    fill: none;
+}
