@@ -17,6 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 检查用户登录状态并更新UI
     function updateUserLoginState() {
+        // 检查backendApi对象是否已初始化
+        if (!window.backendApi) {
+            console.warn('后端API尚未初始化，无法检查用户登录状态');
+            return;
+        }
+        
         const userInfo = window.backendApi.getUserInfo();
         const loginBtn = document.getElementById('loginBtn');
         const logoutBtn = document.getElementById('logoutBtn');

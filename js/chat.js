@@ -33,7 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 检查用户是否已登录
     function checkLoginStatus() {
-        const token = localStorage.getItem('xpat_auth_token');
+        // 使用authManager而不是直接访问localStorage
+        const token = window.authManager ? window.authManager.getToken() : null;
         if (!token) {
             // 用户未登录，显示登录提示
             showLoginPrompt();
@@ -42,6 +43,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 显示登录提示
     function showLoginPrompt() {
+        // 检查chatMessages是否存在
+        if (!chatMessages) {
+            console.error('聊天消息容器不存在');
+            return;
+        }
+        
         // 清空欢迎消息
         chatMessages.innerHTML = '';
         

@@ -3,10 +3,10 @@
  * 提供统一的登录状态管理、令牌验证和会话控制
  */
 
-// 本地存储密钥
-const TOKEN_KEY = 'xpat_auth_token';
-const USER_INFO_KEY = 'xpat_user_info';
-const TOKEN_EXPIRY_KEY = 'xpat_token_expiry';
+// 本地存储密钥 - 使用window避免重复声明冲突
+window.TOKEN_KEY = window.TOKEN_KEY || 'xpat_auth_token';
+window.USER_INFO_KEY = window.USER_INFO_KEY || 'xpat_user_info';
+window.TOKEN_EXPIRY_KEY = window.TOKEN_EXPIRY_KEY || 'xpat_token_expiry';
 
 // 创建全局身份验证管理器
 const authManager = {
@@ -15,7 +15,7 @@ const authManager = {
    * @returns {string|null} 令牌或null
    */
   getToken() {
-    return localStorage.getItem(TOKEN_KEY);
+    return localStorage.getItem(window.TOKEN_KEY);
   },
 
   /**
@@ -23,7 +23,7 @@ const authManager = {
    * @returns {Object|null} 用户信息对象或null
    */
   getUserInfo() {
-    const userInfo = localStorage.getItem(USER_INFO_KEY);
+    const userInfo = localStorage.getItem(window.USER_INFO_KEY);
     return userInfo ? JSON.parse(userInfo) : null;
   },
 
@@ -33,7 +33,7 @@ const authManager = {
    */
   isLoggedIn() {
     const token = this.getToken();
-    const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
+    const expiry = localStorage.getItem(window.TOKEN_EXPIRY_KEY);
     
     if (!token) return false;
     
@@ -62,13 +62,13 @@ const authManager = {
    * @param {number} expiryInHours 令牌过期时间（小时）
    */
   setAuth(token, user, expiryInHours = 24) {
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
+    localStorage.setItem(window.TOKEN_KEY, token);
+    localStorage.setItem(window.USER_INFO_KEY, JSON.stringify(user));
     
     // 设置过期时间
     const expiryDate = new Date();
     expiryDate.setHours(expiryDate.getHours() + expiryInHours);
-    localStorage.setItem(TOKEN_EXPIRY_KEY, expiryDate.toISOString());
+    localStorage.setItem(window.TOKEN_EXPIRY_KEY, expiryDate.toISOString());
     
     // 触发登录事件
     window.dispatchEvent(new CustomEvent('auth:login', { detail: user }));
@@ -78,9 +78,9 @@ const authManager = {
    * 退出登录
    */
   logout() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_INFO_KEY);
-    localStorage.removeItem(TOKEN_EXPIRY_KEY);
+    localStorage.removeItem(window.TOKEN_KEY);
+    localStorage.removeItem(window.USER_INFO_KEY);
+    localStorage.removeItem(window.TOKEN_EXPIRY_KEY);
     
     // 触发退出登录事件
     window.dispatchEvent(new CustomEvent('auth:logout'));

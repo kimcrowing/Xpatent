@@ -8,22 +8,22 @@
 // 后端API基础URL - 可以动态修改，以支持GitHub Pages环境
 window.API_BASE_URL = 'https://4df8-2408-8262-1871-4903-4d7-3ec-d97-db30.ngrok-free.app/api';
 
-// 本地存储密钥
-const TOKEN_KEY = 'xpat_auth_token';
-const USER_INFO_KEY = 'xpat_user_info';
+// 本地存储密钥 - 使用window避免重复声明冲突
+window.TOKEN_KEY = window.TOKEN_KEY || 'xpat_auth_token';
+window.USER_INFO_KEY = window.USER_INFO_KEY || 'xpat_user_info';
 
 /**
  * 从本地存储获取令牌
  */
 function getToken() {
-  return localStorage.getItem(TOKEN_KEY);
+  return localStorage.getItem(window.TOKEN_KEY);
 }
 
 /**
  * 从本地存储获取用户信息
  */
 function getUserInfo() {
-  const userInfo = localStorage.getItem(USER_INFO_KEY);
+  const userInfo = localStorage.getItem(window.USER_INFO_KEY);
   return userInfo ? JSON.parse(userInfo) : null;
 }
 
@@ -39,16 +39,16 @@ function isAdmin() {
  * 设置认证信息到本地存储
  */
 function setAuth(token, user) {
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
+  localStorage.setItem(window.TOKEN_KEY, token);
+  localStorage.setItem(window.USER_INFO_KEY, JSON.stringify(user));
 }
 
 /**
  * 清除认证信息
  */
 function clearAuth() {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_INFO_KEY);
+  localStorage.removeItem(window.TOKEN_KEY);
+  localStorage.removeItem(window.USER_INFO_KEY);
 }
 
 /**

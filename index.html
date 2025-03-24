@@ -648,10 +648,12 @@
     <!-- 添加缺失的chatModeDropdown元素 -->
     <div id="chatModeDropdown" class="dropdown-menu" style="display:none;"></div>
 
-    <!-- 引入重构的辅助模块 -->
+    <!-- 引入重构的辅助模块，确保正确的加载顺序 -->
     <script src="js/error-handler.js" defer></script>
     <script src="js/auth-manager.js" defer></script>
     <script src="js/ui-helper.js" defer></script>
+    <!-- 确保backend-api.js在其他依赖它的脚本之前加载 -->
+    <script src="js/backend-api.js?v=1.0" defer></script>
     <script src="js/app.js?v=1.3" defer></script>
     <script src="js/chat.js?v=1.3" defer></script>
     <script src="js/theme.js?v=1.3" defer></script>
@@ -659,16 +661,25 @@
     <script src="js/featureMenu.js?v=1.3" defer></script>
     <script src="js/attachment.js?v=1.3" defer></script>
     <script src="js/chatModeSelector.js?v=1.3" defer></script>
-    <script src="js/backend-api.js?v=1.0" defer></script>
     <script>
         // 检查用户是否是管理员，如果是则显示管理后台入口
         document.addEventListener('DOMContentLoaded', function() {
-            // 如果backendApi已加载
-            if (window.backendApi) {
-                if (window.backendApi.isAdmin()) {
-                    document.getElementById('admin-entry').style.display = 'block';
+            // 延迟检查，确保backendApi已完全加载
+            setTimeout(function() {
+                // 如果backendApi已加载
+                if (window.backendApi && window.backendApi.isAdmin) {
+                    try {
+                        if (window.backendApi.isAdmin()) {
+                            const adminEntry = document.getElementById('admin-entry');
+                            if (adminEntry) {
+                                adminEntry.style.display = 'block';
+                            }
+                        }
+                    } catch (e) {
+                        console.error('检查管理员状态失败:', e);
+                    }
                 }
-            }
+            }, 500);
         });
     </script>
 </body>
