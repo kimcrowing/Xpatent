@@ -192,9 +192,6 @@ const errorHandler = {
   }
 };
 
-// 将错误处理器暴露给全局
-window.errorHandler = errorHandler;
-
 // 添加全局的未捕获错误处理
 window.addEventListener('error', function(event) {
   errorHandler.showError(
@@ -214,5 +211,6 @@ window.addEventListener('unhandledrejection', function(event) {
   errorHandler.logError(error);
 });
 
-// 导出模块
-export { errorHandler, ErrorType }; 
+// 全局挂载模块，替换ES6导出
+window.errorHandler = errorHandler;
+window.ErrorType = ErrorType; 

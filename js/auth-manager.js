@@ -142,9 +142,6 @@ const authManager = {
   }
 };
 
-// 将身份验证管理器暴露给全局
-window.authManager = authManager;
-
 // 添加页面加载时的自动校验
 document.addEventListener('DOMContentLoaded', function() {
   // 如果用户已登录，验证令牌有效性
@@ -158,5 +155,5 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// 导出模块
-export default authManager; 
+// 全局挂载模块，替换ES6导出
+window.authManager = authManager; 

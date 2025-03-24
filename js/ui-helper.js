@@ -895,18 +895,15 @@ const uiHelper = {
   }
 };
 
-// 将UI帮助器暴露给全局
-window.uiHelper = uiHelper;
+// 页面加载时也应用一次响应式调整
+document.addEventListener('DOMContentLoaded', () => {
+  uiHelper.applyResponsive();
+});
 
 // 监听窗口大小变化，应用响应式调整
 window.addEventListener('resize', () => {
   uiHelper.applyResponsive();
 });
 
-// 页面加载时也应用一次响应式调整
-document.addEventListener('DOMContentLoaded', () => {
-  uiHelper.applyResponsive();
-});
-
-// 导出模块
-export default uiHelper; 
+// 全局挂载模块，替换ES6导出
+window.uiHelper = uiHelper; 
