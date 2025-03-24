@@ -2762,4 +2762,283 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    /**
+     * 显示订阅计划编辑模态框
+     * @param {Object} plan - 订阅计划对象（如果是编辑现有计划）
+     */
+    function showSubscriptionModal(plan = null) {
+        // 获取模态框元素
+        const modal = document.getElementById('subscriptionModal');
+        if (!modal) {
+            console.error('未找到订阅计划模态框');
+            return;
+        }
+        
+        // 获取表单元素
+        const planIdInput = document.getElementById('planId');
+        const planNameInput = document.getElementById('planName');
+        const planPriceInput = document.getElementById('planPrice');
+        const planDurationInput = document.getElementById('planDuration');
+        const planApiQuotaInput = document.getElementById('planApiQuota');
+        const planFeaturesTextarea = document.getElementById('planFeatures');
+        const planStatusSelect = document.getElementById('planStatus');
+        const modalTitle = document.getElementById('subscriptionModalTitle');
+        
+        // 重置表单
+        planIdInput.value = '';
+        planNameInput.value = '';
+        planPriceInput.value = '';
+        planDurationInput.value = '30';
+        planApiQuotaInput.value = '100';
+        planFeaturesTextarea.value = '';
+        planStatusSelect.value = 'active';
+        
+        // 如果是编辑现有计划
+        if (plan) {
+            modalTitle.textContent = '编辑订阅计划';
+            planIdInput.value = plan.id;
+            planNameInput.value = plan.name;
+            planPriceInput.value = plan.price;
+            planDurationInput.value = plan.duration || 30;
+            planApiQuotaInput.value = plan.apiQuota || 100;
+            planFeaturesTextarea.value = Array.isArray(plan.features) ? plan.features.join('\n') : plan.features || '';
+            planStatusSelect.value = plan.status || 'active';
+        } else {
+            modalTitle.textContent = '添加订阅计划';
+        }
+        
+        // 显示模态框
+        modal.style.display = 'block';
+    }
+
+    /**
+     * 隐藏订阅计划编辑模态框
+     */
+    function hideSubscriptionModal() {
+        const modal = document.getElementById('subscriptionModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    /**
+     * 保存订阅计划
+     */
+    async function saveSubscriptionPlan() {
+        // 获取表单数据
+        const planId = document.getElementById('planId').value;
+        const name = document.getElementById('planName').value;
+        const price = parseFloat(document.getElementById('planPrice').value);
+        const duration = parseInt(document.getElementById('planDuration').value);
+        const apiQuota = parseInt(document.getElementById('planApiQuota').value);
+        const featuresText = document.getElementById('planFeatures').value;
+        const status = document.getElementById('planStatus').value;
+        
+        // 解析特性列表
+        const features = featuresText.split('\n')
+            .map(feature => feature.trim())
+            .filter(feature => feature);
+        
+        // 验证表单
+        if (!name) {
+            showToast('计划名称不能为空', 'error');
+            return;
+        }
+        
+        if (isNaN(price) || price < 0) {
+            showToast('计划价格必须是有效的数字', 'error');
+            return;
+        }
+        
+        if (isNaN(duration) || duration <= 0) {
+            showToast('计划时长必须是大于0的整数', 'error');
+            return;
+        }
+        
+        if (isNaN(apiQuota) || apiQuota <= 0) {
+            showToast('API配额必须是大于0的整数', 'error');
+            return;
+        }
+        
+        try {
+            let response;
+            
+            // 显示加载状态
+            const saveBtn = document.getElementById('saveSubscriptionBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '保存中...';
+            
+            // 准备数据
+            const planData = {
+                name,
+                price,
+                duration,
+                apiQuota,
+                features,
+                status
+            };
+            
+            // 根据是否有ID决定是新增还是更新
+            if (planId) {
+                // 更新现有计划
+                response = await updateSubscriptionPlan(planId, planData);
+            } else {
+                // 创建新计划
+                response = await createSubscriptionPlan(name, price, duration, apiQuota, features);
+            }
+            
+            // 隐藏模态框
+            hideSubscriptionModal();
+            
+            // 重新加载订阅计划列表
+            loadSubscriptions();
+            
+            // 显示成功消息
+            showToast(planId ? '订阅计划更新成功' : '订阅计划创建成功', 'success');
+        } catch (error) {
+            console.error('保存订阅计划失败:', error);
+            showToast('保存订阅计划失败: ' + error.message, 'error');
+        } finally {
+            // 恢复按钮状态
+            const saveBtn = document.getElementById('saveSubscriptionBtn');
+            saveBtn.disabled = false;
+            saveBtn.textContent = '保存';
+        }
+    }
+
+    /**
+     * 加载订阅计划列表
+     */
+    async function loadSubscriptions() {
+        try {
+            // 显示加载状态
+            const subscriptionsContainer = document.getElementById('subscriptionsContainer');
+            if (subscriptionsContainer) {
+                subscriptionsContainer.innerHTML = '<div class="loading-indicator">加载中...</div>';
+            }
+            
+            // 获取订阅计划列表
+            const response = await getAllSubscriptionPlans();
+            
+            // 清空容器
+            if (subscriptionsContainer) {
+                subscriptionsContainer.innerHTML = '';
+            }
+            
+            // 如果没有数据，显示空状态
+            if (!response || !response.plans || response.plans.length === 0) {
+                if (subscriptionsContainer) {
+                    subscriptionsContainer.innerHTML = '<div class="empty-state">暂无订阅计划，请添加新计划</div>';
+                }
+                return;
+            }
+            
+            // 渲染订阅计划列表
+            response.plans.forEach(plan => {
+                const planCard = createSubscriptionPlanCard(plan);
+                if (subscriptionsContainer) {
+                    subscriptionsContainer.appendChild(planCard);
+                }
+            });
+        } catch (error) {
+            console.error('加载订阅计划失败:', error);
+            showToast('加载订阅计划失败: ' + error.message, 'error');
+            
+            // 显示错误状态
+            const subscriptionsContainer = document.getElementById('subscriptionsContainer');
+            if (subscriptionsContainer) {
+                subscriptionsContainer.innerHTML = '<div class="error-state">加载订阅计划失败，请重试</div>';
+            }
+        }
+    }
+
+    /**
+     * 创建订阅计划卡片
+     * @param {Object} plan - 订阅计划数据
+     * @returns {HTMLElement} 订阅计划卡片元素
+     */
+    function createSubscriptionPlanCard(plan) {
+        const card = document.createElement('div');
+        card.className = 'card subscription-plan-card';
+        card.dataset.id = plan.id;
+        
+        // 格式化价格
+        const formattedPrice = `¥${plan.price.toFixed(2)}`;
+        
+        // 格式化特性列表
+        let featuresHtml = '';
+        if (plan.features && plan.features.length > 0) {
+            featuresHtml = plan.features.map(feature => `<li>${feature}</li>`).join('');
+        } else {
+            featuresHtml = '<li>无特性</li>';
+        }
+        
+        card.innerHTML = `
+            <div class="card-header">
+                <h3 class="card-title">${plan.name}</h3>
+                <div class="card-actions">
+                    <button class="btn btn-icon edit-plan" data-id="${plan.id}">✏️</button>
+                    <button class="btn btn-icon delete-plan" data-id="${plan.id}">🗑️</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="plan-price">${formattedPrice}</div>
+                <div class="plan-duration">有效期: ${plan.duration || 30} 天</div>
+                <div class="plan-quota">API配额: ${plan.apiQuota || 100} 次</div>
+                <div class="plan-status">
+                    <span class="badge badge-${plan.status === 'active' ? 'success' : 'secondary'}">
+                        ${plan.status === 'active' ? '已启用' : '已禁用'}
+                    </span>
+                </div>
+                <div class="plan-features">
+                    <h4>包含特性:</h4>
+                    <ul>
+                        ${featuresHtml}
+                    </ul>
+                </div>
+            </div>
+        `;
+        
+        // 绑定编辑和删除事件
+        card.querySelector('.edit-plan').addEventListener('click', () => {
+            showSubscriptionModal(plan);
+        });
+        
+        card.querySelector('.delete-plan').addEventListener('click', () => {
+            deleteSubscriptionPlan(plan.id);
+        });
+        
+        return card;
+    }
+
+    /**
+     * 删除订阅计划
+     * @param {string} planId - 订阅计划ID
+     */
+    async function deleteSubscriptionPlan(planId) {
+        if (!confirm('确定要删除此订阅计划吗？此操作不可撤销，且可能影响已订阅用户。')) {
+            return;
+        }
+        
+        try {
+            // 调用API删除订阅计划
+            await apiRequest(`/admin/subscriptions/${planId}`, 'DELETE');
+            
+            // 移除页面上的订阅计划卡片
+            const planCard = document.querySelector(`.subscription-plan-card[data-id="${planId}"]`);
+            if (planCard) {
+                planCard.remove();
+            }
+            
+            // 显示成功消息
+            showToast('订阅计划删除成功', 'success');
+            
+            // 重新加载订阅计划列表
+            loadSubscriptions();
+        } catch (error) {
+            console.error('删除订阅计划失败:', error);
+            showToast('删除订阅计划失败: ' + error.message, 'error');
+        }
+    }
 });
