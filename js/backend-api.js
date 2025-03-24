@@ -360,6 +360,12 @@ async function verifyAdminPassword(password) {
     window.API_BASE_URL = savedApiUrl;
     console.log('从本地存储加载API地址:', window.API_BASE_URL);
   } else {
+    // 确保API地址不为空
+    if (!window.API_BASE_URL || window.API_BASE_URL.trim() === '') {
+      window.API_BASE_URL = 'https://4df8-2408-8262-1871-4903-4d7-3ec-d97-db30.ngrok-free.app/api';
+      console.log('API地址为空，设置为默认值:', window.API_BASE_URL);
+    }
+    
     // 保存当前API地址到本地存储
     localStorage.setItem('xpat_api_url', window.API_BASE_URL);
     console.log('初始化API地址:', window.API_BASE_URL);
