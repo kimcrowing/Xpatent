@@ -158,10 +158,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const modelDropdown = createModelDropdown();
         
-        // 计算下拉菜单位置
+        // 计算下拉菜单位置 - 改用fixed定位和top属性
         const rect = modelSelector.getBoundingClientRect();
-        modelDropdown.style.bottom = `${window.innerHeight - rect.top + 10}px`;
+        modelDropdown.style.position = 'fixed';
+        modelDropdown.style.top = `${rect.bottom + 5}px`;
         modelDropdown.style.right = `${window.innerWidth - rect.right}px`;
+        modelDropdown.style.zIndex = '9999';
         
         modelDropdown.classList.toggle('show');
     });

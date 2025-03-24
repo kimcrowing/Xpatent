@@ -265,10 +265,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const chatModeDropdown = createChatModeDropdown();
         
-        // 计算下拉菜单位置
+        // 计算下拉菜单位置 - 改用fixed定位和top属性
         const rect = chatModeSelector.getBoundingClientRect();
-        chatModeDropdown.style.bottom = `${window.innerHeight - rect.top + 10}px`;
-        chatModeDropdown.style.right = `${window.innerWidth - rect.right + 100}px`; // 偏移以防止和模型选择器重叠
+        chatModeDropdown.style.position = 'fixed';
+        chatModeDropdown.style.top = `${rect.bottom + 5}px`;
+        chatModeDropdown.style.right = `${window.innerWidth - rect.right}px`;
+        chatModeDropdown.style.zIndex = '9999';
         
         chatModeDropdown.classList.toggle('show');
     });

@@ -759,50 +759,51 @@ svg path {
     color: var(--text-color);
 }
 
-.model-dropdown, .chat-mode-dropdown {
-    position: absolute;
-    bottom: 70px;
-    right: 70px;
-    background-color: var(--menu-bg);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    width: 200px;
-    z-index: 100;
-    overflow: hidden;
+/* 下拉菜单基础样式 */
+.chat-mode-dropdown,
+.model-dropdown {
     display: none;
+    position: fixed;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    overflow: hidden;
+    padding: 8px 0;
+    width: 180px;
 }
 
-.model-dropdown.show, .chat-mode-dropdown.show {
+.chat-mode-dropdown.show,
+.model-dropdown.show {
     display: block;
     animation: fadeIn 0.2s ease-out;
 }
 
-.model-dropdown ul, .chat-mode-dropdown ul {
-    list-style: none;
+.chat-mode-dropdown ul,
+.model-dropdown ul {
+    list-style-type: none;
     padding: 0;
     margin: 0;
 }
 
-.model-dropdown li, .chat-mode-dropdown li {
-    padding: 10px 15px;
+.chat-mode-dropdown li,
+.model-dropdown li {
+    padding: 10px 16px;
     cursor: pointer;
     transition: background-color 0.2s;
+    color: var(--text-primary);
 }
 
-.model-dropdown li:hover, .chat-mode-dropdown li:hover {
-    background-color: var(--hover-bg);
+.chat-mode-dropdown li:hover,
+.model-dropdown li:hover {
+    background-color: var(--bg-hover);
 }
 
-.model-dropdown li.active, .chat-mode-dropdown li.active {
-    background-color: rgba(0, 123, 255, 0.2);
-    position: relative;
-}
-
-.model-dropdown li.active::after, .chat-mode-dropdown li.active::after {
-    content: "✓";
-    position: absolute;
-    right: 15px;
+.chat-mode-dropdown li.active,
+.model-dropdown li.active {
     color: var(--primary-color);
+    font-weight: 500;
+    background-color: var(--active-item-bg);
 }
 
 /* 聊天模式选择器位置调整 */
