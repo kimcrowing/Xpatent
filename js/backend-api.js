@@ -367,7 +367,37 @@ async function verifyAdminPassword(password) {
 })();
 
 // 导出API函数
-window.backendApi = {\r\n  // 添加API配置接口\r\n  apiConfig: {\r\n    getApiUrl: () => window.API_BASE_URL,\r\n    setApiUrl: (url) => {\r\n      if (url && url.trim() !== \ \) {\r\n        window.API_BASE_URL = url.trim();\r\n        localStorage.setItem(\xpat_api_url\, window.API_BASE_URL);\r\n        console.log(\API地址已更新:\, window.API_BASE_URL);\r\n        return true;\r\n      }\r\n      return false;\r\n    },\r\n    checkConnection: async () => {\r\n      try {\r\n        const response = await fetch(${window.API_BASE_URL}/health, {\r\n          method: \GET\,\r\n          headers: {\r\n            \Content-Type\: \application/json\,\r\n            \Accept\: \application/json\,\r\n            \ngrok-skip-browser-warning\: \1\\r\n          },\r\n          mode: \no-cors\\r\n        });\r\n        return response.type === \opaque\ || response.ok;\r\n      } catch (error) {\r\n        console.error(\API连接检查错误:\, error);\r\n        return false;\r\n      }\r\n    }\r\n  },
+window.backendApi = {
+  // 添加API配置接口
+  apiConfig: {
+    getApiUrl: () => window.API_BASE_URL,
+    setApiUrl: (url) => {
+      if (url && url.trim() !== '') {
+        window.API_BASE_URL = url.trim();
+        localStorage.setItem('xpat_api_url', window.API_BASE_URL);
+        console.log('API地址已更新:', window.API_BASE_URL);
+        return true;
+      }
+      return false;
+    },
+    checkConnection: async () => {
+      try {
+        const response = await fetch(`${window.API_BASE_URL}/health`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'ngrok-skip-browser-warning': '1'
+          },
+          mode: 'no-cors'
+        });
+        return response.type === 'opaque' || response.ok;
+      } catch (error) {
+        console.error('API连接检查错误:', error);
+        return false;
+      }
+    }
+  },
   login,
   register,
   getUserProfile,
