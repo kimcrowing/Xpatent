@@ -350,15 +350,39 @@
                     <div class="right-controls">
                         <!-- 聊天模式选择按钮 -->
                         <button class="icon-btn chat-mode-selector" id="chatModeSelector" title="选择聊天模式">
-                            <span id="currentChatMode">通用对话</span>
+                            <span id="currentChatMode">专利撰写</span>
                             <i class="bi bi-chevron-down"></i>
                         </button>
+                        
+                        <!-- 聊天模式下拉菜单（预先创建） -->
+                        <div id="chatModeDropdown" class="chat-mode-dropdown">
+                            <ul>
+                                <li data-mode="general">通用对话</li>
+                                <li data-mode="patent-search">专利检索</li>
+                                <li data-mode="patent-writing">专利撰写</li>
+                                <li data-mode="patent-analysis">专利答审</li>
+                            </ul>
+                        </div>
                         
                         <!-- 模型选择按钮 -->
                         <button class="icon-btn model-selector" id="modelSelector" title="选择AI模型">
                             <span id="currentModel">Deepseek</span>
                             <i class="bi bi-chevron-down"></i>
                         </button>
+                        
+                        <!-- 模型选择下拉菜单（预先创建） -->
+                        <div id="modelDropdown" class="model-dropdown">
+                            <ul>
+                                <li data-model="deepseek/deepseek-r1:free">Deepseek</li>
+                                <li data-model="anthropic/claude-3-opus:beta">Claude 3 Opus</li>
+                                <li data-model="anthropic/claude-3-sonnet:beta">Claude 3 Sonnet</li>
+                                <li data-model="anthropic/claude-3-haiku:beta">Claude 3 Haiku</li>
+                                <li data-model="google/gemini-1.5-pro-latest">Gemini 1.5 Pro</li>
+                                <li data-model="google/gemini-2.0-flash-thinking-exp:free">Gemini 2.0 Flash</li>
+                                <li data-model="meta-llama/llama-3-70b-instruct:free">Llama 3 70B</li>
+                                <li data-model="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -641,12 +665,6 @@
             </div>
         </div>
     </div>
-
-    <!-- 添加缺失的modelDropdown元素 -->
-    <div id="modelDropdown" class="dropdown-menu" style="display:none;"></div>
-
-    <!-- 添加缺失的chatModeDropdown元素 -->
-    <div id="chatModeDropdown" class="dropdown-menu" style="display:none;"></div>
 
     <!-- 引入重构的辅助模块，确保正确的加载顺序 -->
     <script src="js/error-handler.js" defer></script>

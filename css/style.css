@@ -506,6 +506,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+    position: relative;
 }
 
 /* 附件信息样式优化 */
@@ -763,20 +764,22 @@ svg path {
 .chat-mode-dropdown,
 .model-dropdown {
     display: none;
-    position: fixed;
-    background-color: var(--bg-secondary);
+    position: absolute;
+    top: 50px; /* 固定位置在按钮下方 */
+    right: 0;
+    background-color: var(--bg-secondary, #2d2d35);
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     z-index: 9999;
     overflow: hidden;
     padding: 8px 0;
     width: 180px;
+    border: 1px solid var(--border-color, #464656);
 }
 
 .chat-mode-dropdown.show,
 .model-dropdown.show {
     display: block;
-    animation: fadeIn 0.2s ease-out;
 }
 
 .chat-mode-dropdown ul,
@@ -791,19 +794,19 @@ svg path {
     padding: 10px 16px;
     cursor: pointer;
     transition: background-color 0.2s;
-    color: var(--text-primary);
+    color: var(--text-primary, #e1e1e2);
 }
 
 .chat-mode-dropdown li:hover,
 .model-dropdown li:hover {
-    background-color: var(--bg-hover);
+    background-color: var(--bg-hover, #3d3d49);
 }
 
 .chat-mode-dropdown li.active,
 .model-dropdown li.active {
-    color: var(--primary-color);
+    color: var(--primary-color, #5865f2);
     font-weight: 500;
-    background-color: var(--active-item-bg);
+    background-color: var(--active-item-bg, #3a3a46);
 }
 
 /* 聊天模式选择器位置调整 */

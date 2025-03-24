@@ -65,46 +65,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 存储用户选择的模型的本地存储键
     const SELECTED_MODEL_KEY = 'selected_model';
     
-    // 动态创建模型下拉菜单
-    function createModelDropdown() {
-        // 检查是否已存在下拉菜单
-        let modelDropdown = document.getElementById('modelDropdown');
-        
-        if (!modelDropdown) {
-            modelDropdown = document.createElement('div');
-            modelDropdown.id = 'modelDropdown';
-            modelDropdown.className = 'model-dropdown';
-            
-            const modelList = document.createElement('ul');
-            
-            // 获取用户可用的模型
-            const models = getAvailableModels();
-            
-            models.forEach(model => {
-                const modelItem = document.createElement('li');
-                modelItem.setAttribute('data-model', model.id);
-                modelItem.textContent = model.name;
-                
-                // 如果是当前选择的模型，添加active类
-                if (window.CURRENT_MODEL === model.id) {
-                    modelItem.classList.add('active');
-                }
-                
-                modelItem.addEventListener('click', function() {
-                    selectModel(model.id, model.name);
-                    modelDropdown.classList.remove('show');
-                });
-                
-                modelList.appendChild(modelItem);
-            });
-            
-            modelDropdown.appendChild(modelList);
-            document.body.appendChild(modelDropdown);
-        }
-        
-        return modelDropdown;
-    }
-    
     // 检查本地存储中的模型选择
     function checkSelectedModel() {
         const savedModel = localStorage.getItem(SELECTED_MODEL_KEY);
@@ -152,25 +112,40 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始化时加载用户权限
     loadUserPermissions();
     
+    // 获取预先创建的下拉菜单
+    const modelDropdown = document.getElementById('modelDropdown');
+    
+    // 添加点击事件到预先创建的菜单项
+    if (modelDropdown) {
+        const items = modelDropdown.querySelectorAll('li');
+        items.forEach(item => {
+            const modelId = item.getAttribute('data-model');
+            const modelName = item.textContent;
+            
+            item.addEventListener('click', function() {
+                selectModel(modelId, modelName);
+                modelDropdown.classList.remove('show');
+            });
+            
+            // 标记当前选中的模型
+            if (localStorage.getItem(SELECTED_MODEL_KEY) === modelId) {
+                item.classList.add('active');
+            }
+        });
+    }
+    
     // 点击模型选择器按钮时显示/隐藏下拉菜单
     modelSelector.addEventListener('click', function(e) {
         e.stopPropagation();
         
-        const modelDropdown = createModelDropdown();
-        
-        // 计算下拉菜单位置 - 改用fixed定位和top属性
-        const rect = modelSelector.getBoundingClientRect();
-        modelDropdown.style.position = 'fixed';
-        modelDropdown.style.top = `${rect.bottom + 5}px`;
-        modelDropdown.style.right = `${window.innerWidth - rect.right}px`;
-        modelDropdown.style.zIndex = '9999';
-        
-        modelDropdown.classList.toggle('show');
+        // 使用已有的菜单元素，不再动态创建
+        if (modelDropdown) {
+            modelDropdown.classList.toggle('show');
+        }
     });
     
     // 点击页面其他地方时隐藏下拉菜单
     document.addEventListener('click', function(e) {
-        const modelDropdown = document.getElementById('modelDropdown');
         if (modelDropdown && modelSelector && !modelSelector.contains(e.target) && !modelDropdown.contains(e.target)) {
             modelDropdown.classList.remove('show');
         }
