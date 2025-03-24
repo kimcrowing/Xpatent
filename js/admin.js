@@ -3041,4 +3041,316 @@ document.addEventListener('DOMContentLoaded', function() {
             showToast('删除订阅计划失败: ' + error.message, 'error');
         }
     }
+
+    /**
+     * 搜索用户
+     */
+    async function searchUsers() {
+        // 获取搜索关键词
+        const searchKeyword = document.getElementById('userSearchInput').value.trim();
+        
+        // 重置页码并加载用户
+        currentUserPage = 1;
+        await loadUsers(currentUserPage, userPageSize, searchKeyword);
+    }
+
+    /**
+     * 导航用户分页
+     * @param {string} direction - 分页方向，'prev'或'next'
+     */
+    async function navigateUserPage(direction) {
+        if (direction === 'prev' && currentUserPage > 1) {
+            currentUserPage--;
+        } else if (direction === 'next' && !isUserLastPage) {
+            currentUserPage++;
+        } else {
+            return; // 不进行操作
+        }
+        
+        // 获取搜索关键词
+        const searchKeyword = document.getElementById('userSearchInput').value.trim();
+        
+        // 加载用户
+        await loadUsers(currentUserPage, userPageSize, searchKeyword);
+    }
+
+    // 用户管理全局变量
+    let currentUserPage = 1;
+    let userPageSize = 10;
+    let isUserLastPage = false;
+    let totalUserCount = 0;
+
+    /**
+     * 加载用户列表
+     * @param {number} page - 页码
+     * @param {number} limit - 每页条数
+     * @param {string} keyword - 搜索关键词
+     */
+    async function loadUsers(page = 1, limit = 10, keyword = '') {
+        try {
+            // 显示加载状态
+            const userTableBody = document.getElementById('userTableBody');
+            if (userTableBody) {
+                userTableBody.innerHTML = '<tr><td colspan="6" class="text-center">加载中...</td></tr>';
+            }
+            
+            // 构建API请求路径
+            let endpoint = `/users?page=${page}&limit=${limit}`;
+            if (keyword) {
+                endpoint += `&keyword=${encodeURIComponent(keyword)}`;
+            }
+            
+            // 获取用户列表
+            const response = await apiRequest(endpoint);
+            
+            // 更新全局状态
+            currentUserPage = page;
+            isUserLastPage = response.users.length < limit;
+            totalUserCount = response.total || 0;
+            
+            // 更新分页信息
+            updateUserPagination();
+            
+            // 渲染用户表格
+            renderUserTable(response.users);
+        } catch (error) {
+            console.error('加载用户失败:', error);
+            
+            // 显示错误状态
+            const userTableBody = document.getElementById('userTableBody');
+            if (userTableBody) {
+                userTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载用户失败，请重试</td></tr>';
+            }
+            
+            showToast('加载用户失败: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * 渲染用户表格
+     * @param {Array} users - 用户数据数组
+     */
+    function renderUserTable(users) {
+        const userTableBody = document.getElementById('userTableBody');
+        
+        if (!userTableBody) {
+            console.error('未找到用户表格');
+            return;
+        }
+        
+        // 清空表格
+        userTableBody.innerHTML = '';
+        
+        // 如果没有数据，显示空状态
+        if (!users || users.length === 0) {
+            userTableBody.innerHTML = '<tr><td colspan="6" class="text-center">暂无用户</td></tr>';
+            return;
+        }
+        
+        // 遍历用户数据
+        users.forEach(user => {
+            const row = document.createElement('tr');
+            row.dataset.id = user.id;
+            
+            // 创建日期格式化
+            const createdDate = new Date(user.createdAt);
+            const formattedDate = createdDate.toLocaleString('zh-CN');
+            
+            // 最后登录时间格式化
+            let lastLoginDate = '从未登录';
+            if (user.lastLogin) {
+                const lastLogin = new Date(user.lastLogin);
+                lastLoginDate = lastLogin.toLocaleString('zh-CN');
+            }
+            
+            // 生成角色选择器
+            const roleOptions = ['user', 'admin', 'vip'].map(role => 
+                `<option value="${role}" ${user.role === role ? 'selected' : ''}>${translateRole(role)}</option>`
+            ).join('');
+            
+            // 生成表格行
+            row.innerHTML = `
+                <td class="user-id">${user.id}</td>
+                <td class="user-name">
+                    <div class="user-info">
+                        <span class="user-avatar">${user.username ? user.username[0].toUpperCase() : '?'}</span>
+                        <div>
+                            <div class="user-username">${user.username || '未设置'}</div>
+                            <div class="user-email">${user.email}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="user-role">
+                    <select class="form-control role-select" data-user-id="${user.id}">
+                        ${roleOptions}
+                    </select>
+                </td>
+                <td class="user-status">
+                    <span class="badge badge-${user.active ? 'success' : 'danger'}">
+                        ${user.active ? '已激活' : '未激活'}
+                    </span>
+                </td>
+                <td class="user-created-at">${formattedDate}</td>
+                <td class="user-last-login">${lastLoginDate}</td>
+                <td class="user-actions">
+                    <button class="btn btn-sm edit-user" data-user-id="${user.id}">
+                        编辑
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-user" data-user-id="${user.id}">
+                        删除
+                    </button>
+                </td>
+            `;
+            
+            // 添加到表格
+            userTableBody.appendChild(row);
+        });
+        
+        // 绑定角色选择器事件
+        bindRoleSelectEvents();
+        
+        // 绑定用户操作事件
+        bindUserActionEvents();
+    }
+
+    /**
+     * 更新用户分页信息
+     */
+    function updateUserPagination() {
+        const userPageInfo = document.getElementById('userPageInfo');
+        const userPrevPageBtn = document.getElementById('userPrevPageBtn');
+        const userNextPageBtn = document.getElementById('userNextPageBtn');
+        
+        if (userPageInfo) {
+            userPageInfo.textContent = `第 ${currentUserPage} 页 (共 ${totalUserCount} 条)`;
+        }
+        
+        if (userPrevPageBtn) {
+            userPrevPageBtn.disabled = currentUserPage <= 1;
+        }
+        
+        if (userNextPageBtn) {
+            userNextPageBtn.disabled = isUserLastPage;
+        }
+    }
+
+    /**
+     * 绑定角色选择器事件
+     */
+    function bindRoleSelectEvents() {
+        const roleSelects = document.querySelectorAll('.role-select');
+        
+        roleSelects.forEach(select => {
+            select.addEventListener('change', async function() {
+                const userId = this.getAttribute('data-user-id');
+                const newRole = this.value;
+                
+                if (confirm(`确定要将用户 #${userId} 的角色更改为"${translateRole(newRole)}"吗？`)) {
+                    try {
+                        await updateUserRole(userId, newRole);
+                        showToast('用户角色更新成功', 'success');
+                    } catch (error) {
+                        console.error('更新用户角色失败:', error);
+                        showToast('更新用户角色失败: ' + error.message, 'error');
+                        // 重置选择器
+                        await loadUsers(currentUserPage, userPageSize);
+                    }
+                } else {
+                    // 用户取消了操作，重新加载表格恢复原值
+                    await loadUsers(currentUserPage, userPageSize);
+                }
+            });
+        });
+    }
+
+    /**
+     * 绑定用户操作事件
+     */
+    function bindUserActionEvents() {
+        // 编辑用户按钮
+        const editUserBtns = document.querySelectorAll('.edit-user');
+        editUserBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                showUserEditModal(userId);
+            });
+        });
+        
+        // 删除用户按钮
+        const deleteUserBtns = document.querySelectorAll('.delete-user');
+        deleteUserBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                deleteUser(userId);
+            });
+        });
+    }
+
+    /**
+     * 显示用户编辑模态框
+     * @param {string} userId - 用户ID
+     */
+    async function showUserEditModal(userId) {
+        try {
+            // 获取用户信息
+            const user = await apiRequest(`/users/${userId}`);
+            
+            // 获取模态框元素
+            const modal = document.getElementById('userEditModal');
+            if (!modal) {
+                console.error('未找到用户编辑模态框');
+                return;
+            }
+            
+            // 填充表单
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editUsername').value = user.username || '';
+            document.getElementById('editEmail').value = user.email || '';
+            document.getElementById('editUserRole').value = user.role || 'user';
+            document.getElementById('editUserStatus').checked = user.active;
+            
+            // 显示模态框
+            modal.style.display = 'block';
+        } catch (error) {
+            console.error('获取用户信息失败:', error);
+            showToast('获取用户信息失败: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * 删除用户
+     * @param {string} userId - 用户ID
+     */
+    async function deleteUser(userId) {
+        if (!confirm(`确定要删除ID为 ${userId} 的用户吗？此操作不可撤销。`)) {
+            return;
+        }
+        
+        try {
+            await apiRequest(`/users/${userId}`, 'DELETE');
+            
+            // 重新加载用户列表
+            await loadUsers(currentUserPage, userPageSize);
+            
+            showToast('用户删除成功', 'success');
+        } catch (error) {
+            console.error('删除用户失败:', error);
+            showToast('删除用户失败: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * 将角色代码转换为显示文本
+     * @param {string} role - 角色代码
+     * @returns {string} 角色显示文本
+     */
+    function translateRole(role) {
+        const roleMap = {
+            'user': '普通用户',
+            'admin': '管理员',
+            'vip': 'VIP用户'
+        };
+        
+        return roleMap[role] || role;
+    }
 });
