@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const adminEntry = document.getElementById('admin-entry');
         
         if (userInfo) {
-            // 用户已登录
+            // 用户已登录 - 只显示退出按钮，隐藏登录按钮
             if (loginBtn) loginBtn.style.display = 'none';
             if (logoutBtn) logoutBtn.style.display = 'list-item';
             
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 adminEntry.style.display = 'list-item';
             }
         } else {
-            // 用户未登录
+            // 用户未登录 - 只显示登录按钮，隐藏退出按钮
             if (loginBtn) loginBtn.style.display = 'list-item';
             if (logoutBtn) logoutBtn.style.display = 'none';
             if (adminEntry) adminEntry.style.display = 'none';
@@ -174,45 +174,139 @@ document.addEventListener('DOMContentLoaded', () => {
     if (userMenuBtn && userMenu) {
         console.log('正在初始化用户菜单按钮事件处理...');
         
+        // 移除之前的点击事件（如果有）
+        const newUserMenuBtn = userMenuBtn.cloneNode(true);
+        userMenuBtn.parentNode.replaceChild(newUserMenuBtn, userMenuBtn);
+        userMenuBtn = newUserMenuBtn;
+        
         // 注册单一点击事件处理器
         userMenuBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            e.preventDefault();
-            console.log('用户菜单按钮被点击');
+            const isActive = userMenu.classList.contains('active');
             
-            // 关闭功能菜单
-            const featureMenu = document.getElementById('featureMenu');
-            if (featureMenu && featureMenu.classList.contains('active')) {
-                featureMenu.classList.remove('active');
-            }
+            // 关闭所有其他菜单
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                if (menu !== userMenu) menu.classList.remove('active');
+            });
             
-            // 使用style.display切换菜单显示状态
-            if (userMenu.style.display === 'block') {
-                userMenu.style.display = 'none';
-                console.log('用户菜单状态: 隐藏');
-            } else {
+            // 切换当前菜单
+            userMenu.classList.toggle('active');
+            
+            // 记录调试信息
+            console.log('用户菜单点击:', {
+                之前状态: isActive ? '激活' : '未激活',
+                当前状态: userMenu.classList.contains('active') ? '激活' : '未激活'
+            });
+            
+            // 强制确保菜单可见
+            if (userMenu.classList.contains('active')) {
+                // 添加内联样式确保显示
                 userMenu.style.display = 'block';
-                console.log('用户菜单状态: 显示');
+                userMenu.style.visibility = 'visible';
+                userMenu.style.opacity = '1';
+                userMenu.style.zIndex = '100000';
                 
-                // 关闭历史对话面板
-                if (historyPanel) {
-                    historyPanel.style.display = 'none';
-                }
+                // 确保菜单位置正确
+                const rect = userMenuBtn.getBoundingClientRect();
+                userMenu.style.position = 'absolute';
+                userMenu.style.top = (rect.bottom + window.scrollY) + 'px';
+                userMenu.style.right = '5px';
+                
+                // 100ms后再次检查确保显示正确
+                setTimeout(() => {
+                    if (userMenu.classList.contains('active') && 
+                        (window.getComputedStyle(userMenu).display === 'none' || 
+                         window.getComputedStyle(userMenu).visibility === 'hidden')) {
+                        
+                        console.log('菜单应该显示但未显示，强制修复...');
+                        userMenu.style.display = 'block';
+                        userMenu.style.visibility = 'visible';
+                        document.body.appendChild(userMenu); // 确保菜单在DOM最后
+                    }
+                }, 100);
             }
         });
-        
-        // 点击外部关闭菜单
-        document.addEventListener('click', function(e) {
-            if (userMenu.style.display === 'block' && !userMenuBtn.contains(e.target) && !userMenu.contains(e.target)) {
-                userMenu.style.display = 'none';
-                console.log('用户菜单已通过外部点击关闭');
-            }
-        });
-        
-        console.log('用户菜单按钮事件初始化完成');
-    } else {
-        console.error('找不到用户菜单元素', { 按钮: userMenuBtn, 菜单: userMenu });
     }
+    
+    // 语言菜单按钮点击处理
+    if (languageBtn && languageMenu) {
+        console.log('正在初始化语言菜单按钮事件处理...');
+        
+        // 移除之前的点击事件（如果有）
+        const newLanguageBtn = languageBtn.cloneNode(true);
+        languageBtn.parentNode.replaceChild(newLanguageBtn, languageBtn);
+        languageBtn = newLanguageBtn;
+        
+        languageBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isActive = languageMenu.classList.contains('active');
+            
+            // 关闭所有其他菜单
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                if (menu !== languageMenu) menu.classList.remove('active');
+            });
+            
+            // 切换当前菜单
+            languageMenu.classList.toggle('active');
+            
+            // 记录调试信息
+            console.log('语言菜单点击:', {
+                之前状态: isActive ? '激活' : '未激活',
+                当前状态: languageMenu.classList.contains('active') ? '激活' : '未激活'
+            });
+            
+            // 强制确保菜单可见
+            if (languageMenu.classList.contains('active')) {
+                // 添加内联样式确保显示
+                languageMenu.style.display = 'block';
+                languageMenu.style.visibility = 'visible';
+                languageMenu.style.opacity = '1';
+                languageMenu.style.zIndex = '100000';
+                
+                // 确保菜单位置正确
+                const rect = languageBtn.getBoundingClientRect();
+                languageMenu.style.position = 'absolute';
+                languageMenu.style.top = (rect.bottom + window.scrollY) + 'px';
+                languageMenu.style.right = '55px';
+                
+                // 100ms后再次检查确保显示正确
+                setTimeout(() => {
+                    if (languageMenu.classList.contains('active') && 
+                        (window.getComputedStyle(languageMenu).display === 'none' || 
+                         window.getComputedStyle(languageMenu).visibility === 'hidden')) {
+                        
+                        console.log('菜单应该显示但未显示，强制修复...');
+                        languageMenu.style.display = 'block';
+                        languageMenu.style.visibility = 'visible';
+                        document.body.appendChild(languageMenu); // 确保菜单在DOM最后
+                    }
+                }, 100);
+            }
+        });
+    }
+    
+    // 点击文档任意位置关闭菜单
+    document.addEventListener('click', function(e) {
+        // 检查点击是否在菜单按钮或菜单内部
+        if (userMenu && !userMenuBtn.contains(e.target) && !userMenu.contains(e.target)) {
+            userMenu.classList.remove('active');
+            userMenu.style.display = 'none';
+            console.log('用户菜单已通过外部点击关闭');
+        }
+        
+        if (languageMenu && !languageBtn.contains(e.target) && !languageMenu.contains(e.target)) {
+            languageMenu.classList.remove('active');
+            languageMenu.style.display = 'none';
+            console.log('语言菜单已通过外部点击关闭');
+        }
+        
+        const featureMenu = document.getElementById('featureMenu');
+        const featureMenuBtn = document.getElementById('featureMenuBtn');
+        if (featureMenu && featureMenuBtn && !featureMenuBtn.contains(e.target) && !featureMenu.contains(e.target)) {
+            featureMenu.classList.remove('active');
+            console.log('功能菜单已通过外部点击关闭');
+        }
+    });
     
     // 通知菜单项点击事件
     const notificationMenuItem = document.getElementById('notification-menu-item');
@@ -220,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
         notificationMenuItem.addEventListener('click', function() {
             // 关闭用户菜单
             if (userMenu) {
-                userMenu.style.display = 'none';
+                userMenu.classList.remove('active');
             }
             
             // 显示通知面板
@@ -324,10 +418,10 @@ document.addEventListener('DOMContentLoaded', () => {
             historyPanel.style.display = historyPanel.style.display === 'block' ? 'none' : 'block';
             
             // 如果用户菜单是打开的，则关闭它
-            if (userMenu) userMenu.style.display = 'none';
+            if (userMenu) userMenu.classList.remove('active');
             
             // 如果语言菜单是打开的，则关闭它
-            if (languageMenu) languageMenu.style.display = 'none';
+            if (languageMenu) languageMenu.classList.remove('active');
         });
     }
     
@@ -751,10 +845,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (languageBtn) {
             languageBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                languageMenu.style.display = languageMenu.style.display === 'block' ? 'none' : 'block';
+                languageMenu.classList.toggle('active');
                 // 关闭其他菜单
-                if (userMenu) userMenu.style.display = 'none';
-                if (historyPanel) historyPanel.style.display = 'none';
+                if (userMenu) userMenu.classList.remove('active');
+                if (historyPanel) historyPanel.classList.remove('active');
             });
         }
         
@@ -770,7 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.classList.add('active');
                 
                 // 关闭语言菜单
-                if (languageMenu) languageMenu.style.display = 'none';
+                if (languageMenu) languageMenu.classList.remove('active');
             });
         });
     }

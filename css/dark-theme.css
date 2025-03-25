@@ -189,4 +189,44 @@
 
 .dark-theme .select-wrapper:after {
     border-top-color: rgba(255, 255, 255, 0.7);
+}
+
+/* 深色主题下拉菜单样式 */
+.dark-theme .dropdown-menu-trigger {
+    background-color: var(--select-bg);
+    color: var(--text-primary);
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.dark-theme .dropdown-menu-trigger:hover {
+    background-color: rgba(60, 60, 72, 0.9);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.dark-theme .dropdown-menu-content {
+    background-color: var(--select-bg);
+    border-color: var(--border-color);
+    display: none; /* 默认隐藏 */
+}
+
+.dark-theme .dropdown-menu-container.active .dropdown-menu-content {
+    display: block !important; /* 激活时显示 */
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dark-theme .dropdown-menu-item:hover {
+    background-color: rgba(70, 70, 90, 0.5);
+}
+
+.dark-theme .dropdown-arrow {
+    border-color: rgba(255, 255, 255, 0.7);
+}
+
+.dark-theme .mode-icon,
+.dark-theme .model-icon {
+    background-color: rgba(60, 130, 220, 0.2);
+    color: var(--primary-color);
 } 

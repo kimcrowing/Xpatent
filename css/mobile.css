@@ -32,6 +32,28 @@
     width: 16px;
     height: 16px;
   }
+  
+  /* 移动端下拉菜单样式 */
+  .dropdown-menu-container {
+    margin: 5px 3px;
+  }
+  
+  .dropdown-menu-trigger {
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+  
+  .dropdown-menu-content {
+    width: 200px;
+  }
+  
+  .dropdown-menu-item {
+    padding: 8px 10px;
+  }
+  
+  .dropdown-item-desc {
+    font-size: 11px;
+  }
 }
 
 /* 确保选择器不被挤压 */
@@ -61,16 +83,18 @@
     width: 95% !important;
   }
   
-  /* 选择器垂直布局 */
+  /* 水平布局选择器 */
   .right-controls {
-    flex-direction: column;
-    align-items: flex-end;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
     gap: 8px;
     margin-top: 8px;
+    width: 100%;
   }
   
   .select-wrapper {
-    width: 100%;
+    width: 48%; /* 两个选择器各占一半宽度，中间有间距 */
   }
   
   .styled-select {
@@ -86,6 +110,31 @@
   .input-wrapper {
     padding-right: 2px;
   }
+  
+  /* 超小屏幕优化 */
+  .dropdown-menu-container {
+    width: 48%; /* 两个选择器各占一半宽度，中间有间距 */
+  }
+  
+  .dropdown-menu-trigger {
+    width: 100%;
+    padding: 6px 8px;
+  }
+  
+  .dropdown-selected-text {
+    max-width: 70px;
+    font-size: 13px;
+  }
+  
+  .mode-icon, .model-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+  }
+  
+  .dropdown-arrow {
+    padding: 2px;
+  }
 }
 
 /* 小屏幕下确保两个选择器并排显示 */
@@ -93,7 +142,7 @@
   .right-controls {
     width: 100%;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: space-between;
     margin-top: 5px;
   }
@@ -112,5 +161,24 @@
   /* 微调下拉箭头位置 */
   .select-wrapper:after {
     right: 10px;
+  }
+  
+  /* 超小屏幕适配 */
+  .dropdown-menu-container {
+    min-width: 48%;
+    margin: 3px 0;
+  }
+  
+  .dropdown-menu-trigger {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  
+  .dropdown-menu-content {
+    width: 180px;
+  }
+  
+  .dropdown-selected-text {
+    max-width: 60px;
   }
 }

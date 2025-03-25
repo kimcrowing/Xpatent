@@ -260,4 +260,38 @@
     --border-color-light: #e0e0e0;
     --code-bg-light: #f0f0f0;
 } 
-*/ 
+*/
+
+/* 浅色主题下拉菜单样式 */
+.light-theme .dropdown-menu-trigger {
+    background-color: var(--select-bg);
+    color: var(--text-primary);
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.light-theme .dropdown-menu-trigger:hover {
+    background-color: rgba(220, 220, 230, 0.9);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.light-theme .dropdown-menu-content {
+    background-color: var(--select-bg);
+    border-color: var(--border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .dropdown-menu-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.light-theme .dropdown-arrow {
+    border-color: rgba(0, 0, 0, 0.5);
+}
+
+.light-theme .mode-icon,
+.light-theme .model-icon {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+} 

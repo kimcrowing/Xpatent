@@ -53,7 +53,7 @@ function setupAuthUI() {
   const { isLoggedIn, user } = checkAuth();
   
   if (isLoggedIn && user) {
-    // 显示退出按钮，隐藏登录按钮
+    // 用户已登录 - 只显示退出按钮，隐藏登录按钮
     if (loginBtn) loginBtn.style.display = 'none';
     if (logoutBtn) logoutBtn.style.display = 'list-item';
     
@@ -72,7 +72,7 @@ function setupAuthUI() {
       });
     }
   } else {
-    // 显示登录按钮，隐藏退出按钮
+    // 用户未登录 - 只显示登录按钮，隐藏退出按钮
     if (loginBtn) loginBtn.style.display = 'list-item';
     if (logoutBtn) logoutBtn.style.display = 'none';
     if (adminEntry) adminEntry.style.display = 'none';

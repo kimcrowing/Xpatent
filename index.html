@@ -11,13 +11,16 @@
     <link rel="stylesheet" href="css/dark-theme.css?v=1.3">
     <link rel="stylesheet" href="css/light-theme.css?v=1.3">
     <link rel="stylesheet" href="css/light-theme.css?v=1.3">
-    <link rel="stylesheet" href="css/mobile.css?v=1.0">`n    <link rel="stylesheet" href="css/send-btn-fix.css?v=1.0">
+    <link rel="stylesheet" href="css/mobile.css?v=1.0">
+    <link rel="stylesheet" href="css/send-btn-fix.css?v=1.0">
     <!-- PDF.js 库 -->
     <script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
     <!-- mammoth.js 库 (用于Word文档) -->
     <script src="https://unpkg.com/mammoth@1.6.0/mammoth.browser.min.js"></script>
     <!-- marked.js 库 (用于Markdown解析) -->
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <!-- 菜单调试脚本 -->
+    <script src="js/menu-debug.js?v=1.0"></script>
     <style>
         /* API配置模态窗口样式 */
         .modal-container {
@@ -131,7 +134,7 @@
 </head>
 <body class="dark-theme">
     <!-- 顶部导航栏 -->
-    <header class="navbar">
+    <header class="navbar" style="position: relative; z-index: 100;">
         <div class="logo">
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M14 2C7.373 2 2 7.373 2 14C2 20.627 7.373 26 14 26C20.627 26 26 20.627 26 14C26 7.373 20.627 2 14 2ZM14 5C18.418 5 22 8.582 22 13C22 17.418 18.418 21 14 21C9.582 21 6 17.418 6 13C6 8.582 9.582 5 14 5Z" fill="white"/>
@@ -163,7 +166,7 @@
         </div>
         
         <!-- 语言选择下拉菜单 -->
-        <div class="language-menu" id="languageMenu">
+        <div class="language-menu" id="languageMenu" style="position: absolute; top: 50px; right: 55px; z-index: 9999;">
             <ul>
                 <li class="language-item active" data-lang="zh-CN">
                     <div class="language-option">
@@ -185,7 +188,7 @@
         </div>
         
         <!-- 用户下拉菜单 -->
-        <div class="user-menu" id="userMenu">
+        <div class="user-menu" id="userMenu" style="position: absolute; top: 50px; right: 5px; z-index: 9999;">
             <ul>
                 <li id="notification-menu-item" title="通知">
                     <div class="menu-icon-only">
@@ -339,7 +342,7 @@
                     <div class="left-controls">
                         <button class="icon-btn" id="attachButton" title="上传附件">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l8.57-8.57A4 4 0 1118 8.84l-8.59 8.57a2 2 0 01-2.83-2.83l8.49-8.48" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 0 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </button>
                         <div id="attachmentInfo" style="display: none;">
@@ -348,28 +351,82 @@
                         </div>
                     </div>
                     <div class="right-controls">
-                        <!-- 聊天模式选择器改为select元素 -->
-                        <div class="select-wrapper chat-mode-wrapper">
-                            <select id="chatModeSelector" class="styled-select" title="选择聊天模式">
-                                <option value="general">通用对话</option>
-                                <option value="patent-search">专利检索</option>
-                                <option value="patent-writing">专利撰写</option>
-                                <option value="patent-analysis">专利答审</option>
-                            </select>
+                        <!-- 聊天模式下拉菜单 -->
+                        <div class="dropdown-menu-container" id="chatModeDropdown">
+                            <div class="dropdown-menu-trigger">
+                                <i class="mode-icon general"></i>
+                                <span class="dropdown-selected-text">通用对话</span>
+                                <i class="dropdown-arrow"></i>
+                            </div>
+                            <div class="dropdown-menu-content">
+                                <div class="dropdown-menu-item" data-value="general">
+                                    <i class="mode-icon general"></i>
+                                    <div class="dropdown-item-text">
+                                        <span class="dropdown-item-title">通用对话</span>
+                                        <span class="dropdown-item-desc">可以询问任何问题</span>
+                                    </div>
+                                </div>
+                                <div class="dropdown-menu-item" data-value="patent-search">
+                                    <i class="mode-icon search"></i>
+                                    <div class="dropdown-item-text">
+                                        <span class="dropdown-item-title">专利检索</span>
+                                        <span class="dropdown-item-desc">帮助检索专利信息</span>
+                                    </div>
+                                </div>
+                                <div class="dropdown-menu-item" data-value="patent-writing">
+                                    <i class="mode-icon writing"></i>
+                                    <div class="dropdown-item-text">
+                                        <span class="dropdown-item-title">专利撰写</span>
+                                        <span class="dropdown-item-desc">协助撰写专利文件</span>
+                                    </div>
+                                </div>
+                                <div class="dropdown-menu-item" data-value="patent-analysis">
+                                    <i class="mode-icon analysis"></i>
+                                    <div class="dropdown-item-text">
+                                        <span class="dropdown-item-title">专利答审</span>
+                                        <span class="dropdown-item-desc">提供答审策略</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <!-- 模型选择器改为select元素 -->
-                        <div class="select-wrapper model-wrapper">
-                            <select id="modelSelector" class="styled-select" title="选择AI模型">
-                                <option value="deepseek/deepseek-r1:free">Deepseek</option>
-                                <option value="anthropic/claude-3-opus:beta">Claude 3 Opus</option>
-                                <option value="anthropic/claude-3-sonnet:beta">Claude 3 Sonnet</option>
-                                <option value="anthropic/claude-3-haiku:beta">Claude 3 Haiku</option>
-                                <option value="google/gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
-                                <option value="google/gemini-2.0-flash-thinking-exp:free">Gemini 2.0 Flash</option>
-                                <option value="meta-llama/llama-3-70b-instruct:free">Llama 3 70B</option>
-                                <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B</option>
-                            </select>
+                        <!-- 模型选择下拉菜单 -->
+                        <div class="dropdown-menu-container" id="modelDropdown">
+                            <div class="dropdown-menu-trigger">
+                                <i class="model-icon deepseek"></i>
+                                <span class="dropdown-selected-text">Deepseek</span>
+                                <i class="dropdown-arrow"></i>
+                            </div>
+                            <div class="dropdown-menu-content">
+                                <div class="dropdown-menu-item" data-value="deepseek/deepseek-r1:free">
+                                    <i class="model-icon deepseek"></i>
+                                    <div class="dropdown-item-text">
+                                        <span class="dropdown-item-title">Deepseek</span>
+                                        <span class="dropdown-item-desc">通用型AI，免费使用</span>
+                                    </div>
+                                </div>
+                                <div class="dropdown-menu-item" data-value="anthropic/claude-3-opus:beta">
+                                    <i class="model-icon claude"></i>
+                                    <div class="dropdown-item-text">
+                                        <span class="dropdown-item-title">Claude 3 Opus</span>
+                                        <span class="dropdown-item-desc">高性能专业模型</span>
+                                    </div>
+                                </div>
+                                <div class="dropdown-menu-item" data-value="anthropic/claude-3-sonnet:beta">
+                                    <i class="model-icon claude"></i>
+                                    <div class="dropdown-item-text">
+                                        <span class="dropdown-item-title">Claude 3 Sonnet</span>
+                                        <span class="dropdown-item-desc">平衡性能与速度</span>
+                                    </div>
+                                </div>
+                                <div class="dropdown-menu-item" data-value="google/gemini-1.5-pro-latest">
+                                    <i class="model-icon gemini"></i>
+                                    <div class="dropdown-item-text">
+                                        <span class="dropdown-item-title">Gemini 1.5 Pro</span>
+                                        <span class="dropdown-item-desc">Google多模态模型</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -654,28 +711,23 @@
         </div>
     </div>
 
-    <!-- 引入重构的辅助模块，确保正确的加载顺序 -->
-    <script src="js/error-handler.js" defer></script>
-    <script src="js/auth-manager.js" defer></script>
-    <script src="js/ui-helper.js" defer></script>
-    <!-- 确保backend-api.js在其他依赖它的脚本之前加载 -->
-    <script src="js/backend-api.js?v=1.0" defer></script>
-    <script src="js/app.js?v=1.3" defer></script>
-    <script src="js/chat.js?v=1.3" defer></script>
-    <script src="js/theme.js?v=1.3" defer></script>
-    <script src="js/modelSelector.js?v=1.3" defer></script>
-    <script src="js/featureMenu.js?v=1.3" defer></script>
-    <script src="js/attachment.js?v=1.3" defer></script>
-    <script src="js/chatModeSelector.js?v=1.3" defer></script>`n    <script src="js/promptTemplateLoader.js?v=1.0" defer></script>
+    <!-- 自定义脚本 -->
+    <script src="js/theme.js"></script>
+    <script src="js/spinner.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/dropdown-menu.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/file-upload.js"></script>
+    <script src="js/code-highlight.js"></script>
+
+    <!-- 初始化脚本 -->
     <script>
-        // 检查用户是否是管理员，如果是则显示管理后台入口
         document.addEventListener('DOMContentLoaded', function() {
             // 延迟检查，确保backendApi已完全加载
             setTimeout(function() {
-            // 如果backendApi已加载
                 if (window.backendApi && window.backendApi.isAdmin) {
                     try {
-                if (window.backendApi.isAdmin()) {
+                        if (window.backendApi.isAdmin()) {
                             const adminEntry = document.getElementById('admin-entry');
                             if (adminEntry) {
                                 adminEntry.style.display = 'block';
@@ -686,6 +738,91 @@
                     }
                 }
             }, 500);
+        });
+    </script>
+    
+    <!-- 菜单修复辅助按钮 -->
+    <button id="menuFixHelper" style="position: fixed; bottom: 10px; right: 10px; width: 40px; height: 40px; background-color: rgba(0, 0, 0, 0.7); color: white; border: none; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 16px; cursor: pointer; z-index: 100000; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); opacity: 0.3; display: none;">🔄</button>
+
+    <script>
+        // 初始化菜单修复辅助按钮
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuFixBtn = document.getElementById('menuFixHelper');
+            if (menuFixBtn) {
+                // 显示按钮
+                menuFixBtn.style.display = 'flex';
+                
+                // 悬停时显示提示
+                menuFixBtn.title = "点击重置菜单状态 (Alt+R)";
+                
+                // 按钮点击事件
+                menuFixBtn.addEventListener('click', function() {
+                    resetAllMenus();
+                });
+                
+                // 添加全局键盘快捷键
+                document.addEventListener('keydown', function(e) {
+                    // Alt+R 快捷键
+                    if (e.altKey && e.key.toLowerCase() === 'r') {
+                        resetAllMenus();
+                    }
+                });
+                
+                // 重置所有菜单状态
+                function resetAllMenus() {
+                    console.log('正在重置所有菜单状态...');
+                    
+                    // 关闭所有下拉菜单
+                    document.querySelectorAll('.dropdown-menu, .user-menu, .language-menu').forEach(menu => {
+                        menu.classList.remove('active');
+                        menu.style.display = 'none';
+                    });
+                    
+                    // 刷新菜单样式
+                    const header = document.querySelector('header');
+                    if (header) {
+                        header.style.position = 'relative';
+                        header.style.zIndex = '1000';
+                    }
+                    
+                    // 重新初始化菜单位置
+                    const userMenu = document.getElementById('userMenu');
+                    const languageMenu = document.getElementById('languageMenu');
+                    
+                    if (userMenu) {
+                        userMenu.style.position = 'absolute';
+                        userMenu.style.top = '50px';
+                        userMenu.style.right = '5px';
+                        userMenu.style.zIndex = '100000';
+                        userMenu.style.display = 'none';
+                        
+                        // 确保菜单在header中
+                        if (header && !header.contains(userMenu)) {
+                            header.appendChild(userMenu);
+                        }
+                    }
+                    
+                    if (languageMenu) {
+                        languageMenu.style.position = 'absolute';
+                        languageMenu.style.top = '50px';
+                        languageMenu.style.right = '55px';
+                        languageMenu.style.zIndex = '100000';
+                        languageMenu.style.display = 'none';
+                        
+                        // 确保菜单在header中
+                        if (header && !header.contains(languageMenu)) {
+                            header.appendChild(languageMenu);
+                        }
+                    }
+                    
+                    console.log('菜单状态已重置');
+                    
+                    // 刷新页面
+                    if (confirm('菜单状态已重置。需要刷新页面以完全应用更改吗？')) {
+                        window.location.reload();
+                    }
+                }
+            }
         });
     </script>
 </body>
