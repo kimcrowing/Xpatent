@@ -329,7 +329,7 @@
                     <input type="text" id="userInput" placeholder="您想了解什么?">
                     <button class="send-btn" id="sendButton" title="发送">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 20V4M12 4L6 10M12 4L18 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </button>
                 </div>
@@ -348,17 +348,29 @@
                         </div>
                     </div>
                     <div class="right-controls">
-                        <!-- 聊天模式选择按钮 -->
-                        <button class="icon-btn chat-mode-selector" id="chatModeSelector" title="选择聊天模式">
-                            <span id="currentChatMode">专利撰写</span>
-                            <i class="bi bi-chevron-down"></i>
-                        </button>
+                        <!-- 聊天模式选择器改为select元素 -->
+                        <div class="select-wrapper chat-mode-wrapper">
+                            <select id="chatModeSelector" class="styled-select" title="选择聊天模式">
+                                <option value="general">通用对话</option>
+                                <option value="patent-search">专利检索</option>
+                                <option value="patent-writing">专利撰写</option>
+                                <option value="patent-analysis">专利答审</option>
+                            </select>
+                        </div>
                         
-                        <!-- 模型选择按钮 -->
-                        <button class="icon-btn model-selector" id="modelSelector" title="选择AI模型">
-                            <span id="currentModel">Deepseek</span>
-                            <i class="bi bi-chevron-down"></i>
-                        </button>
+                        <!-- 模型选择器改为select元素 -->
+                        <div class="select-wrapper model-wrapper">
+                            <select id="modelSelector" class="styled-select" title="选择AI模型">
+                                <option value="deepseek/deepseek-r1:free">Deepseek</option>
+                                <option value="anthropic/claude-3-opus:beta">Claude 3 Opus</option>
+                                <option value="anthropic/claude-3-sonnet:beta">Claude 3 Sonnet</option>
+                                <option value="anthropic/claude-3-haiku:beta">Claude 3 Haiku</option>
+                                <option value="google/gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
+                                <option value="google/gemini-2.0-flash-thinking-exp:free">Gemini 2.0 Flash</option>
+                                <option value="meta-llama/llama-3-70b-instruct:free">Llama 3 70B</option>
+                                <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -640,29 +652,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- 预先创建下拉菜单，添加absolute定位 -->
-    <div id="chatModeDropdown" class="chat-mode-dropdown">
-        <ul>
-            <li data-mode="general">通用对话</li>
-            <li data-mode="patent-search">专利检索</li>
-            <li data-mode="patent-writing">专利撰写</li>
-            <li data-mode="patent-analysis">专利答审</li>
-        </ul>
-    </div>
-    
-    <div id="modelDropdown" class="model-dropdown">
-        <ul>
-            <li data-model="deepseek/deepseek-r1:free">Deepseek</li>
-            <li data-model="anthropic/claude-3-opus:beta">Claude 3 Opus</li>
-            <li data-model="anthropic/claude-3-sonnet:beta">Claude 3 Sonnet</li>
-            <li data-model="anthropic/claude-3-haiku:beta">Claude 3 Haiku</li>
-            <li data-model="google/gemini-1.5-pro-latest">Gemini 1.5 Pro</li>
-            <li data-model="google/gemini-2.0-flash-thinking-exp:free">Gemini 2.0 Flash</li>
-            <li data-model="meta-llama/llama-3-70b-instruct:free">Llama 3 70B</li>
-            <li data-model="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B</li>
-        </ul>
     </div>
 
     <!-- 引入重构的辅助模块，确保正确的加载顺序 -->

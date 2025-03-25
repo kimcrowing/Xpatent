@@ -1,7 +1,41 @@
-.light-theme .send-btn svg path {
-    stroke: var(--text-color);
+/* 发送按钮主题适配 */
+.light-theme .send-btn {
+    color: var(--text-primary);
 }
+
+.light-theme .send-btn svg path {
+    stroke: var(--text-primary);
+}
+
+.light-theme .send-btn:hover {
+    background-color: var(--primary-color);
+}
+
+.light-theme .send-btn:hover svg path {
+    stroke: white;
+}
+
+.dark-theme .send-btn {
+    color: var(--text-secondary);
+}
+
 .dark-theme .send-btn svg path {
-    stroke: currentColor;
-    fill: none;
+    stroke: var(--text-secondary);
+}
+
+.dark-theme .send-btn:hover {
+    background-color: var(--primary-color);
+}
+
+.dark-theme .send-btn:hover svg path {
+    stroke: white;
+}
+
+/* 当输入框有内容时的样式 */
+.input-wrapper.has-content .send-btn {
+    color: var(--primary-color);
+}
+
+.input-wrapper.has-content .send-btn svg path {
+    stroke: var(--primary-color);
 }

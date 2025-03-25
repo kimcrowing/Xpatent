@@ -471,6 +471,55 @@ body {
     border-bottom: 1px solid var(--border-color);
 }
 
+/* 发送按钮样式 */
+.send-btn {
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 8px;
+    margin-right: 4px;
+    color: var(--text-secondary);
+}
+
+.send-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.send-btn svg {
+    width: 18px;
+    height: 18px;
+    transition: all 0.2s ease;
+}
+
+.send-btn:hover svg path {
+    stroke: white;
+}
+
+/* 当输入框中有内容时的发送按钮样式 */
+.input-wrapper.has-content .send-btn {
+    color: var(--primary-color);
+}
+
+/* 禁用状态的发送按钮 */
+.send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.send-btn:disabled:hover {
+    background-color: transparent;
+    transform: none;
+}
+
 .input-wrapper input[type="text"] {
     flex: 1;
     border: none;
@@ -506,7 +555,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    position: relative;
+    margin-left: auto;
 }
 
 /* 附件信息样式优化 */
@@ -738,147 +787,69 @@ svg path {
     }
 }
 
-/* 模型选择器样式优化 */
-.model-selector, .chat-mode-selector {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background-color: var(--model-selector-bg);
-    border-radius: 16px;
-    padding: 6px 12px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    border: 1px solid var(--border-color);
-}
-
-.model-selector:hover, .chat-mode-selector:hover {
-    background-color: var(--hover-color);
-}
-
-.model-selector span, .chat-mode-selector span {
-    font-size: 14px;
-    color: var(--text-color);
-}
-
-/* 下拉菜单基础样式 - 完全重写 */
-.chat-mode-dropdown,
-.model-dropdown {
-    position: absolute;
-    background-color: #2d2d35;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 9999;
-    overflow: hidden;
-    padding: 8px 0;
-    width: 180px;
-    border: 1px solid #464656;
-    display: none;
-    max-height: 300px; /* 限制最大高度 */
-    overflow-y: auto; /* 允许滚动 */
-    /* 自定义滚动条样式 */
-    scrollbar-width: thin; /* Firefox */
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent; /* Firefox */
-}
-
-/* 为Webkit浏览器自定义滚动条 */
-.chat-mode-dropdown::-webkit-scrollbar,
-.model-dropdown::-webkit-scrollbar {
-    width: 6px; /* 滚动条宽度 */
-}
-
-.chat-mode-dropdown::-webkit-scrollbar-track,
-.model-dropdown::-webkit-scrollbar-track {
-    background: transparent; /* 滚动条轨道背景 */
-}
-
-.chat-mode-dropdown::-webkit-scrollbar-thumb,
-.model-dropdown::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.2); /* 滚动条颜色 */
-    border-radius: 3px; /* 圆角 */
-    border: none;
-}
-
-.chat-mode-dropdown::-webkit-scrollbar-thumb:hover,
-.model-dropdown::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, 0.3); /* 悬停时的颜色 */
-}
-
-/* 显示下拉菜单 */
-.chat-mode-dropdown.show,
-.model-dropdown.show {
-    display: block;
-}
-
-/* 下拉菜单列表 */
-.chat-mode-dropdown ul,
-.model-dropdown ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-}
-
-/* 下拉菜单项 */
-.chat-mode-dropdown li,
-.model-dropdown li {
-    padding: 12px 16px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    color: #e1e1e2;
-}
-
-/* 鼠标悬停效果 */
-.chat-mode-dropdown li:hover,
-.model-dropdown li:hover {
-    background-color: #3d3d49;
-}
-
-/* 活动项样式 */
-.chat-mode-dropdown li.active,
-.model-dropdown li.active {
-    color: #5865f2;
-    font-weight: 500;
-    background-color: #3a3a46;
-}
-
-/* 聊天模式卡片样式 */
-.mode-card, .model-card, .faq-item {
-    background-color: var(--card-bg);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 12px;
-    border: 1px solid var(--border-color);
-}
-
-.mode-card h4, .model-card h4, .faq-item h4 {
-    margin-top: 0;
-    margin-bottom: 8px;
-    font-size: 15px;
-    font-weight: 600;
-}
-
-.mode-card p, .model-card p, .faq-item p {
-    margin: 0;
-    font-size: 14px;
-    color: var(--text-secondary);
-}
-
-.model-tag {
+/* 选择列表样式 */
+.select-wrapper {
+    position: relative;
     display: inline-block;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 12px;
+    margin: 0 5px;
+}
+
+.styled-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: rgba(50, 50, 62, 0.8);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 8px 35px 8px 15px;
+    font-size: 14px;
     font-weight: 500;
-    margin-top: 8px;
+    cursor: pointer;
+    min-width: 120px;
+    transition: all 0.2s ease;
 }
 
-.model-tag.free {
-    background-color: rgba(76, 175, 80, 0.1);
-    color: #4caf50;
+.styled-select:hover {
+    background-color: rgba(60, 60, 72, 0.9);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
-.model-tag.premium {
-    background-color: rgba(255, 152, 0, 0.1);
-    color: #ff9800;
+.styled-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+    border-color: rgba(88, 101, 242, 0.5);
+}
+
+/* 添加下拉箭头 */
+.select-wrapper:after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid rgba(255, 255, 255, 0.7);
+    pointer-events: none;
+}
+
+/* 针对特定的选择器应用样式 */
+.chat-mode-wrapper .styled-select {
+    min-width: 120px;
+}
+
+.model-wrapper .styled-select {
+    min-width: 120px;
+}
+
+/* 选项样式（webkit浏览器） */
+.styled-select option {
+    background-color: #32323e;
+    color: white;
+    padding: 8px;
 }
 
 /* 会话管理侧边栏 */
@@ -1325,4 +1296,36 @@ svg path {
 
 .notification.info {
     border-left: 4px solid #2196f3;
+}
+
+/* 添加下拉图标样式 */
+.dropdown-icon {
+    margin-left: 2px;
+    opacity: 0.6;
+    transition: transform 0.2s ease;
+}
+
+/* 当菜单展开时旋转图标 */
+.chat-mode-selector.active .dropdown-icon,
+.model-selector.active .dropdown-icon {
+    transform: rotate(180deg);
+    opacity: 0.8;
+}
+
+/* 微调图标和文本对齐 */
+.chat-mode-selector svg:first-child,
+.model-selector svg:first-child {
+    margin-right: 2px;
+    opacity: 0.75;
+    width: 14px;
+    height: 14px;
+}
+
+.chat-mode-selector span,
+.model-selector span {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
 } 

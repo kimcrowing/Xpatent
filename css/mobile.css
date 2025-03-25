@@ -10,59 +10,42 @@
   .nav-controls {
     gap: 10px;
   }
+  
+  /* 选择器样式优化 */
+  .select-wrapper {
+    margin: 5px 3px;
+  }
+  
+  .styled-select {
+    padding: 7px 30px 7px 12px;
+    font-size: 13px;
+    min-width: 100px;
+  }
+  
+  .send-btn {
+    width: 34px;
+    height: 34px;
+    margin-right: 2px;
+  }
+  
+  .send-btn svg {
+    width: 16px;
+    height: 16px;
+  }
 }
 
+/* 确保选择器不被挤压 */
+.right-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
 
-  /* 选择器样式优化 */
-  .model-selector, .chat-mode-selector {
-    flex-direction: column;
-    padding: 6px 10px;
-    gap: 3px;
-  }
-  
-  .model-selector svg, .chat-mode-selector svg {
-    margin-right: 0;
-  }
-
-
-  /* 下拉菜单样式优化 */
-  .chat-mode-dropdown, .model-dropdown {
-    width: 180px !important;
-    max-height: 250px !important;
-    right: 5px !important;
-    left: auto !important;
-  }
-  
-  .chat-mode-dropdown li, .model-dropdown li {
-    padding: 10px 12px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-
-  /* 分组样式 */
-  .model-group-title {
-    padding: 6px 12px;
-    font-size: 12px;
-    color: #8a8a9c;
-    background-color: #32323e;
-    font-weight: 600;
-    display: block;
-  }
-  
-  /* 小屏幕下确保两个选择器不挤在一起 */
-  @media (max-width: 380px) {
-    .right-controls {
-      width: 100%;
-      justify-content: space-between;
-    }
-    
-    .model-selector, .chat-mode-selector {
-      min-width: 45%;
-    }
-  }
-
+.select-wrapper {
+  flex: 0 0 auto;
+}
 
 @media (max-width: 480px) {
   /* 超小屏幕优化 */
@@ -83,10 +66,51 @@
     flex-direction: column;
     align-items: flex-end;
     gap: 8px;
+    margin-top: 8px;
   }
   
-  .chat-mode-selector, .model-selector {
+  .select-wrapper {
+    width: 100%;
+  }
+  
+  .styled-select {
+    width: 100%;
+  }
+  
+  .send-btn {
+    width: 32px;
+    height: 32px;
+  }
+  
+  /* 在小屏幕上增强发送按钮点击区域 */
+  .input-wrapper {
+    padding-right: 2px;
+  }
+}
+
+/* 小屏幕下确保两个选择器并排显示 */
+@media (max-width: 380px) {
+  .right-controls {
     width: 100%;
     flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 5px;
+  }
+  
+  .select-wrapper {
+    min-width: 48%;
+    margin: 3px 0;
+  }
+  
+  .styled-select {
+    width: 100%;
+    padding: 6px 25px 6px 10px;
+    font-size: 12px;
+  }
+  
+  /* 微调下拉箭头位置 */
+  .select-wrapper:after {
+    right: 10px;
   }
 }

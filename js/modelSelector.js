@@ -1,15 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('开始初始化模型选择器...');
     const modelSelector = document.getElementById('modelSelector');
-    const currentModelText = document.getElementById('currentModel');
     
     // 调试代码，帮助排除问题
     console.log('ModelSelector初始化:', {
-        modelSelector: !!modelSelector,
-        currentModelText: !!currentModelText
+        modelSelector: modelSelector ? true : false,
+        options: modelSelector ? modelSelector.options.length : 0
     });
     
     // 检查元素是否存在
-    if (!modelSelector || !currentModelText) {
+    if (!modelSelector) {
         console.error('ModelSelector: 找不到必要的DOM元素');
         return; // 如果必要元素不存在，退出初始化
     }
@@ -31,74 +31,21 @@ document.addEventListener('DOMContentLoaded', function() {
         allowedModels: ['deepseek/deepseek-r1:free']
     };
     
-    // 获取用户权限
-    async function loadUserPermissions() {
-        try {
-            if (window.backendApi && window.backendApi.getUserPermissions) {
-                userPermissions = await window.backendApi.getUserPermissions();
-                console.log('已加载用户权限:', userPermissions);
-                
-                // 重新初始化选择器
-                checkSelectedModel();
-            }
-        } catch (error) {
-            console.error('加载用户权限失败:', error);
-        }
-    }
-    
-    // 获取可用模型，根据用户权限过滤
-    function getAvailableModels() {
-        // 管理员可以访问所有模型
-        if (window.backendApi && window.backendApi.isAdmin && window.backendApi.isAdmin()) {
-            return allModels;
-        }
-        
-        // 普通用户只能访问被允许的模型
-        if (userPermissions && userPermissions.allowedModels) {
-            return allModels.filter(model => userPermissions.allowedModels.includes(model.id));
-        }
-        
-        // 默认只返回免费模型
-        return allModels.filter(model => model.id.includes(':free'));
-    }
-    
     // 存储用户选择的模型的本地存储键
     const SELECTED_MODEL_KEY = 'selected_model';
     
-    // 检查本地存储中的模型选择
-    function checkSelectedModel() {
-        const savedModel = localStorage.getItem(SELECTED_MODEL_KEY);
-        if (savedModel) {
-            // 获取可用模型
-            const availableModels = getAvailableModels();
-            
-            // 查找匹配的模型
-            const model = availableModels.find(m => m.id === savedModel);
-            
-            if (model) {
-                // 更新显示的模型名称
-                currentModelText.textContent = model.name;
-                // 更新API中使用的模型
-                window.CURRENT_MODEL = savedModel;
-            } else {
-                // 如果保存的模型不在可用列表中，使用第一个可用模型
-                if (availableModels.length > 0) {
-                    selectModel(availableModels[0].id, availableModels[0].name);
-                }
-            }
-        } else {
-            // 未保存过模型，使用第一个可用模型
-            const availableModels = getAvailableModels();
-            if (availableModels.length > 0) {
-                selectModel(availableModels[0].id, availableModels[0].name);
-            }
-        }
+    // 获取当前选择的模型ID
+    function getCurrentModelId() {
+        return localStorage.getItem(SELECTED_MODEL_KEY) || 'deepseek/deepseek-r1:free';
     }
     
     // 选择模型
-    function selectModel(modelId, modelName) {
-        // 更新显示的模型名称
-        currentModelText.textContent = modelName;
+    function selectModel(modelId) {
+        // 获取模型信息
+        const model = allModels.find(m => m.id === modelId) || allModels[0];
+        
+        // 更新select元素的值
+        modelSelector.value = modelId;
         
         // 更新API中使用的模型
         window.CURRENT_MODEL = modelId;
@@ -106,92 +53,80 @@ document.addEventListener('DOMContentLoaded', function() {
         // 保存到本地存储
         localStorage.setItem(SELECTED_MODEL_KEY, modelId);
         
-        console.log(`模型已切换为: ${modelName} (${modelId})`);
+        console.log(`模型已切换为: ${model.name} (${modelId})`);
     }
     
-    // 初始化时加载用户权限
-    loadUserPermissions();
-    
-    // 获取预先创建的下拉菜单
-    const modelDropdown = document.getElementById('modelDropdown');
-    
-    // 添加点击事件到预先创建的菜单项
-    if (modelDropdown) {
-        const items = modelDropdown.querySelectorAll('li');
-        items.forEach(item => {
-            const modelId = item.getAttribute('data-model');
-            const modelName = item.textContent;
+    // 初始化模型选择
+    function initModelSelector() {
+        try {
+            const modelId = getCurrentModelId();
             
-            item.addEventListener('click', function(e) {
-                // 阻止事件冒泡，防止触发dropdown的toggle事件
-                e.stopPropagation();
+            // 确认模型选择器有效
+            if (modelSelector && modelSelector.options.length > 0) {
+                // 设置选中值
+                modelSelector.value = modelId;
                 
-                selectModel(modelId, modelName);
-                // 强制隐藏下拉菜单
-                modelDropdown.classList.remove('show');
-                modelDropdown.style.display = 'none';
-            });
-            
-            // 标记当前选中的模型
-            if (localStorage.getItem(SELECTED_MODEL_KEY) === modelId) {
-                item.classList.add('active');
+                // 应用选中的模型
+                selectModel(modelId);
+                
+                console.log('模型选择器初始化完成:', {
+                    modelId: modelId,
+                    options: modelSelector.options.length
+                });
+            } else {
+                console.warn('模型选择器不存在或没有选项');
             }
-        });
+        } catch (err) {
+            console.error('初始化模型选择器时出错:', err);
+        }
     }
     
-    // 点击模型选择器按钮时显示/隐藏下拉菜单
-    modelSelector.addEventListener('click', function(e) {
-        e.stopPropagation();
-        
-        // 使用已有的菜单元素，不再动态创建
-        if (modelDropdown) {
-            modelDropdown.classList.toggle('show');
-            
-            // 计算位置，确保下拉菜单紧贴按钮
-            const rect = modelSelector.getBoundingClientRect();
-            const dropdownWidth = 180; // 菜单宽度与CSS中保持一致
-            
-            // 获取下拉菜单的高度（先显示它才能获取高度）
-            modelDropdown.style.visibility = 'hidden';
-            modelDropdown.style.display = 'block';
-            const dropdownHeight = modelDropdown.offsetHeight;
-            
-            // 设置为固定定位，相对于视口
-            modelDropdown.style.position = 'fixed';
-            
-            // 检查是否会超出底部边界
-            const spaceBelow = window.innerHeight - rect.bottom - 5;
-            const spaceAbove = rect.top - 5;
-            
-            // 垂直位置：优先显示在按钮下方，如果下方空间不足则显示在按钮上方
-            if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
-                // 上方显示
-                modelDropdown.style.top = `${rect.top - dropdownHeight - 5}px`;
-            } else {
-                // 下方显示（默认）或者上方空间也不足时强制下方显示
-                modelDropdown.style.top = `${rect.bottom + 5}px`;
-            }
-            
-            // 水平位置：优先保持右对齐，但确保不超出左侧边界
-            const rightPosition = window.innerWidth - rect.right;
-            // 如果右对齐会导致超出左侧边界，则使用左对齐
-            if (rect.right - dropdownWidth < 0) {
-                modelDropdown.style.left = `${rect.left}px`;
-                modelDropdown.style.right = 'auto';
-            } else {
-                modelDropdown.style.right = `${rightPosition}px`;
-                modelDropdown.style.left = 'auto';
-            }
-            
-            // 恢复可见性
-            modelDropdown.style.visibility = 'visible';
-        }
+    // 监听select元素的change事件
+    modelSelector.addEventListener('change', function(e) {
+        const selectedModelId = this.value;
+        selectModel(selectedModelId);
     });
     
-    // 点击页面其他地方时隐藏下拉菜单
-    document.addEventListener('click', function(e) {
-        if (modelDropdown && modelSelector && !modelSelector.contains(e.target) && !modelDropdown.contains(e.target)) {
-            modelDropdown.classList.remove('show');
+    // 初始化
+    initModelSelector();
+    
+    // 获取用户权限 - 可以在需要时禁用某些选项
+    async function loadUserPermissions() {
+        try {
+            if (window.backendApi && window.backendApi.getUserPermissions) {
+                userPermissions = await window.backendApi.getUserPermissions();
+                console.log('已加载用户权限:', userPermissions);
+                
+                // 禁用不允许的模型选项
+                for (let i = 0; i < modelSelector.options.length; i++) {
+                    const option = modelSelector.options[i];
+                    const isAllowed = userPermissions.allowedModels.includes(option.value) || 
+                                     option.value.includes(':free') ||
+                                     (window.backendApi.isAdmin && window.backendApi.isAdmin());
+                    
+                    option.disabled = !isAllowed;
+                }
+                
+                // 如果当前选中的模型不被允许，切换到第一个允许的模型
+                if (!userPermissions.allowedModels.includes(modelSelector.value) && 
+                    !modelSelector.value.includes(':free') &&
+                    !(window.backendApi.isAdmin && window.backendApi.isAdmin())) {
+                    
+                    const firstAllowedOption = Array.from(modelSelector.options)
+                        .find(opt => !opt.disabled);
+                    
+                    if (firstAllowedOption) {
+                        selectModel(firstAllowedOption.value);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('加载用户权限失败:', error);
         }
-    });
+    }
+    
+    // 在初始化后加载用户权限
+    setTimeout(loadUserPermissions, 500);
+    
+    console.log('模型选择器脚本加载完成');
 }); 

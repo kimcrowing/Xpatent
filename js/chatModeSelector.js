@@ -1,17 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('开始初始化聊天模式选择器...');
     const chatModeSelector = document.getElementById('chatModeSelector');
-    const currentChatModeText = document.getElementById('currentChatMode');
-    const chatModeDropdown = document.getElementById('chatModeDropdown');
     
     // 调试代码，帮助排除问题
     console.log('ChatModeSelector初始化:', {
-        chatModeSelector: !!chatModeSelector,
-        currentChatModeText: !!currentChatModeText,
-        chatModeDropdown: !!chatModeDropdown
+        chatModeSelector: chatModeSelector ? true : false,
+        options: chatModeSelector ? chatModeSelector.options.length : 0
     });
     
     // 检查必要元素是否存在
-    if (!chatModeSelector || !currentChatModeText || !chatModeDropdown) {
+    if (!chatModeSelector) {
         console.error('ChatModeSelector: 找不到必要的DOM元素');
         return; // 如果必要元素不存在，退出初始化
     }
@@ -53,127 +51,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 选择聊天模式
-    function selectChatMode(modeId, modeName, systemPrompt) {
-        // 更新显示的模式名称
-        currentChatModeText.textContent = modeName;
+    function selectChatMode(modeId) {
+        const mode = chatModes.find(m => m.id === modeId) || chatModes[0];
         
         // 更新系统提示词
-        window.CHAT_MODE_SYSTEM_PROMPT = systemPrompt;
+        window.CHAT_MODE_SYSTEM_PROMPT = mode.systemPrompt;
         
         // 保存到本地存储
         localStorage.setItem(SELECTED_CHAT_MODE_KEY, modeId);
         
-        // 更新活动状态
-        document.querySelectorAll('#chatModeDropdown li').forEach(item => {
-            if (item.getAttribute('data-mode') === modeId) {
-                item.classList.add('active');
-            } else {
-                item.classList.remove('active');
-            }
-        });
-        
         // 根据模式更新输入框占位符
         const userInput = document.getElementById('userInput');
-        if (userInput) {
-            const mode = chatModes.find(m => m.id === modeId);
-            if (mode && mode.placeholder) {
-                userInput.placeholder = mode.placeholder;
-            }
+        if (userInput && mode.placeholder) {
+            userInput.placeholder = mode.placeholder;
         }
         
-        console.log(`聊天模式已切换为: ${modeName}`);
+        console.log(`聊天模式已切换为: ${mode.name}`);
     }
     
     // 初始化聊天模式
     function initChatMode() {
-        const modeId = getCurrentChatModeId();
-        const mode = chatModes.find(m => m.id === modeId) || chatModes[0];
-        
-        // 设置当前模式
-        selectChatMode(mode.id, mode.name, mode.systemPrompt);
-        
-        // 添加点击事件到菜单项
-        document.querySelectorAll('#chatModeDropdown li').forEach(item => {
-            const itemModeId = item.getAttribute('data-mode');
-            const itemMode = chatModes.find(m => m.id === itemModeId);
+        try {
+            const modeId = getCurrentChatModeId();
             
-            if (itemMode) {
-                item.addEventListener('click', function(e) {
-                    // 阻止事件冒泡，防止触发dropdown的toggle事件
-                    e.stopPropagation();
-                    
-                    selectChatMode(itemMode.id, itemMode.name, itemMode.systemPrompt);
-                    // 强制隐藏下拉菜单
-                    chatModeDropdown.classList.remove('show');
-                    chatModeDropdown.style.display = 'none';
-                });
+            // 确认选择器有效
+            if (chatModeSelector && chatModeSelector.options.length > 0) {
+                // 设置select元素的选中值
+                chatModeSelector.value = modeId;
                 
-                // 标记当前选中的项
-                if (modeId === itemModeId) {
-                    item.classList.add('active');
-                }
+                // 应用选中的模式
+                selectChatMode(modeId);
+                
+                console.log('聊天模式选择器初始化完成:', {
+                    modeId: modeId,
+                    options: chatModeSelector.options.length
+                });
+            } else {
+                console.warn('聊天模式选择器不存在或没有选项');
             }
-        });
+        } catch (err) {
+            console.error('初始化聊天模式选择器时出错:', err);
+        }
     }
+    
+    // 监听select元素的change事件
+    chatModeSelector.addEventListener('change', function(e) {
+        const selectedModeId = this.value;
+        selectChatMode(selectedModeId);
+    });
     
     // 初始化
     initChatMode();
-    
-    // 点击聊天模式选择器按钮时显示/隐藏下拉菜单
-    chatModeSelector.addEventListener('click', function(e) {
-        e.stopPropagation();
-        
-        // 使用已有的菜单元素，不再动态创建
-        if (chatModeDropdown) {
-            chatModeDropdown.classList.toggle('show');
-            
-            // 计算位置，确保下拉菜单紧贴按钮
-            const rect = chatModeSelector.getBoundingClientRect();
-            const dropdownWidth = 180; // 菜单宽度与CSS中保持一致
-            
-            // 获取下拉菜单的高度（先显示它才能获取高度）
-            chatModeDropdown.style.visibility = 'hidden';
-            chatModeDropdown.style.display = 'block';
-            const dropdownHeight = chatModeDropdown.offsetHeight;
-            
-            // 设置为固定定位，相对于视口
-            chatModeDropdown.style.position = 'fixed';
-            
-            // 检查是否会超出底部边界
-            const spaceBelow = window.innerHeight - rect.bottom - 5;
-            const spaceAbove = rect.top - 5;
-            
-            // 垂直位置：优先显示在按钮下方，如果下方空间不足则显示在按钮上方
-            if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
-                // 上方显示
-                chatModeDropdown.style.top = `${rect.top - dropdownHeight - 5}px`;
-            } else {
-                // 下方显示（默认）或者上方空间也不足时强制下方显示
-                chatModeDropdown.style.top = `${rect.bottom + 5}px`;
-            }
-            
-            // 水平位置：优先保持右对齐，但确保不超出左侧边界
-            const rightPosition = window.innerWidth - rect.right;
-            // 如果右对齐会导致超出左侧边界，则使用左对齐
-            if (rect.right - dropdownWidth < 0) {
-                chatModeDropdown.style.left = `${rect.left}px`;
-                chatModeDropdown.style.right = 'auto';
-            } else {
-                chatModeDropdown.style.right = `${rightPosition}px`;
-                chatModeDropdown.style.left = 'auto';
-            }
-            
-            // 恢复可见性
-            chatModeDropdown.style.visibility = 'visible';
-        }
-    });
-    
-    // 点击页面其他地方时隐藏下拉菜单
-    document.addEventListener('click', function(e) {
-        if (!chatModeSelector.contains(e.target) && !chatModeDropdown.contains(e.target)) {
-            chatModeDropdown.classList.remove('show');
-        }
-    });
     
     // 暴露给其他模块的API
     window.CHAT_MODE = {
@@ -183,4 +111,6 @@ document.addEventListener('DOMContentLoaded', function() {
         getCurrentId: getCurrentChatModeId,
         select: selectChatMode
     };
+    
+    console.log('聊天模式选择器脚本加载完成');
 }); 

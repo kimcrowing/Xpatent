@@ -42,6 +42,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 检查用户是否已登录
     function checkLoginStatus() {
+        // 开发模式选项 - 设置为true时无需登录即可使用
+        const devMode = false; // 如果你想要无需登录即可使用，请设置为true
+        
+        if (devMode) {
+            console.log('当前处于开发模式，无需登录即可使用');
+            return;
+        }
+        
         // 使用authManager而不是直接访问localStorage
         const token = window.authManager ? window.authManager.getToken() : null;
         if (!token) {

@@ -245,46 +245,72 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // 输入框焦点效果
+    // 输入框和发送按钮样式处理
     const userInput = document.getElementById('userInput');
     const inputWrapper = document.querySelector('.input-wrapper');
+    const sendButton = document.getElementById('sendButton');
     
-    userInput.addEventListener('focus', () => {
-        inputWrapper.classList.add('focus');
-    });
-    
-    userInput.addEventListener('blur', () => {
-        inputWrapper.classList.remove('focus');
-    });
-    
-    // 键盘快捷键：按Enter发送消息
-    userInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            // 使用window.sendMessage，确保引用全局函数
-            if (window.sendMessage && typeof window.sendMessage === 'function') {
-                window.sendMessage();
-            } else {
-                console.error('sendMessage函数未定义');
-                // 尝试使用sendButton点击作为备选方案
-                const sendButton = document.getElementById('sendButton');
-                if (sendButton) {
-                    sendButton.click();
+    // 输入框焦点效果
+    if (userInput && inputWrapper) {
+        userInput.addEventListener('focus', () => {
+            inputWrapper.classList.add('focus');
+        });
+        
+        userInput.addEventListener('blur', () => {
+            inputWrapper.classList.remove('focus');
+        });
+        
+        // 键盘快捷键：按Enter发送消息
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                // 使用window.sendMessage，确保引用全局函数
+                if (window.sendMessage && typeof window.sendMessage === 'function') {
+                    window.sendMessage();
+                } else {
+                    console.error('sendMessage函数未定义');
+                    // 尝试使用sendButton点击作为备选方案
+                    if (sendButton) {
+                        sendButton.click();
+                    }
                 }
             }
-        }
-    });
-    
-    // 根据输入内容启用/禁用发送按钮
-    userInput.addEventListener('input', () => {
-        const sendButton = document.getElementById('sendButton');
+        });
         
-        if (userInput.value.trim()) {
-            if (sendButton) sendButton.removeAttribute('disabled');
-        } else {
-            if (sendButton) sendButton.setAttribute('disabled', 'disabled');
+        // 监听输入框内容变化，更新发送按钮样式
+        updateSendButtonStyle(); // 检查初始状态
+        
+        // 监听输入事件
+        userInput.addEventListener('input', () => {
+            updateSendButtonStyle();
+            
+            // 根据输入内容启用/禁用发送按钮
+            if (userInput.value.trim()) {
+                if (sendButton) sendButton.removeAttribute('disabled');
+            } else {
+                if (sendButton) sendButton.setAttribute('disabled', 'disabled');
+            }
+        });
+        
+        // 监听粘贴事件
+        userInput.addEventListener('paste', () => {
+            setTimeout(updateSendButtonStyle, 10);
+        });
+        
+        // 监听清除事件
+        userInput.addEventListener('change', updateSendButtonStyle);
+    }
+    
+    // 更新发送按钮样式函数
+    function updateSendButtonStyle() {
+        if (userInput && inputWrapper) {
+            if (userInput.value.trim()) {
+                inputWrapper.classList.add('has-content');
+            } else {
+                inputWrapper.classList.remove('has-content');
+            }
         }
-    });
+    }
     
     // 历史对话按钮点击事件
     if (historyBtn && historyPanel) {

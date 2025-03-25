@@ -1,20 +1,23 @@
 /* 亮色主题下的CSS变量 */
 .light-theme {
-    --bg-color: #f5f5f7;
-    --secondary-bg: #ececf0;
-    --input-bg: #ffffff;
-    --model-selector-bg: #f0f0f0;
-    --text-color: #333333;
-    --text-color-secondary: rgba(0, 0, 0, 0.6);
-    --text-placeholder: rgba(0, 0, 0, 0.4);
-    --border-color: #dadce0;
-    --hover-color: rgba(0, 0, 0, 0.05);
-    --primary-color: #5865f2;
+    color-scheme: light;
+    --bg-primary: #f9f9fb;
+    --bg-secondary: #f0f0f5;
+    --select-bg: #f0f0f0;
+    --text-primary: #333333;
+    --text-secondary: rgba(0, 0, 0, 0.6);
+    --border-color: rgba(0, 0, 0, 0.1);
+    --hover-color: rgba(0, 0, 0, 0.03);
+    --input-bg: rgba(0, 0, 0, 0.03);
     --menu-bg: #ffffff;
-    --code-bg: #f2f2f7;
-    --table-header-bg: #f0f0f5;
-    --table-alt-row-bg: #f8f8fc;
-    --link-color: #0366d6;
+    --card-bg: #f5f5f8;
+    --primary-color: #5865f2;
+    --message-bot-bg: #f1f2f7;
+    --message-user-bg: #e9eaf2;
+    --code-bg: #f3f3f7;
+    --selection-bg: rgba(88, 101, 242, 0.2);
+    --model-selector-bg: #f0f0f0;
+    --text-placeholder: rgba(0, 0, 0, 0.4);
     --hover-bg: rgba(0, 0, 0, 0.05);
     --user-avatar-bg: #5865f2;
     --ai-avatar-bg: #a1a1a1;
@@ -28,8 +31,8 @@
     --attachment-bg: rgba(88, 101, 242, 0.05);
     
     /* 直接设置主题颜色 */
-    color: var(--text-color);
-    background-color: var(--bg-color) !important;
+    color: var(--text-primary);
+    background-color: var(--bg-primary) !important;
 }
 
 /* 确保所有需要改变背景色的主要容器都使用正确的主题色 */
@@ -37,20 +40,20 @@
 .light-theme .chat-container,
 .light-theme .messages,
 .light-theme .input-area {
-    background-color: var(--bg-color) !important;
+    background-color: var(--bg-primary) !important;
 }
 
 .light-theme .navbar {
-    background-color: var(--bg-color);
+    background-color: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
 }
 
 .light-theme .logo {
-    color: var(--text-color);
+    color: var(--text-primary);
 }
 
 .light-theme .logo svg path {
-    fill: var(--text-color);
+    fill: var(--text-primary);
 }
 
 .light-theme .user-avatar {
@@ -59,8 +62,8 @@
 }
 
 .light-theme .icon-btn svg path {
-    fill: var(--text-color);
-    stroke: var(--text-color);
+    fill: var(--text-primary);
+    stroke: var(--text-primary);
 }
 
 .light-theme .user-menu {
@@ -74,7 +77,7 @@
 }
 
 .light-theme .input-container {
-    background-color: var(--bg-color);
+    background-color: var(--bg-primary);
 }
 
 .light-theme .input-wrapper {
@@ -83,7 +86,7 @@
 }
 
 .light-theme input {
-    color: var(--text-color);
+    color: var(--text-primary);
 }
 
 .light-theme input::placeholder {
@@ -107,8 +110,8 @@
 .light-theme .model-selector svg path,
 .light-theme .dropdown-indicator svg path,
 .light-theme .send-btn svg path {
-    fill: var(--text-color);
-    stroke: var(--text-color);
+    fill: var(--text-primary);
+    stroke: var(--text-primary);
 }
 
 .light-theme .icon-btn:hover {
@@ -132,7 +135,7 @@
 }
 
 .light-theme .action-btn svg path {
-    fill: var(--text-color);
+    fill: var(--text-primary);
 }
 
 /* 消息内容高亮 */
@@ -151,7 +154,7 @@
 }
 
 .light-theme a {
-    color: var(--link-color);
+    color: var(--primary-color);
     text-decoration: none;
 }
 
@@ -170,13 +173,13 @@
 
 .light-theme .message-avatar.ai {
     background-color: var(--ai-avatar-bg);
-    color: var(--text-color);
+    color: var(--text-primary);
 }
 
 /* 确保亮色主题下菜单图标正确显示 */
 .light-theme .feature-btn svg path,
 .light-theme .icon-btn svg path {
-    fill: var(--text-color-dark);
+    fill: var(--text-primary);
 }
 
 .light-theme .feature-menu {
@@ -194,6 +197,53 @@
 .light-theme .pro-btn:hover {
     background-color: #f0f0f0;
     transform: scale(1.05);
+}
+
+/* 滚动条样式（Webkit浏览器） */
+.light-theme::-webkit-scrollbar {
+    width: 8px;
+}
+
+.light-theme::-webkit-scrollbar-track {
+    background: #f5f5f5;
+}
+
+.light-theme::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 20px;
+    border: 2px solid #f5f5f5;
+}
+
+/* 文本选择颜色 */
+.light-theme ::selection {
+    background-color: var(--selection-bg);
+    color: var(--text-primary);
+}
+
+/* 浅色主题特定样式 */
+.light-theme body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.light-theme .styled-select {
+    background-color: var(--select-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.light-theme .styled-select:hover {
+    background-color: rgba(220, 220, 230, 0.9);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+.light-theme .styled-select option {
+    background-color: var(--select-bg);
+    color: var(--text-primary);
+}
+
+.light-theme .select-wrapper:after {
+    border-top-color: rgba(0, 0, 0, 0.5);
 }
 
 /* 移除可能与暗色主题冲突的根变量 */
